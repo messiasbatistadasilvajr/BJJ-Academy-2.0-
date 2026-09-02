@@ -1,0 +1,6 @@
+{
+  "name": "BJJ Academy Mobile",
+  "description": "Plataforma Mobile 2.0 para academias de Jiu-Jitsu com portais especializados para Alunos, Responsáveis, Professores e Gestores, preparada para PWA e Capacitor (iOS e Android).",
+  "requestFramePermissions": ["camera"],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
