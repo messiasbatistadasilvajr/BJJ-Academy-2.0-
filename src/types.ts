@@ -7,15 +7,33 @@ export type UserRole =
   | 'academy_registration'; // 🏛️ Cadastrar / Gerenciar Rede de Academias
 
 export type BeltColor = 
-  | 'white' 
-  | 'grey' 
-  | 'yellow' 
-  | 'orange' 
-  | 'green' 
-  | 'blue' 
-  | 'purple' 
-  | 'brown' 
-  | 'black';
+  // Branca (Kids e Adulto)
+  | 'white'
+  // Infantil (Kids 4-15 anos) - Grupo Cinza
+  | 'grey_white'
+  | 'grey'
+  | 'grey_black'
+  // Infantil (Kids 7-15 anos) - Grupo Amarelo
+  | 'yellow_white'
+  | 'yellow'
+  | 'yellow_black'
+  // Infantil (Kids 10-15 anos) - Grupo Laranja
+  | 'orange_white'
+  | 'orange'
+  | 'orange_black'
+  // Infantil (Kids 13-15 anos) - Grupo Verde
+  | 'green_white'
+  | 'green'
+  | 'green_black'
+  // Adulto / Juvenil (16+ anos)
+  | 'blue'
+  | 'purple'
+  | 'brown'
+  | 'black'
+  // Graus Superiores / Mestres (CBJJ / IBJJF)
+  | 'red_black'
+  | 'red_white'
+  | 'red';
 
 export interface PromotionRecord {
   id: string;

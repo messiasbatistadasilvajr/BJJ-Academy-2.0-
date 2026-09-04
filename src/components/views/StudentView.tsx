@@ -32,6 +32,7 @@ interface StudentViewProps {
   onOpenTournaments?: () => void;
   onOpenFinancial?: () => void;
   onOpenSparringJournal?: () => void;
+  onOpenBeltGuide?: () => void;
   academyName?: string;
 }
 
@@ -56,6 +57,7 @@ export const StudentView: React.FC<StudentViewProps> = ({
   onOpenTournaments,
   onOpenFinancial,
   onOpenSparringJournal,
+  onOpenBeltGuide,
   academyName,
 }) => {
   const [activeTab, setActiveTab] = useState<'treinos' | 'graduacao' | 'frequencia' | 'financeiro' | 'comunicados'>('treinos');
@@ -383,15 +385,27 @@ export const StudentView: React.FC<StudentViewProps> = ({
                 Certificado por Mestre Rodrigo "Cavalo" (Faixa Preta 3º Grau)
               </p>
 
-              {onOpenGraduation && (
-                <button
-                  onClick={onOpenGraduation}
-                  className="mt-3 w-full py-2.5 px-3 rounded-xl bg-gradient-to-r from-red-600 to-amber-600 hover:from-red-500 hover:to-amber-500 text-white font-bold text-xs flex items-center justify-center gap-2 shadow-lg shadow-red-950/40 transition"
-                >
-                  <Award className="w-4 h-4" />
-                  <span>Verificar Elegibilidade & Simulado de Exame</span>
-                </button>
-              )}
+              <div className="mt-3 flex flex-col sm:flex-row gap-2">
+                {onOpenGraduation && (
+                  <button
+                    onClick={onOpenGraduation}
+                    className="flex-1 py-2.5 px-3 rounded-xl bg-gradient-to-r from-red-600 to-amber-600 hover:from-red-500 hover:to-amber-500 text-white font-bold text-xs flex items-center justify-center gap-2 shadow-lg shadow-red-950/40 transition"
+                  >
+                    <Award className="w-4 h-4" />
+                    <span>Verificar Elegibilidade & Simulado</span>
+                  </button>
+                )}
+                {onOpenBeltGuide && (
+                  <button
+                    type="button"
+                    onClick={onOpenBeltGuide}
+                    className="py-2.5 px-3 rounded-xl bg-slate-800 hover:bg-slate-700 text-amber-300 font-bold text-xs flex items-center justify-center gap-2 border border-slate-700 transition"
+                  >
+                    <BookOpen className="w-4 h-4 text-amber-400" />
+                    <span>Tabela Oficial IBJJF</span>
+                  </button>
+                )}
+              </div>
             </div>
 
             {onOpenContract && (

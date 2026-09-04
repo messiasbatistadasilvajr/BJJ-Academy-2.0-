@@ -32,8 +32,11 @@ import { DataMigrationModal } from './components/common/DataMigrationModal';
 import { RetentionRadarModal } from './components/common/RetentionRadarModal';
 import { SparringJournalModal } from './components/common/SparringJournalModal';
 import { BirthdayAlertModal } from './components/common/BirthdayAlertModal';
+import { IBJJFBeltGuideModal } from './components/common/IBJJFBeltGuideModal';
 import { academyVoiceEngine } from './utils/voiceNotification';
 import { useOnlineStatus } from './hooks/usePWAInstall';
+import { safeLocalStorageGet, safeLocalStorageSet } from './utils/safeStorage';
+import { ErrorBoundary } from './components/common/ErrorBoundary';
 
 export default function App() {
   const isOnline = useOnlineStatus();
@@ -45,23 +48,19 @@ export default function App() {
 
   // Domain Data State (Reactive with persistence fallback)
   const [student, setStudent] = useState<StudentProfile>(() => {
-    const saved = localStorage.getItem('bjj_student');
-    return saved ? JSON.parse(saved) : mockStudent;
+    return safeLocalStorageGet<StudentProfile>('bjj_student', mockStudent);
   });
 
   const [dependents, setDependents] = useState<DependentStudent[]>(() => {
-    const saved = localStorage.getItem('bjj_dependents');
-    return saved ? JSON.parse(saved) : mockDependents;
+    return safeLocalStorageGet<DependentStudent[]>('bjj_dependents', mockDependents);
   });
 
   const [classes, setClasses] = useState<ClassSession[]>(() => {
-    const saved = localStorage.getItem('bjj_classes');
-    return saved ? JSON.parse(saved) : mockClasses;
+    return safeLocalStorageGet<ClassSession[]>('bjj_classes', mockClasses);
   });
 
   const [invoices, setInvoices] = useState<Invoice[]>(() => {
-    const saved = localStorage.getItem('bjj_invoices');
-    return saved ? JSON.parse(saved) : mockInvoices;
+    return safeLocalStorageGet<Invoice[]>('bjj_invoices', mockInvoices);
   });
 
   const [announcements, setAnnouncements] = useState<Announcement[]>(mockAnnouncements);
@@ -102,26 +101,26 @@ export default function App() {
   // Improvement #3: Radar Anti-Evasão
   const [isRetentionRadarOpen, setIsRetentionRadarOpen] = useState(false);
   const [retentionAlerts, setRetentionAlerts] = useState<RetentionAlertItem[]>(() => {
-    const saved = localStorage.getItem('bjj_retention_alerts');
-    return saved ? JSON.parse(saved) : mockRetentionAlerts;
+    return safeLocalStorageGet<RetentionAlertItem[]>('bjj_retention_alerts', mockRetentionAlerts);
   });
 
   // Improvement #5: Diário de Rola & Raio-X Técnico
   const [isSparringJournalOpen, setIsSparringJournalOpen] = useState(false);
   const [sparringSessions, setSparringSessions] = useState<SparringSession[]>(() => {
-    const saved = localStorage.getItem('bjj_sparring_sessions');
-    return saved ? JSON.parse(saved) : mockSparringSessions;
+    return safeLocalStorageGet<SparringSession[]>('bjj_sparring_sessions', mockSparringSessions);
   });
 
   // Birthday Alert System
   const [isBirthdayAlertOpen, setIsBirthdayAlertOpen] = useState(false);
+  
+  // Official IBJJF Belt Guide Modal
+  const [isBeltGuideOpen, setIsBeltGuideOpen] = useState(false);
   const [birthdays, setBirthdays] = useState<BirthdayPerson[]>(() => {
-    const saved = localStorage.getItem('bjj_birthdays');
-    return saved ? JSON.parse(saved) : mockBirthdays;
+    return safeLocalStorageGet<BirthdayPerson[]>('bjj_birthdays', mockBirthdays);
   });
 
   useEffect(() => {
-    localStorage.setItem('bjj_birthdays', JSON.stringify(birthdays));
+    safeLocalStorageSet('bjj_birthdays', birthdays);
   }, [birthdays]);
 
   // Today's birthdays count (reference date Sept 4th)
@@ -131,18 +130,15 @@ export default function App() {
 
   // Platform General Manager (Messias Batista da Silva junior)
   const [generalManager, setGeneralManager] = useState<PlatformGeneralManager>(() => {
-    const saved = localStorage.getItem('bjj_general_manager');
-    return saved ? JSON.parse(saved) : defaultPlatformGeneralManager;
+    return safeLocalStorageGet<PlatformGeneralManager>('bjj_general_manager', defaultPlatformGeneralManager);
   });
 
   // Registered Academies State (Persisted in localStorage)
   const [academies, setAcademies] = useState<RegisteredAcademy[]>(() => {
-    const saved = localStorage.getItem('bjj_academies');
-    return saved ? JSON.parse(saved) : mockRegisteredAcademies;
+    return safeLocalStorageGet<RegisteredAcademy[]>('bjj_academies', mockRegisteredAcademies);
   });
   const [activeAcademyId, setActiveAcademyId] = useState<string>(() => {
-    const saved = localStorage.getItem('bjj_active_academy_id');
-    return saved || mockRegisteredAcademies[0].id;
+    return safeLocalStorageGet<string>('bjj_active_academy_id', mockRegisteredAcademies[0].id);
   });
 
   const activeAcademy = academies.find((a) => a.id === activeAcademyId) || academies[0];
@@ -153,36 +149,36 @@ export default function App() {
 
   // Save to localStorage when critical items change
   useEffect(() => {
-    localStorage.setItem('bjj_general_manager', JSON.stringify(generalManager));
+    safeLocalStorageSet('bjj_general_manager', generalManager);
   }, [generalManager]);
 
   // Save to localStorage when critical items change
   useEffect(() => {
-    localStorage.setItem('bjj_student', JSON.stringify(student));
+    safeLocalStorageSet('bjj_student', student);
   }, [student]);
 
   useEffect(() => {
-    localStorage.setItem('bjj_invoices', JSON.stringify(invoices));
+    safeLocalStorageSet('bjj_invoices', invoices);
   }, [invoices]);
 
   useEffect(() => {
-    localStorage.setItem('bjj_classes', JSON.stringify(classes));
+    safeLocalStorageSet('bjj_classes', classes);
   }, [classes]);
 
   useEffect(() => {
-    localStorage.setItem('bjj_academies', JSON.stringify(academies));
+    safeLocalStorageSet('bjj_academies', academies);
   }, [academies]);
 
   useEffect(() => {
-    localStorage.setItem('bjj_active_academy_id', activeAcademyId);
+    safeLocalStorageSet('bjj_active_academy_id', activeAcademyId);
   }, [activeAcademyId]);
 
   useEffect(() => {
-    localStorage.setItem('bjj_retention_alerts', JSON.stringify(retentionAlerts));
+    safeLocalStorageSet('bjj_retention_alerts', retentionAlerts);
   }, [retentionAlerts]);
 
   useEffect(() => {
-    localStorage.setItem('bjj_sparring_sessions', JSON.stringify(sparringSessions));
+    safeLocalStorageSet('bjj_sparring_sessions', sparringSessions);
   }, [sparringSessions]);
 
   // Initial welcoming push notification after 2 seconds with Voice
@@ -441,7 +437,8 @@ export default function App() {
   };
 
   return (
-    <DeviceFrame
+    <ErrorBoundary>
+      <DeviceFrame
       activeRole={activeRole}
       onSelectRole={(r) => setActiveRole(r)}
       isDesktopView={isDesktopView}
@@ -514,6 +511,7 @@ export default function App() {
           onOpenTournaments={() => setIsTournamentsOpen(true)}
           onOpenFinancial={() => setIsFinancialOpen(true)}
           onOpenSparringJournal={() => setIsSparringJournalOpen(true)}
+          onOpenBeltGuide={() => setIsBeltGuideOpen(true)}
           academyName={activeAcademy.name}
         />
       )}
@@ -530,6 +528,7 @@ export default function App() {
           onOpenContract={() => setIsContractOpen(true)}
           onOpenProShop={() => setIsProShopOpen(true)}
           onOpenTournaments={() => setIsTournamentsOpen(true)}
+          onOpenBeltGuide={() => setIsBeltGuideOpen(true)}
         />
       )}
 
@@ -552,6 +551,7 @@ export default function App() {
           onOpenTournaments={() => setIsTournamentsOpen(true)}
           onOpenRetentionRadar={() => setIsRetentionRadarOpen(true)}
           onOpenBirthdayAlert={() => setIsBirthdayAlertOpen(true)}
+          onOpenBeltGuide={() => setIsBeltGuideOpen(true)}
           todayBirthdaysCount={todayBirthdaysCount}
           academyName={activeAcademy.shortName || activeAcademy.name}
           onAddClass={(newClass) => {
@@ -940,7 +940,10 @@ export default function App() {
           setRetentionAlerts(updated);
           localStorage.setItem('bjj_retention_alerts', JSON.stringify(updated));
         }}
+        academies={academies}
+        activeAcademyId={activeAcademy.id}
         activeAcademyName={activeAcademy.shortName || activeAcademy.name}
+        isGeneralManager={activeRole === 'general_manager'}
         onAnnounceVoice={(title, body) => {
           academyVoiceEngine.announceAcademyMessage(activeAcademy, title, body);
         }}
@@ -992,6 +995,13 @@ export default function App() {
           );
         }}
       />
+
+      {/* 🥋 Official IBJJF / CBJJ Graduation & Belt Guide Modal */}
+      <IBJJFBeltGuideModal
+        isOpen={isBeltGuideOpen}
+        onClose={() => setIsBeltGuideOpen(false)}
+      />
     </DeviceFrame>
+    </ErrorBoundary>
   );
 }

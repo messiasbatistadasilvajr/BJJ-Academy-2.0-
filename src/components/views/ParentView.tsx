@@ -4,10 +4,11 @@ import {
   Users, Award, Calendar, DollarSign, MessageSquare, 
   CheckCircle2, AlertCircle, QrCode, ArrowUpRight, 
   ShieldCheck, Heart, Clock, BellRing, Sparkles, Send,
-  FileText, ShoppingBag, Trophy
+  FileText, ShoppingBag, Trophy, BookOpen
 } from 'lucide-react';
 import { DependentStudent, Invoice, Announcement, ChatMessage } from '../../types';
 import { BeltBadge } from '../common/BeltBadge';
+import { IBJJFBeltGuideModal } from '../common/IBJJFBeltGuideModal';
 
 interface ParentViewProps {
   dependents: DependentStudent[];
@@ -20,6 +21,7 @@ interface ParentViewProps {
   onOpenContract?: () => void;
   onOpenProShop?: () => void;
   onOpenTournaments?: () => void;
+  onOpenBeltGuide?: () => void;
 }
 
 export const ParentView: React.FC<ParentViewProps> = ({
@@ -33,10 +35,12 @@ export const ParentView: React.FC<ParentViewProps> = ({
   onOpenContract,
   onOpenProShop,
   onOpenTournaments,
+  onOpenBeltGuide,
 }) => {
   const [selectedChildIndex, setSelectedChildIndex] = useState<number>(0);
   const [activeTab, setActiveTab] = useState<'geral' | 'frequencia' | 'financeiro' | 'mensagens'>('geral');
   const [chatInput, setChatInput] = useState('');
+  const [isBeltGuideOpen, setIsBeltGuideOpen] = useState<boolean>(false);
 
   const currentChild = dependents[selectedChildIndex] || dependents[0];
 
@@ -129,19 +133,30 @@ export const ParentView: React.FC<ParentViewProps> = ({
             </div>
           </div>
 
-          <div className="p-2.5 rounded-2xl bg-slate-950/80 border border-slate-800 flex items-center justify-between">
-            <div>
-              <div className="text-[10px] text-slate-400">Faixa Oficial Infantil:</div>
-              <div className="mt-1">
-                <BeltBadge belt={currentChild.belt} stripes={currentChild.stripes} size="md" />
+          <div className="p-2.5 rounded-2xl bg-slate-950/80 border border-slate-800 space-y-2">
+            <div className="flex items-center justify-between">
+              <div>
+                <div className="text-[10px] text-slate-400">Faixa Oficial Infantil:</div>
+                <div className="mt-1">
+                  <BeltBadge belt={currentChild.belt} stripes={currentChild.stripes} size="md" />
+                </div>
+              </div>
+              <div className="text-right">
+                <div className="text-[10px] text-slate-400">Evolução no Grau:</div>
+                <div className="text-xs font-bold text-blue-400 mt-1">
+                  {currentChild.currentAttendanceCount}/{currentChild.classesForNextDegree} aulas
+                </div>
               </div>
             </div>
-            <div className="text-right">
-              <div className="text-[10px] text-slate-400">Evolução no Grau:</div>
-              <div className="text-xs font-bold text-blue-400 mt-1">
-                {currentChild.currentAttendanceCount}/{currentChild.classesForNextDegree} aulas
-              </div>
-            </div>
+
+            <button
+              type="button"
+              onClick={() => onOpenBeltGuide ? onOpenBeltGuide() : setIsBeltGuideOpen(true)}
+              className="w-full py-1.5 px-3 rounded-xl bg-amber-500/10 hover:bg-amber-500/20 text-amber-300 border border-amber-500/30 text-[11px] font-bold flex items-center justify-center gap-1.5 transition"
+            >
+              <BookOpen size={13} />
+              <span>Ver Tabela Oficial de Faixas Kids IBJJF (13 Variações)</span>
+            </button>
           </div>
 
           {/* Quick Stats Grid */}
@@ -398,6 +413,12 @@ export const ParentView: React.FC<ParentViewProps> = ({
           </div>
         )}
       </div>
+
+      {/* Modal de Tabela de Faixas IBJJF para os Pais */}
+      <IBJJFBeltGuideModal
+        isOpen={isBeltGuideOpen}
+        onClose={() => setIsBeltGuideOpen(false)}
+      />
     </div>
   );
 };

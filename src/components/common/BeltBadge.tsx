@@ -1,86 +1,23 @@
 import React from 'react';
 import { BeltColor } from '../../types';
+import { getBeltInfo } from '../../utils/beltRegulations';
 
 interface BeltBadgeProps {
-  belt: BeltColor;
+  belt: BeltColor | string;
   stripes?: number;
   size?: 'sm' | 'md' | 'lg' | 'hero';
   showLabel?: boolean;
+  showDivisionBadge?: boolean;
 }
-
-const BELT_CONFIG: Record<BeltColor, { name: string; bg: string; border: string; barBg: string; text: string }> = {
-  white: {
-    name: 'Branca',
-    bg: 'bg-white',
-    border: 'border-slate-300 shadow-inner',
-    barBg: 'bg-slate-900',
-    text: 'text-slate-800'
-  },
-  grey: {
-    name: 'Cinza',
-    bg: 'bg-slate-400',
-    border: 'border-slate-500',
-    barBg: 'bg-slate-900',
-    text: 'text-slate-200'
-  },
-  yellow: {
-    name: 'Amarela',
-    bg: 'bg-amber-400',
-    border: 'border-amber-500',
-    barBg: 'bg-slate-900',
-    text: 'text-amber-400'
-  },
-  orange: {
-    name: 'Laranja',
-    bg: 'bg-orange-500',
-    border: 'border-orange-600',
-    barBg: 'bg-slate-900',
-    text: 'text-orange-400'
-  },
-  green: {
-    name: 'Verde',
-    bg: 'bg-emerald-600',
-    border: 'border-emerald-700',
-    barBg: 'bg-slate-900',
-    text: 'text-emerald-400'
-  },
-  blue: {
-    name: 'Azul',
-    bg: 'bg-blue-600',
-    border: 'border-blue-700',
-    barBg: 'bg-slate-900',
-    text: 'text-blue-400'
-  },
-  purple: {
-    name: 'Roxa',
-    bg: 'bg-purple-700',
-    border: 'border-purple-800',
-    barBg: 'bg-slate-900',
-    text: 'text-purple-400'
-  },
-  brown: {
-    name: 'Marrom',
-    bg: 'bg-amber-900',
-    border: 'border-amber-950',
-    barBg: 'bg-slate-900',
-    text: 'text-amber-600'
-  },
-  black: {
-    name: 'Preta',
-    bg: 'bg-slate-950',
-    border: 'border-slate-800',
-    barBg: 'bg-red-600', // Tarja vermelha
-    text: 'text-red-500'
-  }
-};
 
 export const BeltBadge: React.FC<BeltBadgeProps> = ({
   belt,
   stripes = 0,
   size = 'md',
   showLabel = true,
+  showDivisionBadge = false,
 }) => {
-  const config = BELT_CONFIG[belt] || BELT_CONFIG.white;
+  const beltDef = getBeltInfo(belt);
 
   const sizeClasses = {
     sm: 'h-3.5 w-16 text-[9px]',
@@ -103,34 +40,78 @@ export const BeltBadge: React.FC<BeltBadgeProps> = ({
     hero: 'w-[3px] h-7'
   }[size];
 
+  // Custom styling for coral belts
+  const isCoralBlack = beltDef.bicolorType === 'coral_black';
+  const isCoralWhite = beltDef.bicolorType === 'coral_white';
+  const isCoral = isCoralBlack || isCoralWhite;
+
+  const coralStyle: React.CSSProperties | undefined = isCoralBlack
+    ? {
+        background: 'repeating-linear-gradient(90deg, #dc2626 0px, #dc2626 12px, #0f172a 12px, #0f172a 24px)',
+      }
+    : isCoralWhite
+    ? {
+        background: 'repeating-linear-gradient(90deg, #dc2626 0px, #dc2626 12px, #f8fafc 12px, #f8fafc 24px)',
+      }
+    : undefined;
+
   return (
     <div className="inline-flex items-center gap-2">
       {/* Belt Graphic */}
       <div
-        className={`relative overflow-hidden rounded-sm flex items-center justify-between border ${config.bg} ${config.border} ${sizeClasses}`}
-        title={`Faixa ${config.name} (${stripes} graus)`}
+        style={coralStyle}
+        className={`relative overflow-hidden rounded-[2px] flex items-center justify-between border ${
+          isCoral ? 'border-red-950' : `${beltDef.baseColorClass} ${beltDef.borderColorClass}`
+        } ${sizeClasses}`}
+        title={`Faixa ${beltDef.name} IBJJF (${stripes} graus)`}
       >
         {/* Subtle fabric stitch lines */}
-        <div className="absolute inset-x-0 top-1/2 -translate-y-1/2 h-[1px] bg-black/10 pointer-events-none" />
+        <div className="absolute inset-x-0 top-1/2 -translate-y-1/2 h-[1px] bg-black/15 pointer-events-none z-10" />
+
+        {/* Central horizontal stripe for IBJJF Bicolor Kids Belts */}
+        {beltDef.bicolorType === 'center_white' && (
+          <div className="absolute left-0 right-0 top-1/2 -translate-y-1/2 h-[34%] bg-white/95 shadow-sm border-y border-black/15 pointer-events-none" />
+        )}
+        {beltDef.bicolorType === 'center_black' && (
+          <div className="absolute left-0 right-0 top-1/2 -translate-y-1/2 h-[34%] bg-slate-950 shadow-sm border-y border-black/30 pointer-events-none" />
+        )}
 
         {/* Empty left side */}
         <div className="flex-1" />
 
-        {/* Black/Red Rank Bar (Tarja) on the right */}
-        <div className={`h-full ${config.barBg} ${barWidthClass} flex items-center justify-evenly px-0.5 border-l border-black/30 shrink-0`}>
+        {/* Rank Bar (Tarja) on the right */}
+        <div 
+          className={`h-full ${beltDef.barBgClass} ${barWidthClass} relative z-20 flex items-center justify-evenly px-0.5 border-l border-black/40 shrink-0`}
+        >
+          {/* Black Belt White Tip (Ponteira de Atleta/Instrutor) */}
+          {beltDef.id === 'black' && (
+            <>
+              <div className="absolute left-0 inset-y-0 w-[2px] bg-white pointer-events-none" />
+              <div className="absolute right-0 inset-y-0 w-[2px] bg-white pointer-events-none" />
+            </>
+          )}
+
+          {/* Degrees / Stripes */}
           {Array.from({ length: Math.min(4, Math.max(0, stripes)) }).map((_, i) => (
             <span
               key={i}
-              className={`${stripeWidth} bg-white shadow-sm rounded-[0.5px]`}
+              className={`${stripeWidth} bg-white shadow-sm rounded-[0.5px] z-30`}
             />
           ))}
         </div>
       </div>
 
       {showLabel && (
-        <span className={`font-semibold tracking-wide capitalize ${config.text} ${size === 'hero' ? 'text-base' : 'text-xs'}`}>
-          Faixa {config.name} {stripes > 0 ? `• ${stripes}º Grau` : '• Lisa'}
-        </span>
+        <div className="flex items-center gap-1.5 flex-wrap">
+          <span className={`font-bold tracking-wide capitalize ${beltDef.textColorClass} ${size === 'hero' ? 'text-base' : 'text-xs'}`}>
+            Faixa {beltDef.name} {stripes > 0 ? `• ${stripes}º Grau` : '• Lisa'}
+          </span>
+          {showDivisionBadge && beltDef.category === 'kids' && (
+            <span className="text-[9px] font-black uppercase px-1.5 py-0.2 bg-amber-500/20 text-amber-400 border border-amber-500/30 rounded-full">
+              Kids IBJJF
+            </span>
+          )}
+        </div>
       )}
     </div>
   );

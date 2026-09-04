@@ -86,16 +86,16 @@ _Foco na jornada! Oss!_`;
 }
 
 /**
- * Creates a personalized WhatsApp message for the Retention / Churn Radar.
+ * Generates the URL for a personalized WhatsApp message for the Retention / Churn Radar.
  */
-export function sendRetentionRescueWhatsApp(
+export function getRetentionRescueWhatsAppUrl(
   studentName: string,
   studentPhone: string,
   daysAbsent: number,
   academyName: string = 'BJJ Academy',
   customMessage?: string,
   preferredTime?: string
-) {
+): string {
   const cleanPhone = studentPhone.replace(/\D/g, '');
   const phoneParam = cleanPhone.length >= 10 ? `phone=55${cleanPhone}&` : '';
 
@@ -113,8 +113,27 @@ Qualquer coisa que você esteja passando ou precisando ajustar na sua rotina, co
 _Nos vemos no tatame hoje? Um forte abraço e OSS! 🥋🔥_`;
 
   const text = customMessage || defaultText;
-  const url = `https://api.whatsapp.com/send?${phoneParam}text=${encodeURIComponent(text)}`;
-  window.open(url, '_blank');
+  return `https://api.whatsapp.com/send?${phoneParam}text=${encodeURIComponent(text)}`;
+}
+
+/**
+ * Creates a personalized WhatsApp message for the Retention / Churn Radar.
+ */
+export function sendRetentionRescueWhatsApp(
+  studentName: string,
+  studentPhone: string,
+  daysAbsent: number,
+  academyName: string = 'BJJ Academy',
+  customMessage?: string,
+  preferredTime?: string
+): string {
+  const url = getRetentionRescueWhatsAppUrl(studentName, studentPhone, daysAbsent, academyName, customMessage, preferredTime);
+  try {
+    window.open(url, '_blank', 'noopener,noreferrer');
+  } catch (e) {
+    console.warn('Could not open window:', e);
+  }
+  return url;
 }
 
 /**

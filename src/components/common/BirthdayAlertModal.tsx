@@ -605,15 +605,38 @@ export const BirthdayAlertModal: React.FC<BirthdayAlertModalProps> = ({
                   <select
                     value={newBelt}
                     onChange={(e) => setNewBelt(e.target.value as any)}
-                    className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-white focus:outline-none focus:border-amber-500"
+                    className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-white focus:outline-none focus:border-amber-500 text-xs"
                   >
-                    <option value="white">Branca</option>
-                    <option value="grey">Cinza (Kids)</option>
-                    <option value="yellow">Amarela (Kids)</option>
-                    <option value="blue">Azul</option>
-                    <option value="purple">Roxa</option>
-                    <option value="brown">Marrom</option>
-                    <option value="black">Preta</option>
+                    <optgroup label="Adulto & Mestres (16+ anos)">
+                      <option value="white">Branca</option>
+                      <option value="blue">Azul</option>
+                      <option value="purple">Roxa</option>
+                      <option value="brown">Marrom</option>
+                      <option value="black">Preta</option>
+                      <option value="red_black">Coral (Vermelha e Preta - 7º Grau)</option>
+                      <option value="red_white">Coral (Vermelha e Branca - 8º Grau)</option>
+                      <option value="red">Vermelha (9º Grau - Grande Mestre)</option>
+                    </optgroup>
+                    <optgroup label="Infantil Grupo Cinza (4-15 anos)">
+                      <option value="grey_white">Cinza e Branca</option>
+                      <option value="grey">Cinza Lisa</option>
+                      <option value="grey_black">Cinza e Preta</option>
+                    </optgroup>
+                    <optgroup label="Infantil Grupo Amarelo (7-15 anos)">
+                      <option value="yellow_white">Amarela e Branca</option>
+                      <option value="yellow">Amarela Lisa</option>
+                      <option value="yellow_black">Amarela e Preta</option>
+                    </optgroup>
+                    <optgroup label="Infantil Grupo Laranja (10-15 anos)">
+                      <option value="orange_white">Laranja e Branca</option>
+                      <option value="orange">Laranja Lisa</option>
+                      <option value="orange_black">Laranja e Preta</option>
+                    </optgroup>
+                    <optgroup label="Infantil Grupo Verde (13-15 anos)">
+                      <option value="green_white">Verde e Branca</option>
+                      <option value="green">Verde Lisa</option>
+                      <option value="green_black">Verde e Preta</option>
+                    </optgroup>
                   </select>
                 </div>
               </div>

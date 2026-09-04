@@ -19,6 +19,7 @@ import { calculateLateFeeAndInterest, formatBRL, calculateSaasLicenseFee, SAAS_F
 import { exportFinancialInvoicesCSV, exportAcademiesListCSV } from '../../utils/csvExport';
 import { sendReceiptViaWhatsApp, sendReminderViaWhatsApp } from '../../utils/whatsappHelper';
 import { DueAlertsDrawer } from '../common/DueAlertsDrawer';
+import { safeLocalStorageGet, safeLocalStorageSet } from '../../utils/safeStorage';
 
 interface ManagerViewProps {
   classes: ClassSession[];
@@ -87,8 +88,7 @@ export const ManagerView: React.FC<ManagerViewProps> = ({
   
   // CRM Kanban Leads state
   const [leads, setLeads] = useState<CRMLead[]>(() => {
-    const saved = localStorage.getItem('bjj_crm_leads');
-    return saved ? JSON.parse(saved) : mockCRMLeads;
+    return safeLocalStorageGet<CRMLead[]>('bjj_crm_leads', mockCRMLeads);
   });
   const [isNewLeadOpen, setIsNewLeadOpen] = useState(false);
   const [newLeadName, setNewLeadName] = useState('');
@@ -99,7 +99,7 @@ export const ManagerView: React.FC<ManagerViewProps> = ({
 
   const saveLeadsToStorage = (updated: CRMLead[]) => {
     setLeads(updated);
-    localStorage.setItem('bjj_crm_leads', JSON.stringify(updated));
+    safeLocalStorageSet('bjj_crm_leads', updated);
   };
 
   const handleMoveLeadStage = (leadId: string, direction: 'next' | 'prev') => {
@@ -540,11 +540,18 @@ export const ManagerView: React.FC<ManagerViewProps> = ({
                     </p>
                   </div>
                 </div>
-                <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-red-600 hover:bg-red-500 text-white font-bold text-xs shadow-md transition shrink-0">
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onOpenRetentionRadar();
+                  }}
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-red-600 hover:bg-red-500 active:scale-95 text-white font-bold text-xs shadow-md shadow-red-950 transition shrink-0 cursor-pointer"
+                >
                   <span className="hidden sm:inline">Resgatar Alunos</span>
                   <span className="sm:hidden">Resgatar</span>
                   <ArrowUpRight className="w-4 h-4" />
-                </div>
+                </button>
               </div>
             )}
 

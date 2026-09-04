@@ -74,7 +74,7 @@ export const mockDependents: DependentStudent[] = [
     email: 'marcelo.pai@gmail.com',
     phone: '(11) 99123-4567',
     avatar: 'https://images.unsplash.com/photo-1543610892-0b1f7e6d8ac1?w=200&auto=format&fit=crop&q=80',
-    belt: 'grey',
+    belt: 'grey_white',
     stripes: 2,
     degreesNeededForNext: 4,
     currentAttendanceCount: 18,
@@ -100,11 +100,11 @@ export const mockDependents: DependentStudent[] = [
       },
       {
         id: 'p_pedro_2',
-        belt: 'grey',
+        belt: 'grey_white',
         stripes: 2,
         date: '15/06/2025',
         instructor: 'Mestre Rodrigo "Cavalo"',
-        notes: 'Faixa Cinza Infantil com 2 graus. Ótima defesa pessoal!'
+        notes: 'Graduado a Faixa Cinza e Branca Infantil IBJJF com 2 graus. Ótima defesa pessoal!'
       }
     ]
   },
@@ -797,6 +797,22 @@ export const mockGraduationCandidates: GraduationEligibility[] = [
     recommendedNextBelt: 'blue',
     recommendedNextStripes: 0,
     convokedForExam: false,
+    certificateIssued: false
+  },
+  {
+    studentId: 'stu_cand_pedro_kids',
+    studentName: 'Pedro Henrique Mendes (Kids)',
+    avatar: 'https://images.unsplash.com/photo-1543610892-0b1f7e6d8ac1?w=100&auto=format&fit=crop&q=80',
+    currentBelt: 'grey_white',
+    currentStripes: 4,
+    timeInCurrentBeltMonths: 12,
+    minimumTimeMonthsNeeded: 12,
+    attendancesCount: 52,
+    minimumAttendancesNeeded: 45,
+    isEligible: true,
+    recommendedNextBelt: 'grey',
+    recommendedNextStripes: 0,
+    convokedForExam: true,
     certificateIssued: false
   }
 ];
@@ -1567,7 +1583,7 @@ export const mockBirthdays: BirthdayPerson[] = [
     birthMonth: 9,
     phone: '(11) 99123-4567',
     avatar: 'https://images.unsplash.com/photo-1543610892-0b1f7e6d8ac1?w=200&auto=format&fit=crop&q=80',
-    belt: 'grey',
+    belt: 'grey_white',
     stripes: 2,
     academyId: 'acad_bjj_jardins',
     academyName: 'BJJ Academy Jardins',
@@ -1674,7 +1690,7 @@ export const mockBirthdays: BirthdayPerson[] = [
     birthMonth: 10,
     phone: '(11) 99333-8877',
     avatar: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=200&auto=format&fit=crop&q=80',
-    belt: 'white',
+    belt: 'yellow_white',
     stripes: 2,
     academyId: 'acad_bjj_jardins',
     academyName: 'BJJ Academy Jardins',

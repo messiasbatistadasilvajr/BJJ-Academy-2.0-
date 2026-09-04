@@ -57,7 +57,21 @@ export const DataMigrationModal: React.FC<DataMigrationModalProps> = ({
       const name = parts[0] || `Aluno Linha ${i}`;
       const rawBelt = (parts[1] || 'branca').toLowerCase();
       let belt: BeltColor = 'white';
-      if (rawBelt.includes('azul')) belt = 'blue';
+      
+      // Bicolor & Coral checks first
+      if (rawBelt.includes('cinza') && (rawBelt.includes('branc') || rawBelt.includes('white'))) belt = 'grey_white';
+      else if (rawBelt.includes('cinza') && (rawBelt.includes('pret') || rawBelt.includes('black'))) belt = 'grey_black';
+      else if (rawBelt.includes('amarela') && (rawBelt.includes('branc') || rawBelt.includes('white'))) belt = 'yellow_white';
+      else if (rawBelt.includes('amarela') && (rawBelt.includes('pret') || rawBelt.includes('black'))) belt = 'yellow_black';
+      else if (rawBelt.includes('laranja') && (rawBelt.includes('branc') || rawBelt.includes('white'))) belt = 'orange_white';
+      else if (rawBelt.includes('laranja') && (rawBelt.includes('pret') || rawBelt.includes('black'))) belt = 'orange_black';
+      else if (rawBelt.includes('verde') && (rawBelt.includes('branc') || rawBelt.includes('white'))) belt = 'green_white';
+      else if (rawBelt.includes('verde') && (rawBelt.includes('pret') || rawBelt.includes('black'))) belt = 'green_black';
+      else if (rawBelt.includes('coral') || (rawBelt.includes('vermelh') && rawBelt.includes('pret'))) belt = 'red_black';
+      else if (rawBelt.includes('vermelh') && rawBelt.includes('branc')) belt = 'red_white';
+      else if (rawBelt.includes('vermelh') || rawBelt === 'red') belt = 'red';
+      // Standard solid belts
+      else if (rawBelt.includes('azul') || rawBelt.includes('blue')) belt = 'blue';
       else if (rawBelt.includes('roxa') || rawBelt.includes('purple')) belt = 'purple';
       else if (rawBelt.includes('marrom') || rawBelt.includes('brown')) belt = 'brown';
       else if (rawBelt.includes('preta') || rawBelt.includes('black')) belt = 'black';
@@ -65,6 +79,7 @@ export const DataMigrationModal: React.FC<DataMigrationModalProps> = ({
       else if (rawBelt.includes('cinza') || rawBelt.includes('grey')) belt = 'grey';
       else if (rawBelt.includes('laranja') || rawBelt.includes('orange')) belt = 'orange';
       else if (rawBelt.includes('verde') || rawBelt.includes('green')) belt = 'green';
+      else belt = 'white';
 
       const stripes = Math.min(4, Math.max(0, parseInt(parts[2] || '0', 10) || 0));
       const phone = parts[3] || '(11) 99999-9999';

@@ -30,6 +30,7 @@ interface TeacherViewProps {
   onOpenBirthdayAlert?: () => void;
   todayBirthdaysCount?: number;
   academyName?: string;
+  onOpenBeltGuide?: () => void;
   // Teacher actions requested by user:
   onAddClass?: (newClass: ClassSession) => void;
   onSendClassAnnouncement?: (title: string, content: string, priority: 'urgent' | 'normal', target: string) => void;
@@ -61,6 +62,7 @@ export const TeacherView: React.FC<TeacherViewProps> = ({
   onOpenBirthdayAlert,
   todayBirthdaysCount,
   academyName = 'BJJ Academy',
+  onOpenBeltGuide,
   onAddClass,
   onSendClassAnnouncement,
   onAddTournamentReminder,
@@ -383,6 +385,18 @@ export const TeacherView: React.FC<TeacherViewProps> = ({
                   {todayBirthdaysCount}
                 </span>
               )}
+            </button>
+          )}
+
+          {onOpenBeltGuide && (
+            <button
+              type="button"
+              onClick={onOpenBeltGuide}
+              className="p-2 rounded-xl bg-yellow-500/20 hover:bg-yellow-500/30 text-yellow-300 border border-yellow-500/40 flex flex-col items-center justify-center gap-1 text-[10px] font-bold transition shadow-sm"
+              title="Tabela Oficial de Graduação IBJJF (Adulto e Kids)"
+            >
+              <Award size={14} className="text-yellow-400" />
+              <span>Faixas IBJJF</span>
             </button>
           )}
         </div>
@@ -822,17 +836,38 @@ export const TeacherView: React.FC<TeacherViewProps> = ({
                   <select
                     value={promotedBelt}
                     onChange={(e) => setPromotedBelt(e.target.value as BeltColor)}
-                    className="w-full mt-1 bg-slate-950 border border-slate-800 rounded-xl p-2.5 text-xs text-white focus:outline-none focus:border-red-500 capitalize"
+                    className="w-full mt-1 bg-slate-950 border border-slate-800 rounded-xl p-2.5 text-xs text-white focus:outline-none focus:border-red-500"
                   >
-                    <option value="white">Faixa Branca</option>
-                    <option value="grey">Faixa Cinza (Kids)</option>
-                    <option value="yellow">Faixa Amarela (Kids)</option>
-                    <option value="orange">Faixa Laranja (Kids)</option>
-                    <option value="green">Faixa Verde (Kids)</option>
-                    <option value="blue">Faixa Azul</option>
-                    <option value="purple">Faixa Roxa</option>
-                    <option value="brown">Faixa Marrom</option>
-                    <option value="black">Faixa Preta</option>
+                    <optgroup label="Adulto & Mestres (16+ anos) IBJJF">
+                      <option value="white">Faixa Branca (Iniciante)</option>
+                      <option value="blue">Faixa Azul (mín. 16 anos)</option>
+                      <option value="purple">Faixa Roxa (mín. 17 anos)</option>
+                      <option value="brown">Faixa Marrom (mín. 18 anos)</option>
+                      <option value="black">Faixa Preta (mín. 19 anos)</option>
+                      <option value="red_black">Coral Vermelha e Preta (7º Grau - Mestre)</option>
+                      <option value="red_white">Coral Vermelha e Branca (8º Grau - Mestre)</option>
+                      <option value="red">Faixa Vermelha (9º Grau - Grande Mestre)</option>
+                    </optgroup>
+                    <optgroup label="Infantil - Grupo Cinza (4-15 anos) IBJJF">
+                      <option value="grey_white">Faixa Cinza e Branca (Kids)</option>
+                      <option value="grey">Faixa Cinza Lisa (Kids)</option>
+                      <option value="grey_black">Faixa Cinza e Preta (Kids)</option>
+                    </optgroup>
+                    <optgroup label="Infantil - Grupo Amarelo (7-15 anos) IBJJF">
+                      <option value="yellow_white">Faixa Amarela e Branca (Kids)</option>
+                      <option value="yellow">Faixa Amarela Lisa (Kids)</option>
+                      <option value="yellow_black">Faixa Amarela e Preta (Kids)</option>
+                    </optgroup>
+                    <optgroup label="Infantil - Grupo Laranja (10-15 anos) IBJJF">
+                      <option value="orange_white">Faixa Laranja e Branca (Kids)</option>
+                      <option value="orange">Faixa Laranja Lisa (Kids)</option>
+                      <option value="orange_black">Faixa Laranja e Preta (Kids)</option>
+                    </optgroup>
+                    <optgroup label="Infantil - Grupo Verde (13-15 anos) IBJJF">
+                      <option value="green_white">Faixa Verde e Branca (Kids)</option>
+                      <option value="green">Faixa Verde Lisa (Kids)</option>
+                      <option value="green_black">Faixa Verde e Preta (Kids)</option>
+                    </optgroup>
                   </select>
                 </div>
 
@@ -870,8 +905,19 @@ export const TeacherView: React.FC<TeacherViewProps> = ({
                   />
                 </div>
 
-                <div className="p-2.5 rounded-xl bg-slate-950 border border-slate-800 text-center">
-                  <span className="text-[10px] text-slate-400">Prévia da Nova Faixa:</span>
+                <div className="p-2.5 rounded-xl bg-slate-950 border border-slate-800 text-center space-y-1.5">
+                  <div className="flex items-center justify-between text-[10px] text-slate-400">
+                    <span>Prévia da Nova Faixa:</span>
+                    {onOpenBeltGuide && (
+                      <button
+                        type="button"
+                        onClick={onOpenBeltGuide}
+                        className="text-amber-400 hover:text-amber-300 font-bold underline flex items-center gap-1"
+                      >
+                        <BookOpen size={10} /> Tabela IBJJF
+                      </button>
+                    )}
+                  </div>
                   <div className="flex justify-center mt-1">
                     <BeltBadge belt={promotedBelt} stripes={promotedStripes} size="md" />
                   </div>

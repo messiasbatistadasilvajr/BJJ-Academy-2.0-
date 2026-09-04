@@ -1,11 +1,12 @@
 import React, { useState } from 'react';
 import { 
   X, Award, CheckCircle2, Clock, Calendar, FileText, 
-  Send, Sparkles, AlertCircle, Shield, Printer, Check
+  Send, Sparkles, AlertCircle, Shield, Printer, Check, BookOpen
 } from 'lucide-react';
 import { GraduationEligibility, BeltColor } from '../../types';
 import { mockGraduationCandidates } from '../../data/mockData';
 import { BeltBadge } from './BeltBadge';
+import { IBJJFBeltGuideModal } from './IBJJFBeltGuideModal';
 
 interface GraduationExamModalProps {
   isOpen: boolean;
@@ -17,6 +18,7 @@ export const GraduationExamModal: React.FC<GraduationExamModalProps> = ({ isOpen
   const [selectedCandidate, setSelectedCandidate] = useState<GraduationEligibility | null>(null);
   const [showCertificate, setShowCertificate] = useState<boolean>(false);
   const [certificateCandidate, setCertificateCandidate] = useState<GraduationEligibility | null>(null);
+  const [isBeltGuideOpen, setIsBeltGuideOpen] = useState<boolean>(false);
 
   if (!isOpen) return null;
 
@@ -126,16 +128,24 @@ export const GraduationExamModal: React.FC<GraduationExamModalProps> = ({ isOpen
         )}
 
         {/* CBJJ Rules Banner */}
-        <div className="p-4 bg-slate-800/40 border-b border-slate-800">
+        <div className="p-4 bg-slate-800/40 border-b border-slate-800 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div className="flex items-start gap-3">
             <Shield size={18} className="text-amber-400 flex-shrink-0 mt-0.5" />
             <div className="text-xs">
-              <span className="font-bold text-white">Critérios Mínimos da CBJJ: </span>
+              <span className="font-bold text-white">Critérios Oficiais IBJJF / CBJJ: </span>
               <span className="text-slate-300">
-                Faixa Branca (mín. 12 meses / 100 aulas) • Faixa Azul (mín. 24 meses / 180 aulas) • Faixa Roxa (mín. 18 meses / 150 aulas) • Faixa Marrom (mín. 12 meses / 120 aulas).
+                Adulto: Branca (12m/100a) • Azul (24m/180a) • Roxa (18m/150a) • Marrom (12m/120a). Kids: 13 faixas com carência de 12 meses por cor.
               </span>
             </div>
           </div>
+          <button
+            type="button"
+            onClick={() => setIsBeltGuideOpen(true)}
+            className="self-start sm:self-auto px-3 py-1.5 rounded-xl bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border border-amber-500/40 text-xs font-bold flex items-center gap-1.5 transition whitespace-nowrap shadow-sm"
+          >
+            <BookOpen size={14} />
+            <span>Tabela Oficial IBJJF</span>
+          </button>
         </div>
 
         {/* Candidates List */}
@@ -255,6 +265,12 @@ export const GraduationExamModal: React.FC<GraduationExamModalProps> = ({ isOpen
           ))}
         </div>
       </div>
+
+      {/* IBJJF Official Belt Guide Modal */}
+      <IBJJFBeltGuideModal
+        isOpen={isBeltGuideOpen}
+        onClose={() => setIsBeltGuideOpen(false)}
+      />
     </div>
   );
 };
