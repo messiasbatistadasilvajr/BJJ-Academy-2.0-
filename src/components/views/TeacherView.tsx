@@ -4,11 +4,14 @@ import {
   CheckCircle2, XCircle, Camera, Award, UserCheck, 
   Clock, MapPin, Users, Edit3, Plus, Sparkles, 
   ChevronDown, Flame, FileText, Check, AlertCircle,
-  Timer, BookOpen
+  Timer, BookOpen, Download, MessageCircle, Zap, ShieldCheck,
+  Bell, Send, Trophy, Calendar, Shield, Megaphone, Flag, Volume2, ShieldAlert, Cake
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { ClassSession, BeltColor } from '../../types';
 import { BeltBadge } from '../common/BeltBadge';
+import { exportAttendanceReportCSV } from '../../utils/csvExport';
+import { sendMissedClassWhatsApp } from '../../utils/whatsappHelper';
 
 interface TeacherViewProps {
   classes: ClassSession[];
@@ -20,6 +23,25 @@ interface TeacherViewProps {
   onOpenScoreboard?: () => void;
   onOpenTechniques?: () => void;
   onOpenGraduation?: () => void;
+  onOpenPhotoAttendance?: () => void;
+  onOpenAICoach?: () => void;
+  onOpenTournaments?: () => void;
+  onOpenRetentionRadar?: () => void;
+  onOpenBirthdayAlert?: () => void;
+  todayBirthdaysCount?: number;
+  academyName?: string;
+  // Teacher actions requested by user:
+  onAddClass?: (newClass: ClassSession) => void;
+  onSendClassAnnouncement?: (title: string, content: string, priority: 'urgent' | 'normal', target: string) => void;
+  onAddTournamentReminder?: (reminder: {
+    name: string;
+    federation: 'CBJJ' | 'IBJJF' | 'FPJJ' | 'Local Open';
+    date: string;
+    registrationDeadline: string;
+    location: string;
+    categories: string;
+    notes: string;
+  }) => void;
 }
 
 export const TeacherView: React.FC<TeacherViewProps> = ({
@@ -32,10 +54,22 @@ export const TeacherView: React.FC<TeacherViewProps> = ({
   onOpenScoreboard,
   onOpenTechniques,
   onOpenGraduation,
+  onOpenPhotoAttendance,
+  onOpenAICoach,
+  onOpenTournaments,
+  onOpenRetentionRadar,
+  onOpenBirthdayAlert,
+  todayBirthdaysCount,
+  academyName = 'BJJ Academy',
+  onAddClass,
+  onSendClassAnnouncement,
+  onAddTournamentReminder,
 }) => {
   const [selectedClassId, setSelectedClassId] = useState<string>(classes[1]?.id || classes[0]?.id);
   const [selectedStudentForNote, setSelectedStudentForNote] = useState<{ id: string; name: string } | null>(null);
   const [noteText, setNoteText] = useState('');
+  const [attendanceFilter, setAttendanceFilter] = useState<'all' | 'present' | 'absent'>('all');
+  const [attendanceSavedMessage, setAttendanceSavedMessage] = useState<string | null>(null);
   
   // Promotion modal state
   const [promotionModalStudent, setPromotionModalStudent] = useState<{ id: string; name: string; belt: BeltColor } | null>(null);
@@ -43,7 +77,48 @@ export const TeacherView: React.FC<TeacherViewProps> = ({
   const [promotedStripes, setPromotedStripes] = useState<number>(4);
   const [promotionComment, setPromotionComment] = useState('');
 
+  // ➕ Cadastrar Nova Aula Modal State
+  const [isCreateClassModalOpen, setIsCreateClassModalOpen] = useState(false);
+  const [newClassName, setNewClassName] = useState('');
+  const [newClassType, setNewClassType] = useState<'Gi' | 'No-Gi' | 'Kids' | 'Competição' | 'Fundamentos'>('Gi');
+  const [newClassTime, setNewClassTime] = useState('19:00 - 20:15');
+  const [newClassDuration, setNewClassDuration] = useState('1h 15m');
+  const [newClassTatame, setNewClassTatame] = useState('Tatame 1 - Principal');
+  const [newClassCapacity, setNewClassCapacity] = useState(30);
+  const [newClassInstructor, setNewClassInstructor] = useState('Mestre Rodrigo "Cavalo" (3º Grau)');
+
+  // 📢 Enviar Mensagem / Mural Modal State
+  const [isSendMessageModalOpen, setIsSendMessageModalOpen] = useState(false);
+  const [messageTarget, setMessageTarget] = useState<'current_class' | 'all_students'>('current_class');
+  const [messageTitle, setMessageTitle] = useState('');
+  const [messageContent, setMessageContent] = useState('');
+  const [messagePriority, setMessagePriority] = useState<'normal' | 'urgent'>('normal');
+
+  // 🏆 Lembretes de Competições Modal State
+  const [isTournamentModalOpen, setIsTournamentModalOpen] = useState(false);
+  const [tournName, setTournName] = useState('');
+  const [tournFederation, setTournFederation] = useState<'CBJJ' | 'IBJJF' | 'FPJJ' | 'Local Open'>('CBJJ');
+  const [tournDate, setTournDate] = useState('24/10/2026');
+  const [tournDeadline, setTournDeadline] = useState('14/10/2026');
+  const [tournLocation, setTournLocation] = useState('Ginásio Poliesportivo do Ibirapuera - SP');
+  const [tournCategories, setTournCategories] = useState('Juvenil, Adulto e Master - Todas as Faixas');
+  const [tournNotes, setTournNotes] = useState('Atenção ao peso no dia anterior! Treinos de gás e ritmo às terças e quintas.');
+
   const currentClass = classes.find(c => c.id === selectedClassId) || classes[0];
+
+  const handleExportAttendanceCSV = () => {
+    exportAttendanceReportCSV(currentClass);
+  };
+
+  const handleSaveAttendance = () => {
+    confetti({
+      particleCount: 70,
+      spread: 60,
+      origin: { y: 0.6 }
+    });
+    setAttendanceSavedMessage(`✓ Chamada confirmada! ${presentCount} presenças computadas para graduação CBJJ.`);
+    setTimeout(() => setAttendanceSavedMessage(null), 4000);
+  };
 
   const handleSaveNote = () => {
     if (selectedStudentForNote && noteText.trim()) {
@@ -72,13 +147,145 @@ export const TeacherView: React.FC<TeacherViewProps> = ({
     }
   };
 
+  // Submit Nova Aula
+  const handleConfirmCreateClass = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newClassName.trim()) return;
+
+    const newClass: ClassSession = {
+      id: `class_${Date.now()}`,
+      name: newClassName.trim(),
+      instructor: newClassInstructor.trim() || 'Mestre Rodrigo "Cavalo"',
+      instructorAvatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150',
+      time: newClassTime.trim() || '19:00 - 20:15',
+      duration: newClassDuration.trim() || '1h 15m',
+      type: newClassType,
+      tatame: newClassTatame.trim() || 'Tatame 1',
+      capacity: Number(newClassCapacity) || 30,
+      enrolledCount: 3,
+      checkedIn: false,
+      registeredStudents: [
+        {
+          id: 'student_1',
+          name: 'Lucas Silva (Você)',
+          belt: 'blue',
+          avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150',
+          status: 'pending',
+          note: 'Regular no treino'
+        },
+        {
+          id: 'stu_matheus',
+          name: 'Matheus Oliveira',
+          belt: 'purple',
+          avatar: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=150',
+          status: 'pending',
+          note: 'Treino de competição'
+        },
+        {
+          id: 'stu_gabriel',
+          name: 'Gabriel Costa',
+          belt: 'white',
+          avatar: 'https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?w=150',
+          status: 'pending'
+        }
+      ]
+    };
+
+    if (onAddClass) {
+      onAddClass(newClass);
+    }
+    setSelectedClassId(newClass.id);
+    setIsCreateClassModalOpen(false);
+    setNewClassName('');
+
+    confetti({
+      particleCount: 90,
+      spread: 70,
+      origin: { y: 0.6 }
+    });
+    setAttendanceSavedMessage(`✓ Nova aula "${newClass.name}" cadastrada com sucesso e pronta para chamada!`);
+    setTimeout(() => setAttendanceSavedMessage(null), 4500);
+  };
+
+  // Submit Enviar Mensagem da Turma
+  const handleConfirmSendMessage = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!messageTitle.trim() || !messageContent.trim()) return;
+
+    if (onSendClassAnnouncement) {
+      const targetLabel = messageTarget === 'current_class' ? `Turma ${currentClass.name}` : 'Todos os Alunos da Academia';
+      onSendClassAnnouncement(messageTitle.trim(), messageContent.trim(), messagePriority, targetLabel);
+    }
+
+    setIsSendMessageModalOpen(false);
+    setMessageTitle('');
+    setMessageContent('');
+
+    confetti({
+      particleCount: 80,
+      spread: 60,
+      origin: { y: 0.6 }
+    });
+    setAttendanceSavedMessage(`📢 Mensagem publicada no mural dos alunos com sucesso!`);
+    setTimeout(() => setAttendanceSavedMessage(null), 4500);
+  };
+
+  // Submit Lembrete de Competição
+  const handleConfirmTournamentReminder = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!tournName.trim()) return;
+
+    if (onAddTournamentReminder) {
+      onAddTournamentReminder({
+        name: tournName.trim(),
+        federation: tournFederation,
+        date: tournDate.trim(),
+        registrationDeadline: tournDeadline.trim(),
+        location: tournLocation.trim(),
+        categories: tournCategories.trim(),
+        notes: tournNotes.trim()
+      });
+    }
+
+    setIsTournamentModalOpen(false);
+    setTournName('');
+
+    confetti({
+      particleCount: 90,
+      spread: 70,
+      origin: { y: 0.6 }
+    });
+    setAttendanceSavedMessage(`🏆 Lembrete de competição cadastrado e convocações enviadas aos atletas!`);
+    setTimeout(() => setAttendanceSavedMessage(null), 4500);
+  };
+
   const presentCount = currentClass.registeredStudents.filter(s => s.status === 'present').length;
 
   return (
     <div className="flex flex-col h-full bg-slate-950 text-slate-100 overflow-y-auto pb-20 no-scrollbar">
       {/* Teacher Operational Top Header */}
-      <div className="px-5 pt-4 pb-4 bg-gradient-to-b from-red-950/40 via-slate-900 to-slate-950 border-b border-slate-800">
-        <div className="flex items-center justify-between mb-3">
+      <div className="px-5 pt-4 pb-3 bg-gradient-to-b from-red-950/40 via-slate-900 to-slate-950 border-b border-slate-800 space-y-3">
+        {/* Blindagem Pedagógica Banner */}
+        <div className="p-2.5 rounded-2xl bg-emerald-950/50 border border-emerald-500/40 flex items-center justify-between gap-2 shadow-sm">
+          <div className="flex items-center gap-2">
+            <div className="w-7 h-7 rounded-xl bg-emerald-500/20 text-emerald-400 border border-emerald-500/40 flex items-center justify-center font-bold text-xs shrink-0">
+              🛡️
+            </div>
+            <div>
+              <div className="text-[11px] font-black text-emerald-300 flex items-center gap-1.5">
+                <span>Blindagem do Professor Ativa</span>
+                <span className="text-[9px] bg-emerald-500/20 text-emerald-300 px-1.5 py-0.2 rounded-full font-bold">
+                  TATAME & ALUNOS
+                </span>
+              </div>
+              <p className="text-[10px] text-emerald-200/80 leading-tight">
+                Acesso exclusivo a Aulas, Alunos, Graduações, Mensagens e Lembretes de Torneios na unidade <strong>{academyName}</strong>. Finanças restritas à gerência.
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <div className="flex items-center justify-between">
           <div className="flex items-center gap-2.5">
             <div className="w-9 h-9 rounded-2xl bg-red-600/20 border border-red-500/40 flex items-center justify-center text-red-500 font-black">
               🥋
@@ -95,11 +302,134 @@ export const TeacherView: React.FC<TeacherViewProps> = ({
           </span>
         </div>
 
-        {/* Quick Class Selector Dropdown / Scroll */}
-        <div className="space-y-1.5">
-          <label className="text-[10px] font-bold uppercase text-slate-400">
-            Selecione a Turma em Andamento:
-          </label>
+        {/* Teacher Responsibilities Quick Actions Bar */}
+        <div className="grid grid-cols-4 sm:grid-cols-4 md:grid-cols-8 gap-1.5 pt-1">
+          <button
+            type="button"
+            onClick={() => setIsCreateClassModalOpen(true)}
+            className="p-2 rounded-xl bg-emerald-600/20 hover:bg-emerald-600/30 text-emerald-300 border border-emerald-500/40 flex flex-col items-center justify-center gap-1 text-[10px] font-bold transition shadow-sm"
+          >
+            <Plus size={14} className="text-emerald-400" />
+            <span>+ Nova Aula</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setIsSendMessageModalOpen(true)}
+            className="p-2 rounded-xl bg-blue-600/20 hover:bg-blue-600/30 text-blue-300 border border-blue-500/40 flex flex-col items-center justify-center gap-1 text-[10px] font-bold transition shadow-sm"
+          >
+            <Megaphone size={14} className="text-blue-400" />
+            <span>Mensagens</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setIsTournamentModalOpen(true)}
+            className="p-2 rounded-xl bg-amber-600/20 hover:bg-amber-600/30 text-amber-300 border border-amber-500/40 flex flex-col items-center justify-center gap-1 text-[10px] font-bold transition shadow-sm"
+          >
+            <Trophy size={14} className="text-amber-400" />
+            <span>Torneios</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={onOpenGraduation}
+            className="p-2 rounded-xl bg-purple-600/20 hover:bg-purple-600/30 text-purple-300 border border-purple-500/40 flex flex-col items-center justify-center gap-1 text-[10px] font-bold transition shadow-sm"
+          >
+            <Award size={14} className="text-purple-400" />
+            <span>Graduar</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={onOpenPhotoAttendance}
+            className="p-2 rounded-xl bg-cyan-600/20 hover:bg-cyan-600/30 text-cyan-300 border border-cyan-500/40 flex flex-col items-center justify-center gap-1 text-[10px] font-bold transition shadow-sm"
+          >
+            <Camera size={14} className="text-cyan-400" />
+            <span>Foto IA</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={onOpenAICoach}
+            className="p-2 rounded-xl bg-red-600/20 hover:bg-red-600/30 text-red-300 border border-red-500/40 flex flex-col items-center justify-center gap-1 text-[10px] font-bold transition shadow-sm"
+          >
+            <Sparkles size={14} className="text-red-400" />
+            <span>AI Coach</span>
+          </button>
+
+          {onOpenRetentionRadar && (
+            <button
+              type="button"
+              onClick={onOpenRetentionRadar}
+              className="p-2 rounded-xl bg-rose-600/20 hover:bg-rose-600/30 text-rose-300 border border-rose-500/40 flex flex-col items-center justify-center gap-1 text-[10px] font-bold transition shadow-sm"
+            >
+              <ShieldAlert size={14} className="text-rose-400" />
+              <span>Evasão</span>
+            </button>
+          )}
+
+          {onOpenBirthdayAlert && (
+            <button
+              type="button"
+              onClick={onOpenBirthdayAlert}
+              className="p-2 rounded-xl bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border border-amber-500/40 flex flex-col items-center justify-center gap-1 text-[10px] font-bold transition shadow-sm relative"
+              title="Aniversariantes: Parabenize em nome da academia"
+            >
+              <Cake size={14} className="text-amber-400" />
+              <span>Aniversários</span>
+              {todayBirthdaysCount !== undefined && todayBirthdaysCount > 0 && (
+                <span className="absolute -top-1 -right-1 w-4 h-4 bg-amber-500 text-slate-950 font-black rounded-full text-[9px] flex items-center justify-center">
+                  {todayBirthdaysCount}
+                </span>
+              )}
+            </button>
+          )}
+        </div>
+
+        {/* 🎂 Aniversariantes Banner in Teacher View */}
+        {todayBirthdaysCount !== undefined && todayBirthdaysCount > 0 && onOpenBirthdayAlert && (
+          <div 
+            onClick={onOpenBirthdayAlert}
+            className="p-3 rounded-2xl bg-gradient-to-r from-amber-950/70 via-slate-900 to-yellow-950/40 border border-amber-500/50 hover:border-amber-400 cursor-pointer flex items-center justify-between transition group shadow-md"
+          >
+            <div className="flex items-center gap-2.5">
+              <div className="w-8 h-8 rounded-xl bg-amber-500/20 text-amber-400 flex items-center justify-center border border-amber-500/30 shadow-inner">
+                <Cake className="w-4 h-4 animate-bounce" />
+              </div>
+              <div>
+                <div className="flex items-center gap-1.5">
+                  <span className="text-xs font-black text-white">🎉 Aniversariante(s) no Tatame Hoje!</span>
+                  <span className="px-1.5 py-0.2 rounded-full text-[9px] bg-amber-500 text-slate-950 font-black">
+                    {todayBirthdaysCount} hoje
+                  </span>
+                </div>
+                <p className="text-[10px] text-amber-200/80">
+                  Lembre-se de parabenizar no final da aula em nome da <strong>{academyName}</strong>!
+                </p>
+              </div>
+            </div>
+            <span className="text-[10px] bg-amber-500/20 text-amber-300 font-bold px-2.5 py-1 rounded-xl border border-amber-500/30 group-hover:bg-amber-500 group-hover:text-slate-950 transition">
+              Ver & WhatsApp →
+            </span>
+          </div>
+        )}
+
+        {/* Quick Class Selector Dropdown / Scroll with + button */}
+        <div className="space-y-1.5 pt-1">
+          <div className="flex items-center justify-between">
+            <label className="text-[10px] font-bold uppercase text-slate-400">
+              Selecione a Turma em Andamento:
+            </label>
+            <button
+              type="button"
+              onClick={() => setIsCreateClassModalOpen(true)}
+              className="text-[10px] font-bold text-emerald-400 hover:text-emerald-300 flex items-center gap-1"
+            >
+              <Plus size={11} /> Cadastrar Nova Turma
+            </button>
+          </div>
+          
           <div className="flex gap-2 overflow-x-auto no-scrollbar pb-1">
             {classes.map((c) => {
               const isSelected = c.id === selectedClassId;
@@ -125,6 +455,17 @@ export const TeacherView: React.FC<TeacherViewProps> = ({
                 </button>
               );
             })}
+
+            {/* Quick Add Class Card in Scroll */}
+            <button
+              type="button"
+              onClick={() => setIsCreateClassModalOpen(true)}
+              className="p-2.5 rounded-2xl border border-dashed border-slate-700 hover:border-emerald-500 bg-slate-900/50 hover:bg-emerald-950/20 text-slate-400 hover:text-emerald-300 shrink-0 transition min-w-[150px] flex flex-col items-center justify-center gap-1 text-center"
+            >
+              <Plus size={16} className="text-emerald-400" />
+              <span className="text-xs font-bold">Adicionar Turma</span>
+              <span className="text-[9px] text-slate-500">Gi, No-Gi ou Kids</span>
+            </button>
           </div>
         </div>
       </div>
@@ -153,24 +494,95 @@ export const TeacherView: React.FC<TeacherViewProps> = ({
             </div>
           </div>
 
+          {/* AI Tatame Superpowers (Gemini Vision + AI Coach) */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-1">
+            <button
+              onClick={onOpenPhotoAttendance}
+              className="py-2.5 px-3 rounded-2xl bg-gradient-to-r from-indigo-950 via-slate-900 to-indigo-900/60 border border-indigo-500/50 hover:border-indigo-400 text-left flex items-center justify-between group transition shadow-md"
+            >
+              <div className="flex items-center gap-2.5">
+                <div className="w-8 h-8 rounded-xl bg-indigo-600 text-white flex items-center justify-center group-hover:scale-105 transition-transform shadow">
+                  <Camera className="w-4 h-4" />
+                </div>
+                <div>
+                  <div className="text-xs font-black text-white flex items-center gap-1">
+                    Chamada por Foto IA
+                    <span className="text-[9px] bg-indigo-500/20 text-indigo-300 font-bold px-1.5 py-0.2 rounded border border-indigo-500/30">
+                      Gemini Vision
+                    </span>
+                  </div>
+                  <div className="text-[10px] text-indigo-200/80">Identificar atletas e registrar em lote</div>
+                </div>
+              </div>
+              <span className="text-indigo-400 text-xs font-bold">Abrir →</span>
+            </button>
+
+            <button
+              onClick={onOpenAICoach}
+              className="py-2.5 px-3 rounded-2xl bg-gradient-to-r from-purple-950 via-slate-900 to-indigo-950/60 border border-purple-500/50 hover:border-purple-400 text-left flex items-center justify-between group transition shadow-md"
+            >
+              <div className="flex items-center gap-2.5">
+                <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-purple-600 to-indigo-600 text-white flex items-center justify-center group-hover:scale-105 transition-transform shadow">
+                  <Sparkles className="w-4 h-4" />
+                </div>
+                <div>
+                  <div className="text-xs font-black text-white flex items-center gap-1">
+                    BJJ AI Coach
+                    <span className="text-[9px] bg-purple-500/20 text-purple-300 font-bold px-1.5 py-0.2 rounded border border-purple-500/30">
+                      CBJJ / IBJJF
+                    </span>
+                  </div>
+                  <div className="text-[10px] text-purple-200/80">Planos de aula, drills e sparring</div>
+                </div>
+              </div>
+              <span className="text-purple-400 text-xs font-bold">Abrir →</span>
+            </button>
+          </div>
+
           {/* Operational Buttons */}
           <div className="grid grid-cols-2 gap-2 pt-1">
             <button
               onClick={() => onMarkAllPresent(currentClass.id)}
-              className="py-2.5 px-3 rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-700 text-xs font-bold text-white flex items-center justify-center gap-1.5 transition"
+              className="py-2.5 px-3 rounded-xl bg-slate-800 hover:bg-slate-750 border border-slate-700 text-xs font-bold text-white flex items-center justify-center gap-1.5 transition"
             >
               <UserCheck className="w-4 h-4 text-emerald-400" />
-              Marcar Todos
+              Marcar Todos Presentes
             </button>
 
             <button
-              onClick={() => onOpenCamera('Foto Coletiva do Tatame', 'Registre a turma reunida no final do treino com a Câmera Nativa')}
-              className="py-2.5 px-3 rounded-xl bg-red-600 hover:bg-red-700 text-xs font-bold text-white flex items-center justify-center gap-1.5 transition shadow-lg shadow-red-950"
+              onClick={handleSaveAttendance}
+              className="py-2.5 px-3 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-xs font-black text-white flex items-center justify-center gap-1.5 transition shadow-lg shadow-emerald-950"
             >
-              <Camera className="w-4 h-4" />
-              Câmera Tatame
+              <CheckCircle2 className="w-4 h-4" />
+              Confirmar Chamada
             </button>
           </div>
+
+          <div className="flex items-center gap-2 pt-1">
+            <button
+              onClick={() => onOpenCamera('Foto Coletiva do Tatame', 'Registre a turma reunida no final do treino com a Câmera Nativa')}
+              className="flex-1 py-2 px-3 rounded-xl bg-red-600 hover:bg-red-700 text-xs font-bold text-white flex items-center justify-center gap-1.5 transition shadow-md shadow-red-950"
+            >
+              <Camera className="w-3.5 h-3.5" />
+              <span>Câmera Tatame</span>
+            </button>
+
+            <button
+              onClick={handleExportAttendanceCSV}
+              className="py-2 px-3 rounded-xl bg-slate-800 hover:bg-slate-750 border border-slate-700 text-slate-200 text-xs font-bold flex items-center justify-center gap-1.5 transition"
+              title="Exportar Lista de Presença em CSV / Excel"
+            >
+              <Download className="w-3.5 h-3.5 text-emerald-400" />
+              <span>Exportar CSV</span>
+            </button>
+          </div>
+
+          {attendanceSavedMessage && (
+            <div className="p-3 rounded-2xl bg-emerald-950/80 border border-emerald-500 text-emerald-200 text-xs font-bold flex items-center gap-2 animate-in fade-in">
+              <ShieldCheck className="w-4 h-4 text-emerald-400 shrink-0" />
+              <span>{attendanceSavedMessage}</span>
+            </div>
+          )}
 
           {/* Tatame 2.0 Interactive Tools */}
           <div className="grid grid-cols-3 gap-2 pt-1 border-t border-slate-800/80">
@@ -202,80 +614,138 @@ export const TeacherView: React.FC<TeacherViewProps> = ({
 
         {/* Student Call Sheet (Lista de Chamada) */}
         <div className="space-y-2.5">
-          <div className="flex items-center justify-between">
-            <h4 className="text-xs font-bold uppercase tracking-wider text-slate-400">
-              Alunos no Tatame ({currentClass.registeredStudents.length})
-            </h4>
-            <span className="text-[10px] text-slate-400">Toque para alternar presença</span>
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+            <div>
+              <h4 className="text-xs font-bold uppercase tracking-wider text-slate-400 flex items-center gap-1.5">
+                <Zap className="w-3.5 h-3.5 text-amber-400" />
+                <span>Chamada Express • Alunos ({currentClass.registeredStudents.length})</span>
+              </h4>
+              <span className="text-[10px] text-slate-400">Toque no botão para alternar presença instantaneamente</span>
+            </div>
+
+            {/* Quick Filters */}
+            <div className="flex items-center gap-1 bg-slate-900 p-1 rounded-xl border border-slate-800 self-start sm:self-auto">
+              <button
+                type="button"
+                onClick={() => setAttendanceFilter('all')}
+                className={`px-2.5 py-1 rounded-lg text-[10px] font-bold transition ${
+                  attendanceFilter === 'all'
+                    ? 'bg-red-600 text-white shadow-sm'
+                    : 'text-slate-400 hover:text-white'
+                }`}
+              >
+                Todos ({currentClass.registeredStudents.length})
+              </button>
+              <button
+                type="button"
+                onClick={() => setAttendanceFilter('present')}
+                className={`px-2.5 py-1 rounded-lg text-[10px] font-bold transition ${
+                  attendanceFilter === 'present'
+                    ? 'bg-emerald-600 text-white shadow-sm'
+                    : 'text-slate-400 hover:text-emerald-400'
+                }`}
+              >
+                Presentes ({presentCount})
+              </button>
+              <button
+                type="button"
+                onClick={() => setAttendanceFilter('absent')}
+                className={`px-2.5 py-1 rounded-lg text-[10px] font-bold transition ${
+                  attendanceFilter === 'absent'
+                    ? 'bg-slate-700 text-white shadow-sm'
+                    : 'text-slate-400 hover:text-slate-300'
+                }`}
+              >
+                Faltas ({currentClass.registeredStudents.length - presentCount})
+              </button>
+            </div>
           </div>
 
           <div className="space-y-2">
-            {currentClass.registeredStudents.map((stu) => {
-              const isPresent = stu.status === 'present';
-              return (
-                <div
-                  key={stu.id}
-                  className={`p-3 rounded-2xl border transition flex items-center justify-between ${
-                    isPresent
-                      ? 'bg-slate-900/90 border-emerald-500/40'
-                      : 'bg-slate-900/50 border-slate-800/80 opacity-75'
-                  }`}
-                >
-                  <div className="flex items-center gap-3 min-w-0">
-                    <img
-                      src={stu.avatar}
-                      alt={stu.name}
-                      className="w-10 h-10 rounded-xl object-cover border border-slate-700 shrink-0"
-                    />
-                    <div className="min-w-0">
-                      <div className="text-xs font-bold text-white truncate">{stu.name}</div>
-                      <div className="mt-0.5">
-                        <BeltBadge belt={stu.belt} size="sm" />
-                      </div>
-                      {stu.note && (
-                        <div className="text-[10px] text-amber-400 italic mt-0.5 truncate max-w-[180px]">
-                          Obs: {stu.note}
+            {currentClass.registeredStudents
+              .filter((stu) => {
+                if (attendanceFilter === 'present') return stu.status === 'present';
+                if (attendanceFilter === 'absent') return stu.status !== 'present';
+                return true;
+              })
+              .map((stu) => {
+                const isPresent = stu.status === 'present';
+                return (
+                  <div
+                    key={stu.id}
+                    className={`p-3 rounded-2xl border transition flex items-center justify-between ${
+                      isPresent
+                        ? 'bg-slate-900/90 border-emerald-500/40'
+                        : 'bg-slate-900/50 border-slate-800/80 opacity-80'
+                    }`}
+                  >
+                    <div className="flex items-center gap-3 min-w-0">
+                      <img
+                        src={stu.avatar}
+                        alt={stu.name}
+                        className="w-10 h-10 rounded-xl object-cover border border-slate-700 shrink-0"
+                      />
+                      <div className="min-w-0">
+                        <div className="text-xs font-bold text-white truncate">{stu.name}</div>
+                        <div className="mt-0.5">
+                          <BeltBadge belt={stu.belt} size="sm" />
                         </div>
+                        {stu.note && (
+                          <div className="text-[10px] text-amber-400 italic mt-0.5 truncate max-w-[180px]">
+                            Obs: {stu.note}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Actions for this student */}
+                    <div className="flex items-center gap-1.5 shrink-0">
+                      {/* WhatsApp absence notice if absent */}
+                      {!isPresent && (
+                        <button
+                          type="button"
+                          onClick={() => sendMissedClassWhatsApp(stu.name, currentClass.name, academyName)}
+                          className="p-2 rounded-xl bg-emerald-950/60 hover:bg-emerald-900 text-emerald-300 border border-emerald-800/60 transition"
+                          title="Avisar no WhatsApp que faltou no treino"
+                        >
+                          <MessageCircle className="w-3.5 h-3.5" />
+                        </button>
                       )}
+
+                      {/* Add Observation Note */}
+                      <button
+                        onClick={() => setSelectedStudentForNote({ id: stu.id, name: stu.name })}
+                        className="p-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-amber-400 transition"
+                        title="Adicionar Observação Técnica"
+                      >
+                        <Edit3 className="w-3.5 h-3.5" />
+                      </button>
+
+                      {/* Promote Student Button */}
+                      <button
+                        onClick={() => setPromotionModalStudent({ id: stu.id, name: stu.name, belt: stu.belt })}
+                        className="p-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-red-400 transition"
+                        title="Registrar Graduação / Grau"
+                      >
+                        <Award className="w-3.5 h-3.5" />
+                      </button>
+
+                      {/* Attendance Toggle */}
+                      <button
+                        onClick={() => onUpdateAttendance(currentClass.id, stu.id, isPresent ? 'absent' : 'present')}
+                        className={`px-3 py-1.5 rounded-xl text-xs font-extrabold flex items-center gap-1 transition ${
+                          isPresent
+                            ? 'bg-emerald-600 hover:bg-emerald-500 text-white shadow-sm'
+                            : 'bg-slate-800 hover:bg-slate-750 text-slate-400 hover:text-white border border-slate-700'
+                        }`}
+                      >
+                        {isPresent ? <CheckCircle2 className="w-3.5 h-3.5" /> : <XCircle className="w-3.5 h-3.5" />}
+                        <span>{isPresent ? 'Presente' : 'Falta'}</span>
+                      </button>
                     </div>
                   </div>
-
-                  {/* Actions for this student */}
-                  <div className="flex items-center gap-1.5 shrink-0">
-                    {/* Add Observation Note */}
-                    <button
-                      onClick={() => setSelectedStudentForNote({ id: stu.id, name: stu.name })}
-                      className="p-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-amber-400 transition"
-                      title="Adicionar Observação Técnica"
-                    >
-                      <Edit3 className="w-3.5 h-3.5" />
-                    </button>
-
-                    {/* Promote Student Button */}
-                    <button
-                      onClick={() => setPromotionModalStudent({ id: stu.id, name: stu.name, belt: stu.belt })}
-                      className="p-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-red-400 transition"
-                      title="Registrar Graduação / Grau"
-                    >
-                      <Award className="w-3.5 h-3.5" />
-                    </button>
-
-                    {/* Attendance Toggle */}
-                    <button
-                      onClick={() => onUpdateAttendance(currentClass.id, stu.id, isPresent ? 'absent' : 'present')}
-                      className={`px-3 py-1.5 rounded-xl text-xs font-extrabold flex items-center gap-1 transition ${
-                        isPresent
-                          ? 'bg-emerald-600 text-white'
-                          : 'bg-slate-800 text-slate-400 hover:text-white'
-                      }`}
-                    >
-                      {isPresent ? <CheckCircle2 className="w-3.5 h-3.5" /> : <XCircle className="w-3.5 h-3.5" />}
-                      {isPresent ? 'Presente' : 'Falta'}
-                    </button>
-                  </div>
-                </div>
-              );
-            })}
+                );
+              })}
           </div>
         </div>
       </div>
@@ -422,6 +892,446 @@ export const TeacherView: React.FC<TeacherViewProps> = ({
                   Confirmar Graduação!
                 </button>
               </div>
+            </motion.div>
+          </div>
+        )}
+
+        {/* Modal: Cadastrar Nova Aula */}
+        {isCreateClassModalOpen && (
+          <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-3 sm:p-4">
+            <motion.div
+              initial={{ scale: 0.95, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.95, opacity: 0 }}
+              className="w-full max-w-md bg-slate-900 border border-slate-800 rounded-3xl p-5 shadow-2xl space-y-4 max-h-[90vh] overflow-y-auto"
+            >
+              <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+                <div className="flex items-center gap-2">
+                  <div className="w-8 h-8 rounded-xl bg-emerald-500/20 text-emerald-400 border border-emerald-500/40 flex items-center justify-center font-bold">
+                    ➕
+                  </div>
+                  <div>
+                    <h3 className="text-sm font-bold text-white">Cadastrar Nova Aula / Turma</h3>
+                    <p className="text-[10px] text-slate-400">Ativação imediata no tatame da academia</p>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setIsCreateClassModalOpen(false)}
+                  className="p-1 rounded-lg bg-slate-800 text-slate-400 hover:text-white"
+                >
+                  <XCircle size={18} />
+                </button>
+              </div>
+
+              <form onSubmit={handleConfirmCreateClass} className="space-y-3">
+                <div>
+                  <label className="text-[11px] font-bold text-slate-400 uppercase">
+                    Nome da Turma / Modalidade:
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    value={newClassName}
+                    onChange={(e) => setNewClassName(e.target.value)}
+                    placeholder="Ex: Jiu-Jitsu No-Gi Noite ou BJJ Kids Fundamentos"
+                    className="w-full mt-1 bg-slate-950 border border-slate-800 rounded-xl p-2.5 text-xs text-white focus:outline-none focus:border-emerald-500"
+                  />
+                </div>
+
+                <div className="grid grid-cols-2 gap-2">
+                  <div>
+                    <label className="text-[11px] font-bold text-slate-400 uppercase">
+                      Tipo de Treino:
+                    </label>
+                    <select
+                      value={newClassType}
+                      onChange={(e) => setNewClassType(e.target.value as any)}
+                      className="w-full mt-1 bg-slate-950 border border-slate-800 rounded-xl p-2 text-xs text-white focus:outline-none focus:border-emerald-500"
+                    >
+                      <option value="Gi">Gi (Com Kimono)</option>
+                      <option value="No-Gi">No-Gi (Sem Kimono)</option>
+                      <option value="Kids">BJJ Kids</option>
+                      <option value="Competição">Equipe Competição</option>
+                      <option value="Fundamentos">Fundamentos BJJ</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="text-[11px] font-bold text-slate-400 uppercase">
+                      Tatame / Área:
+                    </label>
+                    <select
+                      value={newClassTatame}
+                      onChange={(e) => setNewClassTatame(e.target.value)}
+                      className="w-full mt-1 bg-slate-950 border border-slate-800 rounded-xl p-2 text-xs text-white focus:outline-none focus:border-emerald-500"
+                    >
+                      <option value="Tatame 1 - Principal">Tatame 1 - Principal</option>
+                      <option value="Tatame 2 - Anexo">Tatame 2 - Anexo</option>
+                      <option value="Tatame Kids / Confort">Tatame Kids</option>
+                      <option value="Área de Sparring Livre">Área de Sparring Livre</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-2">
+                  <div>
+                    <label className="text-[11px] font-bold text-slate-400 uppercase">
+                      Horário:
+                    </label>
+                    <input
+                      type="text"
+                      value={newClassTime}
+                      onChange={(e) => setNewClassTime(e.target.value)}
+                      placeholder="Ex: 19:30 - 20:45"
+                      className="w-full mt-1 bg-slate-950 border border-slate-800 rounded-xl p-2 text-xs text-white focus:outline-none focus:border-emerald-500"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="text-[11px] font-bold text-slate-400 uppercase">
+                      Duração:
+                    </label>
+                    <input
+                      type="text"
+                      value={newClassDuration}
+                      onChange={(e) => setNewClassDuration(e.target.value)}
+                      placeholder="Ex: 1h 15m"
+                      className="w-full mt-1 bg-slate-950 border border-slate-800 rounded-xl p-2 text-xs text-white focus:outline-none focus:border-emerald-500"
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-2">
+                  <div>
+                    <label className="text-[11px] font-bold text-slate-400 uppercase">
+                      Capacidade Máxima:
+                    </label>
+                    <input
+                      type="number"
+                      min={5}
+                      max={100}
+                      value={newClassCapacity}
+                      onChange={(e) => setNewClassCapacity(Number(e.target.value))}
+                      className="w-full mt-1 bg-slate-950 border border-slate-800 rounded-xl p-2 text-xs text-white focus:outline-none focus:border-emerald-500"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="text-[11px] font-bold text-slate-400 uppercase">
+                      Instrutor:
+                    </label>
+                    <input
+                      type="text"
+                      value={newClassInstructor}
+                      onChange={(e) => setNewClassInstructor(e.target.value)}
+                      className="w-full mt-1 bg-slate-950 border border-slate-800 rounded-xl p-2 text-xs text-white focus:outline-none focus:border-emerald-500"
+                    />
+                  </div>
+                </div>
+
+                <div className="p-2.5 rounded-xl bg-slate-950 border border-slate-800 text-[10px] text-slate-400 flex items-center gap-2">
+                  <ShieldCheck size={14} className="text-emerald-400 shrink-0" />
+                  <span>A turma é criada instantaneamente com lista de chamada e integrada ao app dos alunos.</span>
+                </div>
+
+                <div className="flex gap-2 pt-1">
+                  <button
+                    type="button"
+                    onClick={() => setIsCreateClassModalOpen(false)}
+                    className="flex-1 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold"
+                  >
+                    Cancelar
+                  </button>
+                  <button
+                    type="submit"
+                    className="flex-1 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold shadow-lg shadow-emerald-950 flex items-center justify-center gap-1.5"
+                  >
+                    <Check size={14} /> Salvar Nova Aula
+                  </button>
+                </div>
+              </form>
+            </motion.div>
+          </div>
+        )}
+
+        {/* Modal: Enviar Mensagens da Turma / Mural */}
+        {isSendMessageModalOpen && (
+          <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-3 sm:p-4">
+            <motion.div
+              initial={{ scale: 0.95, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.95, opacity: 0 }}
+              className="w-full max-w-md bg-slate-900 border border-slate-800 rounded-3xl p-5 shadow-2xl space-y-4 max-h-[90vh] overflow-y-auto"
+            >
+              <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+                <div className="flex items-center gap-2">
+                  <div className="w-8 h-8 rounded-xl bg-blue-500/20 text-blue-400 border border-blue-500/40 flex items-center justify-center font-bold">
+                    📢
+                  </div>
+                  <div>
+                    <h3 className="text-sm font-bold text-white">Enviar Mensagem / Mural da Turma</h3>
+                    <p className="text-[10px] text-slate-400">Comunicação direta do professor aos alunos</p>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setIsSendMessageModalOpen(false)}
+                  className="p-1 rounded-lg bg-slate-800 text-slate-400 hover:text-white"
+                >
+                  <XCircle size={18} />
+                </button>
+              </div>
+
+              {/* Quick Template Chips */}
+              <div>
+                <label className="text-[10px] font-bold text-slate-400 uppercase">
+                  Modelos Rápidos do Tatame:
+                </label>
+                <div className="flex flex-wrap gap-1.5 mt-1">
+                  {[
+                    { title: '🥋 Kimono Branco Obrigatório', body: 'Atenção alunos: no próximo treino será obrigatório o uso do kimono branco oficial para fotos e graduação.' },
+                    { title: '🔥 Aulão Geral de Sexta-feira', body: 'Nesta sexta teremos aulão unificado com sparring livre e ritmo de competição às 19:30. Presença de todos os graduados!' },
+                    { title: '🏆 Convocação Torneio Regional', body: 'Convocamos os atletas inscritos no campeonato deste mês para o treino específico de regras e gás amanhã.' },
+                    { title: '⏰ Ajuste no Horário de Treino', body: 'Avisamos que o treino de fundamentos começará 15 minutos mais cedo esta semana.' }
+                  ].map((tpl, i) => (
+                    <button
+                      key={i}
+                      type="button"
+                      onClick={() => {
+                        setMessageTitle(tpl.title);
+                        setMessageContent(tpl.body);
+                      }}
+                      className="px-2 py-1 rounded-lg bg-slate-800/80 hover:bg-slate-700 text-slate-300 text-[10px] font-medium border border-slate-750 transition"
+                    >
+                      {tpl.title}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <form onSubmit={handleConfirmSendMessage} className="space-y-3">
+                <div>
+                  <label className="text-[11px] font-bold text-slate-400 uppercase">
+                    Destinatários:
+                  </label>
+                  <select
+                    value={messageTarget}
+                    onChange={(e) => setMessageTarget(e.target.value as any)}
+                    className="w-full mt-1 bg-slate-950 border border-slate-800 rounded-xl p-2 text-xs text-white focus:outline-none focus:border-blue-500"
+                  >
+                    <option value="current_class">Apenas Alunos da Turma Atual ({currentClass.name})</option>
+                    <option value="all_students">Todos os Alunos da Academia ({academyName})</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="text-[11px] font-bold text-slate-400 uppercase">
+                    Título do Comunicado:
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    value={messageTitle}
+                    onChange={(e) => setMessageTitle(e.target.value)}
+                    placeholder="Ex: Treino Especial de Sparring neste Sábado"
+                    className="w-full mt-1 bg-slate-950 border border-slate-800 rounded-xl p-2.5 text-xs text-white focus:outline-none focus:border-blue-500"
+                  />
+                </div>
+
+                <div>
+                  <label className="text-[11px] font-bold text-slate-400 uppercase">
+                    Conteúdo da Mensagem:
+                  </label>
+                  <textarea
+                    required
+                    rows={3}
+                    value={messageContent}
+                    onChange={(e) => setMessageContent(e.target.value)}
+                    placeholder="Escreva a mensagem ou orientação técnica para os atletas..."
+                    className="w-full mt-1 bg-slate-950 border border-slate-800 rounded-xl p-2.5 text-xs text-white focus:outline-none focus:border-blue-500"
+                  />
+                </div>
+
+                <div className="flex items-center justify-between p-2.5 rounded-xl bg-slate-950 border border-slate-800">
+                  <span className="text-[11px] text-slate-300 font-semibold">Prioridade Alta / Alerta no App:</span>
+                  <button
+                    type="button"
+                    onClick={() => setMessagePriority(p => p === 'urgent' ? 'normal' : 'urgent')}
+                    className={`px-2.5 py-1 rounded-lg text-[10px] font-bold transition ${
+                      messagePriority === 'urgent' 
+                        ? 'bg-red-600 text-white' 
+                        : 'bg-slate-800 text-slate-400'
+                    }`}
+                  >
+                    {messagePriority === 'urgent' ? '🚨 Urgente' : 'Normal'}
+                  </button>
+                </div>
+
+                <div className="flex gap-2 pt-1">
+                  <button
+                    type="button"
+                    onClick={() => setIsSendMessageModalOpen(false)}
+                    className="flex-1 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold"
+                  >
+                    Cancelar
+                  </button>
+                  <button
+                    type="submit"
+                    className="flex-1 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold shadow-lg shadow-blue-950 flex items-center justify-center gap-1.5"
+                  >
+                    <Send size={14} /> Publicar no Mural
+                  </button>
+                </div>
+              </form>
+            </motion.div>
+          </div>
+        )}
+
+        {/* Modal: Lembretes de Competições & Torneios */}
+        {isTournamentModalOpen && (
+          <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-3 sm:p-4">
+            <motion.div
+              initial={{ scale: 0.95, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.95, opacity: 0 }}
+              className="w-full max-w-md bg-slate-900 border border-slate-800 rounded-3xl p-5 shadow-2xl space-y-4 max-h-[90vh] overflow-y-auto"
+            >
+              <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+                <div className="flex items-center gap-2">
+                  <div className="w-8 h-8 rounded-xl bg-amber-500/20 text-amber-400 border border-amber-500/40 flex items-center justify-center font-bold">
+                    🏆
+                  </div>
+                  <div>
+                    <h3 className="text-sm font-bold text-white">Lembrete de Competição & Torneio</h3>
+                    <p className="text-[10px] text-slate-400">Convocação e avisos oficiais de campeonato</p>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setIsTournamentModalOpen(false)}
+                  className="p-1 rounded-lg bg-slate-800 text-slate-400 hover:text-white"
+                >
+                  <XCircle size={18} />
+                </button>
+              </div>
+
+              <form onSubmit={handleConfirmTournamentReminder} className="space-y-3">
+                <div>
+                  <label className="text-[11px] font-bold text-slate-400 uppercase">
+                    Nome do Campeonato:
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    value={tournName}
+                    onChange={(e) => setTournName(e.target.value)}
+                    placeholder="Ex: Campeonato Sul-Americano de Jiu-Jitsu 2026"
+                    className="w-full mt-1 bg-slate-950 border border-slate-800 rounded-xl p-2.5 text-xs text-white focus:outline-none focus:border-amber-500"
+                  />
+                </div>
+
+                <div className="grid grid-cols-2 gap-2">
+                  <div>
+                    <label className="text-[11px] font-bold text-slate-400 uppercase">
+                      Federação:
+                    </label>
+                    <select
+                      value={tournFederation}
+                      onChange={(e) => setTournFederation(e.target.value as any)}
+                      className="w-full mt-1 bg-slate-950 border border-slate-800 rounded-xl p-2 text-xs text-white focus:outline-none focus:border-amber-500"
+                    >
+                      <option value="CBJJ">CBJJ</option>
+                      <option value="IBJJF">IBJJF</option>
+                      <option value="FPJJ">FPJJ (Paulista)</option>
+                      <option value="Local Open">Open Regional / Outro</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="text-[11px] font-bold text-slate-400 uppercase">
+                      Data do Evento:
+                    </label>
+                    <input
+                      type="text"
+                      value={tournDate}
+                      onChange={(e) => setTournDate(e.target.value)}
+                      placeholder="Ex: 24/10/2026"
+                      className="w-full mt-1 bg-slate-950 border border-slate-800 rounded-xl p-2 text-xs text-white focus:outline-none focus:border-amber-500"
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-2">
+                  <div>
+                    <label className="text-[11px] font-bold text-slate-400 uppercase">
+                      Prazo Limite de Inscrição:
+                    </label>
+                    <input
+                      type="text"
+                      value={tournDeadline}
+                      onChange={(e) => setTournDeadline(e.target.value)}
+                      placeholder="Ex: 14/10/2026"
+                      className="w-full mt-1 bg-slate-950 border border-slate-800 rounded-xl p-2 text-xs text-white focus:outline-none focus:border-amber-500"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="text-[11px] font-bold text-slate-400 uppercase">
+                      Local / Ginásio:
+                    </label>
+                    <input
+                      type="text"
+                      value={tournLocation}
+                      onChange={(e) => setTournLocation(e.target.value)}
+                      placeholder="Ex: Ibirapuera - SP"
+                      className="w-full mt-1 bg-slate-950 border border-slate-800 rounded-xl p-2 text-xs text-white focus:outline-none focus:border-amber-500"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="text-[11px] font-bold text-slate-400 uppercase">
+                    Categorias Convocadas:
+                  </label>
+                  <input
+                    type="text"
+                    value={tournCategories}
+                    onChange={(e) => setTournCategories(e.target.value)}
+                    placeholder="Ex: Juvenil, Adulto e Master - Todas as Faixas"
+                    className="w-full mt-1 bg-slate-950 border border-slate-800 rounded-xl p-2.5 text-xs text-white focus:outline-none focus:border-amber-500"
+                  />
+                </div>
+
+                <div>
+                  <label className="text-[11px] font-bold text-slate-400 uppercase">
+                    Instruções & Dicas de Peso do Mestre:
+                  </label>
+                  <textarea
+                    rows={2}
+                    value={tournNotes}
+                    onChange={(e) => setTournNotes(e.target.value)}
+                    placeholder="Orientação sobre pesagem, kimono oficial e horários de aquecimento..."
+                    className="w-full mt-1 bg-slate-950 border border-slate-800 rounded-xl p-2 text-xs text-white focus:outline-none focus:border-amber-500"
+                  />
+                </div>
+
+                <div className="flex gap-2 pt-1">
+                  <button
+                    type="button"
+                    onClick={() => setIsTournamentModalOpen(false)}
+                    className="flex-1 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold"
+                  >
+                    Cancelar
+                  </button>
+                  <button
+                    type="submit"
+                    className="flex-1 py-2.5 rounded-xl bg-amber-600 hover:bg-amber-500 text-white text-xs font-bold shadow-lg shadow-amber-950 flex items-center justify-center gap-1.5"
+                  >
+                    <Trophy size={14} /> Publicar Lembrete
+                  </button>
+                </div>
+              </form>
             </motion.div>
           </div>
         )}

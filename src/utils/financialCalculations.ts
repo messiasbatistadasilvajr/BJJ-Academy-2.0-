@@ -95,6 +95,74 @@ export function calculateLateFeeAndInterest(
 }
 
 /**
+ * SaaS Platform Billing Rules for BJJ Academy SaaS:
+ * - Taxa Fixa por Academia: R$ 130,00 / mês
+ * - Taxa Variável por Aluno Ativo no Tatame: R$ 1,30 / mês
+ * - Fórmula Dinâmica: R$ 130,00 + (Alunos Ativos * R$ 1,30)
+ */
+export const SAAS_FIXED_FEE_BRL = 130.00;
+export const SAAS_PER_STUDENT_FEE_BRL = 1.30;
+
+export interface SaasLicenseFeeBreakdown {
+  activeStudents: number;
+  fixedFee: number;
+  variableFee: number;
+  totalFee: number;
+  formulaDescription: string;
+}
+
+export function calculateSaasLicenseFee(
+  activeStudents: number = 0,
+  fixedFee: number = SAAS_FIXED_FEE_BRL,
+  perStudentFee: number = SAAS_PER_STUDENT_FEE_BRL
+): SaasLicenseFeeBreakdown {
+  const safeStudents = Math.max(0, activeStudents);
+  const variableFee = Math.round(safeStudents * perStudentFee * 100) / 100;
+  const totalFee = Math.round((fixedFee + variableFee) * 100) / 100;
+
+  return {
+    activeStudents: safeStudents,
+    fixedFee,
+    variableFee,
+    totalFee,
+    formulaDescription: `R$ ${fixedFee.toFixed(2).replace('.', ',')} (fixo) + ${safeStudents} alunos x R$ ${perStudentFee.toFixed(2).replace('.', ',')} = R$ ${totalFee.toFixed(2).replace('.', ',')}`
+  };
+}
+
+export interface SaasProjectionResult {
+  academiesCount: number;
+  avgStudentsPerAcademy: number;
+  totalActiveStudents: number;
+  fixedMRR: number;
+  variableMRR: number;
+  totalMRR: number;
+  totalARR: number; // MRR * 12
+}
+
+export function projectSaasScale(
+  academiesCount: number,
+  avgStudentsPerAcademy: number,
+  fixedFee: number = SAAS_FIXED_FEE_BRL,
+  perStudentFee: number = SAAS_PER_STUDENT_FEE_BRL
+): SaasProjectionResult {
+  const totalActiveStudents = academiesCount * avgStudentsPerAcademy;
+  const fixedMRR = academiesCount * fixedFee;
+  const variableMRR = totalActiveStudents * perStudentFee;
+  const totalMRR = fixedMRR + variableMRR;
+  const totalARR = totalMRR * 12;
+
+  return {
+    academiesCount,
+    avgStudentsPerAcademy,
+    totalActiveStudents,
+    fixedMRR,
+    variableMRR,
+    totalMRR,
+    totalARR
+  };
+}
+
+/**
  * Format currency to BRL (R$ 1.234,56)
  */
 export function formatBRL(value: number): string {

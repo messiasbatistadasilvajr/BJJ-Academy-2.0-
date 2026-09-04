@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { UserRole, StudentProfile, DependentStudent, ClassSession, Invoice, Announcement, ChatMessage, PushNotification, BeltColor, RegisteredAcademy, PlatformGeneralManager } from './types';
-import { mockStudent, mockDependents, mockClasses, mockInvoices, mockAnnouncements, mockChatMessages, mockRankings, mockPushNotifications, mockRegisteredAcademies, defaultPlatformGeneralManager } from './data/mockData';
+import { UserRole, StudentProfile, DependentStudent, ClassSession, Invoice, Announcement, ChatMessage, PushNotification, BeltColor, RegisteredAcademy, PlatformGeneralManager, RetentionAlertItem, SparringSession, BirthdayPerson } from './types';
+import { mockStudent, mockDependents, mockClasses, mockInvoices, mockAnnouncements, mockChatMessages, mockRankings, mockPushNotifications, mockRegisteredAcademies, defaultPlatformGeneralManager, mockRetentionAlerts, mockSparringSessions, mockBirthdays } from './data/mockData';
 import { DeviceFrame } from './components/common/DeviceFrame';
 import { StudentView } from './components/views/StudentView';
 import { ParentView } from './components/views/ParentView';
@@ -22,6 +22,16 @@ import { DigitalContractModal } from './components/common/DigitalContractModal';
 import { TournamentsModal } from './components/common/TournamentsModal';
 import { AcademyVoiceSettingsModal } from './components/common/AcademyVoiceSettingsModal';
 import { FinancialHubModal } from './components/common/FinancialHubModal';
+import { AcademyRegistrationModal } from './components/common/AcademyRegistrationModal';
+import { AcademyRegistrationView } from './components/views/AcademyRegistrationView';
+import { SaaSSimulatorModal } from './components/common/SaaSSimulatorModal';
+import { MySaaSSubscriptionModal } from './components/common/MySaaSSubscriptionModal';
+import { PhotoAttendanceModal } from './components/common/PhotoAttendanceModal';
+import { AICoachModal } from './components/common/AICoachModal';
+import { DataMigrationModal } from './components/common/DataMigrationModal';
+import { RetentionRadarModal } from './components/common/RetentionRadarModal';
+import { SparringJournalModal } from './components/common/SparringJournalModal';
+import { BirthdayAlertModal } from './components/common/BirthdayAlertModal';
 import { academyVoiceEngine } from './utils/voiceNotification';
 import { useOnlineStatus } from './hooks/usePWAInstall';
 
@@ -80,6 +90,44 @@ export default function App() {
   const [isTournamentsOpen, setIsTournamentsOpen] = useState(false);
   const [isVoiceSettingsOpen, setIsVoiceSettingsOpen] = useState(false);
   const [isFinancialOpen, setIsFinancialOpen] = useState(false);
+  const [isAcademyRegistrationOpen, setIsAcademyRegistrationOpen] = useState(false);
+
+  // SaaS Master & AI Tatame Modals
+  const [isSaaSSimulatorOpen, setIsSaaSSimulatorOpen] = useState(false);
+  const [isMySaaSSubscriptionOpen, setIsMySaaSSubscriptionOpen] = useState(false);
+  const [isPhotoAttendanceOpen, setIsPhotoAttendanceOpen] = useState(false);
+  const [isAICoachOpen, setIsAICoachOpen] = useState(false);
+  const [isDataMigrationOpen, setIsDataMigrationOpen] = useState(false);
+
+  // Improvement #3: Radar Anti-Evasão
+  const [isRetentionRadarOpen, setIsRetentionRadarOpen] = useState(false);
+  const [retentionAlerts, setRetentionAlerts] = useState<RetentionAlertItem[]>(() => {
+    const saved = localStorage.getItem('bjj_retention_alerts');
+    return saved ? JSON.parse(saved) : mockRetentionAlerts;
+  });
+
+  // Improvement #5: Diário de Rola & Raio-X Técnico
+  const [isSparringJournalOpen, setIsSparringJournalOpen] = useState(false);
+  const [sparringSessions, setSparringSessions] = useState<SparringSession[]>(() => {
+    const saved = localStorage.getItem('bjj_sparring_sessions');
+    return saved ? JSON.parse(saved) : mockSparringSessions;
+  });
+
+  // Birthday Alert System
+  const [isBirthdayAlertOpen, setIsBirthdayAlertOpen] = useState(false);
+  const [birthdays, setBirthdays] = useState<BirthdayPerson[]>(() => {
+    const saved = localStorage.getItem('bjj_birthdays');
+    return saved ? JSON.parse(saved) : mockBirthdays;
+  });
+
+  useEffect(() => {
+    localStorage.setItem('bjj_birthdays', JSON.stringify(birthdays));
+  }, [birthdays]);
+
+  // Today's birthdays count (reference date Sept 4th)
+  const todayBirthdaysCount = birthdays.filter(
+    (b) => b.birthDay === 4 && b.birthMonth === 9
+  ).length;
 
   // Platform General Manager (Messias Batista da Silva junior)
   const [generalManager, setGeneralManager] = useState<PlatformGeneralManager>(() => {
@@ -128,6 +176,14 @@ export default function App() {
   useEffect(() => {
     localStorage.setItem('bjj_active_academy_id', activeAcademyId);
   }, [activeAcademyId]);
+
+  useEffect(() => {
+    localStorage.setItem('bjj_retention_alerts', JSON.stringify(retentionAlerts));
+  }, [retentionAlerts]);
+
+  useEffect(() => {
+    localStorage.setItem('bjj_sparring_sessions', JSON.stringify(sparringSessions));
+  }, [sparringSessions]);
 
   // Initial welcoming push notification after 2 seconds with Voice
   useEffect(() => {
@@ -405,8 +461,17 @@ export default function App() {
       onOpenTournaments={() => setIsTournamentsOpen(true)}
       onOpenVoiceSettings={() => setIsVoiceSettingsOpen(true)}
       onOpenFinancial={() => setIsFinancialOpen(true)}
+      onOpenAcademyRegistration={() => setActiveRole('academy_registration')}
       activeAcademyName={activeAcademy.shortName || activeAcademy.name}
     >
+      {/* Offline Mode Banner */}
+      {!isOnline && (
+        <div className="w-full bg-amber-950/90 border-b border-amber-600/50 text-amber-200 px-3 py-1.5 text-[11px] font-bold flex items-center justify-center gap-2">
+          <span className="w-2 h-2 rounded-full bg-amber-400 animate-ping" />
+          <span>Modo Tatame Offline Ativo • Frequências e dados sincronizados localmente</span>
+        </div>
+      )}
+
       {/* Push Notification Banner with Academy Voice */}
       <PushBanner
         notification={activePush}
@@ -448,6 +513,7 @@ export default function App() {
           onOpenContract={() => setIsContractOpen(true)}
           onOpenTournaments={() => setIsTournamentsOpen(true)}
           onOpenFinancial={() => setIsFinancialOpen(true)}
+          onOpenSparringJournal={() => setIsSparringJournalOpen(true)}
           academyName={activeAcademy.name}
         />
       )}
@@ -481,10 +547,53 @@ export default function App() {
           onOpenScoreboard={() => setIsScoreboardOpen(true)}
           onOpenTechniques={() => setIsTechniquesOpen(true)}
           onOpenGraduation={() => setIsGraduationOpen(true)}
+          onOpenPhotoAttendance={() => setIsPhotoAttendanceOpen(true)}
+          onOpenAICoach={() => setIsAICoachOpen(true)}
+          onOpenTournaments={() => setIsTournamentsOpen(true)}
+          onOpenRetentionRadar={() => setIsRetentionRadarOpen(true)}
+          onOpenBirthdayAlert={() => setIsBirthdayAlertOpen(true)}
+          todayBirthdaysCount={todayBirthdaysCount}
+          academyName={activeAcademy.shortName || activeAcademy.name}
+          onAddClass={(newClass) => {
+            setClasses((prev) => [newClass, ...prev]);
+            localStorage.setItem('bjj_classes', JSON.stringify([newClass, ...classes]));
+            triggerPushNotification(
+              '🥋 Nova Aula Criada no Tatame!',
+              `${newClass.name} (${newClass.time}) foi adicionada com sucesso.`
+            );
+          }}
+          onSendClassAnnouncement={(title, content, priority) => {
+            const created: Announcement = {
+              id: `ann_teacher_${Date.now()}`,
+              title,
+              content,
+              date: 'Hoje',
+              category: 'Mural do Tatame',
+              author: 'Professor do Tatame',
+              priority,
+              read: false,
+            };
+            setAnnouncements((prev) => [created, ...prev]);
+            triggerPushNotification(`📢 Comunicado do Professor: ${title}`, content);
+          }}
+          onAddTournamentReminder={(reminder) => {
+            const created: Announcement = {
+              id: `ann_tourn_${Date.now()}`,
+              title: `🏆 Convocação: ${reminder.name} (${reminder.federation})`,
+              content: `Data: ${reminder.date} • Inscrições até: ${reminder.registrationDeadline} • Local: ${reminder.location}. Dicas: ${reminder.notes || 'Atenção ao peso e kimono oficial.'}`,
+              date: 'Hoje',
+              category: 'Competição',
+              author: 'Professor do Tatame',
+              priority: 'urgent',
+              read: false,
+            };
+            setAnnouncements((prev) => [created, ...prev]);
+            triggerPushNotification(`🏆 Convocação Torneio: ${reminder.name}`, `Inscrições até ${reminder.registrationDeadline}`);
+          }}
         />
       )}
 
-      {activeRole === 'manager' && (
+      {(activeRole === 'manager' || activeRole === 'general_manager') && (
         <ManagerView
           classes={classes}
           invoices={invoices}
@@ -500,11 +609,64 @@ export default function App() {
           onOpenTournaments={() => setIsTournamentsOpen(true)}
           onOpenVoiceSettings={() => setIsVoiceSettingsOpen(true)}
           onOpenFinancial={() => setIsFinancialOpen(true)}
+          onOpenSaaSSimulator={() => setIsSaaSSimulatorOpen(true)}
+          onOpenMySaaSSubscription={() => setIsMySaaSSubscriptionOpen(true)}
+          onOpenDataMigration={() => setIsDataMigrationOpen(true)}
+          onOpenAICoach={() => setIsAICoachOpen(true)}
+          onOpenRetentionRadar={() => setIsRetentionRadarOpen(true)}
+          retentionAlertsCount={retentionAlerts.filter((a) => a.rescueStatus !== 'rescued').length}
+          onOpenBirthdayAlert={() => setIsBirthdayAlertOpen(true)}
+          todayBirthdaysCount={todayBirthdaysCount}
           activeAcademyName={activeAcademy.shortName || activeAcademy.name}
           activeAcademyId={activeAcademy.id}
           academies={academies}
           generalManager={generalManager}
           onUpdateGeneralManager={setGeneralManager}
+          onOpenAcademyRegistration={() => setActiveRole('academy_registration')}
+          isGeneralManager={activeRole === 'general_manager'}
+        />
+      )}
+
+      {activeRole === 'academy_registration' && (
+        <AcademyRegistrationView
+          academies={academies}
+          activeAcademy={activeAcademy}
+          onSelectActiveAcademy={(acad) => {
+            setActiveAcademyId(acad.id);
+            localStorage.setItem('bjj_active_academy_id', acad.id);
+          }}
+          onAddAcademy={(created) => {
+            setAcademies((prev) => {
+              const next = [created, ...prev];
+              localStorage.setItem('bjj_academies', JSON.stringify(next));
+              return next;
+            });
+            setActiveAcademyId(created.id);
+            localStorage.setItem('bjj_active_academy_id', created.id);
+            triggerPushNotification(
+              '🏛️ Nova Filial Cadastrada!',
+              `${created.name} foi adicionada à rede com sucesso.`
+            );
+          }}
+          onUpdateAcademy={(updated) => {
+            setAcademies((prev) => {
+              const next = prev.map((a) => (a.id === updated.id ? updated : a));
+              localStorage.setItem('bjj_academies', JSON.stringify(next));
+              return next;
+            });
+          }}
+          onDeleteAcademy={(id) => {
+            setAcademies((prev) => {
+              const next = prev.filter((a) => a.id !== id);
+              localStorage.setItem('bjj_academies', JSON.stringify(next));
+              return next;
+            });
+          }}
+          generalManager={generalManager}
+          onOpenVoiceNotice={(title, body) => {
+            academyVoiceEngine.announceAcademyMessage(activeAcademy, title, body);
+          }}
+          onBackToManager={() => setActiveRole('manager')}
         />
       )}
 
@@ -627,6 +789,7 @@ export default function App() {
         academies={academies}
         invoices={invoices}
         activeAcademy={activeAcademy}
+        isGeneralManager={activeRole === 'general_manager'}
         onUpdateInvoices={(updated) => {
           setInvoices(updated);
           localStorage.setItem('bjj_invoices', JSON.stringify(updated));
@@ -636,6 +799,198 @@ export default function App() {
         }}
         generalManager={generalManager}
         onUpdateGeneralManager={setGeneralManager}
+      />
+
+      {/* Academy Registration & Branch Management Modal */}
+      <AcademyRegistrationModal
+        isOpen={isAcademyRegistrationOpen}
+        onClose={() => setIsAcademyRegistrationOpen(false)}
+        academies={academies}
+        activeAcademy={activeAcademy}
+        onSelectActiveAcademy={(acad) => {
+          setActiveAcademyId(acad.id);
+          localStorage.setItem('bjj_active_academy_id', acad.id);
+        }}
+        onAddAcademy={(created) => {
+          setAcademies((prev) => {
+            const next = [created, ...prev];
+            localStorage.setItem('bjj_academies', JSON.stringify(next));
+            return next;
+          });
+          setActiveAcademyId(created.id);
+          localStorage.setItem('bjj_active_academy_id', created.id);
+          triggerPushNotification(
+            '🏛️ Nova Filial Cadastrada!',
+            `${created.name} foi adicionada à rede com sucesso.`
+          );
+        }}
+        onUpdateAcademy={(updated) => {
+          setAcademies((prev) => {
+            const next = prev.map((a) => (a.id === updated.id ? updated : a));
+            localStorage.setItem('bjj_academies', JSON.stringify(next));
+            return next;
+          });
+        }}
+        onDeleteAcademy={(id) => {
+          setAcademies((prev) => {
+            const next = prev.filter((a) => a.id !== id);
+            localStorage.setItem('bjj_academies', JSON.stringify(next));
+            return next;
+          });
+        }}
+        generalManager={generalManager}
+        onOpenVoiceNotice={(title, body) => {
+          academyVoiceEngine.announceAcademyMessage(activeAcademy, title, body);
+        }}
+      />
+
+      {/* SaaS Simulator Modal */}
+      <SaaSSimulatorModal
+        isOpen={isSaaSSimulatorOpen}
+        onClose={() => setIsSaaSSimulatorOpen(false)}
+        initialAcademiesCount={academies.length}
+        generalManager={generalManager}
+      />
+
+      {/* My SaaS Subscription Modal (Academy Manager view) */}
+      <MySaaSSubscriptionModal
+        isOpen={isMySaaSSubscriptionOpen}
+        onClose={() => setIsMySaaSSubscriptionOpen(false)}
+        activeAcademy={activeAcademy}
+        generalManager={generalManager}
+      />
+
+      {/* Photo Attendance Modal (Gemini Vision AI) */}
+      <PhotoAttendanceModal
+        isOpen={isPhotoAttendanceOpen}
+        onClose={() => setIsPhotoAttendanceOpen(false)}
+        currentClass={classes[1] || classes[0]}
+        onConfirmAttendance={(presentStudentIds) => {
+          const targetClassId = (classes[1] || classes[0])?.id;
+          if (!targetClassId) return;
+          setClasses((prev) =>
+            prev.map((c) => {
+              if (c.id === targetClassId) {
+                return {
+                  ...c,
+                  registeredStudents: c.registeredStudents.map((s) => ({
+                    ...s,
+                    status: presentStudentIds.includes(s.id) ? 'present' : s.status,
+                  })),
+                };
+              }
+              return c;
+            })
+          );
+          triggerPushNotification(
+            '📸 Chamada por Foto Concluída!',
+            `${presentStudentIds.length} atletas identificados via Gemini Vision com presenças computadas.`
+          );
+        }}
+        onAnnounceVoice={(msg) => {
+          academyVoiceEngine.announceAcademyMessage(activeAcademy, 'Chamada Tatame IA', msg);
+        }}
+      />
+
+      {/* BJJ AI Coach Modal */}
+      <AICoachModal
+        isOpen={isAICoachOpen}
+        onClose={() => setIsAICoachOpen(false)}
+        onPublishToAnnouncements={(title, content) => {
+          const created: Announcement = {
+            id: `ann_coach_${Date.now()}`,
+            title,
+            content,
+            date: 'Hoje',
+            category: 'Geral',
+            author: 'AI Coach BJJ',
+            priority: 'urgent',
+            read: false,
+          };
+          setAnnouncements((prev) => [created, ...prev]);
+          triggerPushNotification(
+            '🧠 Novo Plano de Aula no Mural!',
+            `AI Coach publicou: ${title}`
+          );
+        }}
+        onAnnounceVoice={(msg) => {
+          academyVoiceEngine.announceAcademyMessage(activeAcademy, 'AI Coach BJJ', msg);
+        }}
+      />
+
+      {/* Data Migration Modal (CSV Import/Export) */}
+      <DataMigrationModal
+        isOpen={isDataMigrationOpen}
+        onClose={() => setIsDataMigrationOpen(false)}
+        academyName={activeAcademy.name}
+        onImportStudentsSuccess={(count) => {
+          triggerPushNotification(
+            '📥 Migração em Lote Concluída!',
+            `${count} alunos importados com sucesso para o banco de dados da academia.`
+          );
+        }}
+      />
+
+      {/* Improvement #3: Radar Anti-Evasão Modal */}
+      <RetentionRadarModal
+        isOpen={isRetentionRadarOpen}
+        onClose={() => setIsRetentionRadarOpen(false)}
+        alerts={retentionAlerts}
+        onUpdateAlerts={(updated) => {
+          setRetentionAlerts(updated);
+          localStorage.setItem('bjj_retention_alerts', JSON.stringify(updated));
+        }}
+        activeAcademyName={activeAcademy.shortName || activeAcademy.name}
+        onAnnounceVoice={(title, body) => {
+          academyVoiceEngine.announceAcademyMessage(activeAcademy, title, body);
+        }}
+      />
+
+      {/* Improvement #5: Diário de Rola & Raio-X Técnico Modal */}
+      <SparringJournalModal
+        isOpen={isSparringJournalOpen}
+        onClose={() => setIsSparringJournalOpen(false)}
+        sessions={sparringSessions}
+        onUpdateSessions={(updated) => {
+          setSparringSessions(updated);
+          localStorage.setItem('bjj_sparring_sessions', JSON.stringify(updated));
+        }}
+        student={student}
+        onAnnounceVoice={(title, body) => {
+          academyVoiceEngine.announceAcademyMessage(activeAcademy, title, body);
+        }}
+      />
+
+      {/* 🎂 Birthday Alert & Official Congratulations Modal */}
+      <BirthdayAlertModal
+        isOpen={isBirthdayAlertOpen}
+        onClose={() => setIsBirthdayAlertOpen(false)}
+        birthdays={birthdays}
+        onUpdateBirthdays={(updated) => {
+          setBirthdays(updated);
+          localStorage.setItem('bjj_birthdays', JSON.stringify(updated));
+        }}
+        activeAcademyName={activeAcademy.name}
+        onAnnounceVoice={(title, body) => {
+          academyVoiceEngine.announceAcademyMessage(activeAcademy, title, body);
+        }}
+        onPublishAnnouncement={(title, content) => {
+          const created: Announcement = {
+            id: `ann_bday_${Date.now()}`,
+            title,
+            content,
+            date: 'Hoje',
+            category: 'Geral',
+            author: activeAcademy.name,
+            priority: 'urgent',
+            read: false,
+          };
+          setAnnouncements((prev) => [created, ...prev]);
+          triggerPushNotification(
+            '🎂 Felicitações no Mural do Tatame!',
+            `Anúncio oficial de aniversário publicado: ${title}`
+          );
+        }}
       />
     </DeviceFrame>
   );

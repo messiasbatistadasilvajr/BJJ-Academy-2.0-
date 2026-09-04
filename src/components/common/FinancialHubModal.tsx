@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { 
   X, DollarSign, Calculator, TrendingUp, AlertTriangle, CheckCircle2, 
@@ -24,6 +24,7 @@ interface FinancialHubModalProps {
   onOpenVoiceNotice?: (title: string, body: string) => void;
   generalManager?: PlatformGeneralManager;
   onUpdateGeneralManager?: (gm: PlatformGeneralManager) => void;
+  isGeneralManager?: boolean;
 }
 
 export const FinancialHubModal: React.FC<FinancialHubModalProps> = ({
@@ -35,19 +36,35 @@ export const FinancialHubModal: React.FC<FinancialHubModalProps> = ({
   onUpdateInvoices,
   onOpenVoiceNotice,
   generalManager = defaultPlatformGeneralManager,
-  onUpdateGeneralManager
+  onUpdateGeneralManager,
+  isGeneralManager = true
 }) => {
   // Local Invoices State
   const [invoices, setInvoices] = useState<Invoice[]>(initialInvoices);
   
   // Financial RBAC Profile: 'general_manager' (Super Admin BJJ ACADEMY) vs 'unit_manager' (Unit Local Manager)
-  const [accessProfile, setAccessProfile] = useState<FinancialAccessProfile>('general_manager');
+  const [accessProfile, setAccessProfile] = useState<FinancialAccessProfile>(
+    isGeneralManager ? 'general_manager' : 'unit_manager'
+  );
   
   // When unit_manager, lock to this academyId
   const [assignedUnitId, setAssignedUnitId] = useState<string>(activeAcademy.id || academies[0]?.id);
   
   // Selected Academy Filter for view ('all' only allowed for general_manager)
-  const [selectedAcademyFilter, setSelectedAcademyFilter] = useState<string>('all');
+  const [selectedAcademyFilter, setSelectedAcademyFilter] = useState<string>(
+    isGeneralManager ? 'all' : (activeAcademy.id || academies[0]?.id)
+  );
+
+  useEffect(() => {
+    if (isGeneralManager) {
+      setAccessProfile('general_manager');
+    } else {
+      setAccessProfile('unit_manager');
+      const unitId = activeAcademy.id || academies[0]?.id;
+      setAssignedUnitId(unitId);
+      setSelectedAcademyFilter(unitId);
+    }
+  }, [isGeneralManager, activeAcademy.id, academies]);
   
   // Sub-tabs: 'overview' | 'invoices' | 'calculator' | 'plans' | 'repasses' | 'new_charge'
   const [activeTab, setActiveTab] = useState<'overview' | 'invoices' | 'calculator' | 'plans' | 'repasses' | 'new_charge'>('overview');
@@ -374,35 +391,42 @@ export const FinancialHubModal: React.FC<FinancialHubModalProps> = ({
               <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider flex items-center gap-1">
                 Perfil de Acesso:
               </span>
-              <div className="inline-flex p-1 bg-slate-900 rounded-xl border border-slate-800 text-xs">
-                <button
-                  type="button"
-                  onClick={() => setAccessProfile('general_manager')}
-                  className={`px-3 py-1 rounded-lg font-bold flex items-center gap-1.5 transition ${
-                    accessProfile === 'general_manager'
-                      ? 'bg-amber-500 text-slate-950 shadow-md font-black'
-                      : 'text-slate-400 hover:text-white'
-                  }`}
-                >
-                  <Unlock size={13} />
-                  <span>Gestor Geral BJJ ACADEMY (Rede Toda)</span>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setAccessProfile('unit_manager');
-                    setSelectedAcademyFilter(assignedUnitId);
-                  }}
-                  className={`px-3 py-1 rounded-lg font-bold flex items-center gap-1.5 transition ${
-                    accessProfile === 'unit_manager'
-                      ? 'bg-cyan-500 text-slate-950 shadow-md font-black'
-                      : 'text-slate-400 hover:text-white'
-                  }`}
-                >
-                  <Lock size={13} />
-                  <span>Gestor de Unidade (Apenas sua Academia)</span>
-                </button>
-              </div>
+              {isGeneralManager ? (
+                <div className="inline-flex p-1 bg-slate-900 rounded-xl border border-slate-800 text-xs">
+                  <button
+                    type="button"
+                    onClick={() => setAccessProfile('general_manager')}
+                    className={`px-3 py-1 rounded-lg font-bold flex items-center gap-1.5 transition ${
+                      accessProfile === 'general_manager'
+                        ? 'bg-amber-500 text-slate-950 shadow-md font-black'
+                        : 'text-slate-400 hover:text-white'
+                    }`}
+                  >
+                    <Unlock size={13} />
+                    <span>Gestor Geral BJJ ACADEMY (Super Admin)</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setAccessProfile('unit_manager');
+                      setSelectedAcademyFilter(assignedUnitId);
+                    }}
+                    className={`px-3 py-1 rounded-lg font-bold flex items-center gap-1.5 transition ${
+                      accessProfile === 'unit_manager'
+                        ? 'bg-cyan-500 text-slate-950 shadow-md font-black'
+                        : 'text-slate-400 hover:text-white'
+                    }`}
+                  >
+                    <Lock size={13} />
+                    <span>Simular Visão Filial</span>
+                  </button>
+                </div>
+              ) : (
+                <div className="px-3 py-1.5 rounded-xl bg-cyan-950/60 border border-cyan-800/60 text-cyan-300 font-bold text-xs flex items-center gap-2">
+                  <Lock size={13} className="text-cyan-400" />
+                  <span>Gestor da Academia (Blindagem Ativa - Apenas {activeAcademy.name})</span>
+                </div>
+              )}
             </div>
 
             {/* If Unit Manager: Select Assigned Unit; If General Manager: Filter Academy */}
@@ -411,20 +435,26 @@ export const FinancialHubModal: React.FC<FinancialHubModalProps> = ({
                 <span className="text-[11px] text-cyan-400 font-bold flex items-center gap-1">
                   <ShieldCheck size={14} /> Minha Academia:
                 </span>
-                <select
-                  value={assignedUnitId}
-                  onChange={(e) => {
-                    setAssignedUnitId(e.target.value);
-                    setSelectedAcademyFilter(e.target.value);
-                  }}
-                  className="bg-slate-900 border border-cyan-500/40 text-white text-xs rounded-xl px-3 py-1.5 font-bold focus:outline-none focus:ring-1 focus:ring-cyan-400"
-                >
-                  {academies.map((a) => (
-                    <option key={a.id} value={a.id}>
-                      {a.name} ({a.branch})
-                    </option>
-                  ))}
-                </select>
+                {isGeneralManager ? (
+                  <select
+                    value={assignedUnitId}
+                    onChange={(e) => {
+                      setAssignedUnitId(e.target.value);
+                      setSelectedAcademyFilter(e.target.value);
+                    }}
+                    className="bg-slate-900 border border-cyan-500/40 text-white text-xs rounded-xl px-3 py-1.5 font-bold focus:outline-none focus:ring-1 focus:ring-cyan-400"
+                  >
+                    {academies.map((a) => (
+                      <option key={a.id} value={a.id}>
+                        {a.name} ({a.branch})
+                      </option>
+                    ))}
+                  </select>
+                ) : (
+                  <span className="bg-slate-900 border border-cyan-500/40 text-cyan-200 text-xs rounded-xl px-3 py-1.5 font-bold">
+                    {activeAcademy.name} ({activeAcademy.branch})
+                  </span>
+                )}
               </div>
             ) : (
               <div className="flex items-center gap-2 w-full sm:w-auto">

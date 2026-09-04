@@ -1,7 +1,7 @@
 import React from 'react';
 import { 
   Smartphone, Monitor, Layers, Download, Wifi, 
-  RotateCcw, Sparkles, Shield, User, Users, GraduationCap, Briefcase,
+  RotateCcw, Sparkles, Shield, User, Users, GraduationCap, Briefcase, Crown,
   Timer, BookOpen, Tablet, Award, ShoppingBag, FileText, Trophy, Volume2, DollarSign, Building2
 } from 'lucide-react';
 import { UserRole } from '../../types';
@@ -56,11 +56,13 @@ export const DeviceFrame: React.FC<DeviceFrameProps> = ({
   onOpenAcademyRegistration,
   activeAcademyName,
 }) => {
-  const roles: { id: UserRole; label: string; icon: React.FC<{ className?: string }>; color: string }[] = [
+  const roles: { id: UserRole; label: string; icon: React.FC<{ className?: string }>; color: string; badge?: string }[] = [
+    { id: 'general_manager', label: 'Gestor Geral BJJ', icon: Crown, color: 'text-amber-400', badge: 'SUPER ADMIN' },
+    { id: 'manager', label: 'Gestor Filial', icon: Briefcase, color: 'text-cyan-400', badge: 'ACADEMIA' },
+    { id: 'teacher', label: 'Professor Tatame', icon: GraduationCap, color: 'text-emerald-400' },
     { id: 'student', label: 'Aluno', icon: User, color: 'text-red-400' },
     { id: 'parent', label: 'Portal Responsável', icon: Users, color: 'text-blue-400' },
-    { id: 'teacher', label: 'Professor Tatame', icon: GraduationCap, color: 'text-emerald-400' },
-    { id: 'manager', label: 'Gestor Academia', icon: Briefcase, color: 'text-amber-400' },
+    { id: 'academy_registration', label: 'Cadastrar Academia', icon: Building2, color: 'text-amber-400', badge: 'FILIAIS' },
   ];
 
   return (
@@ -92,18 +94,30 @@ export const DeviceFrame: React.FC<DeviceFrameProps> = ({
           {roles.map((r) => {
             const Icon = r.icon;
             const isSelected = activeRole === r.id;
+            const isAcademyTab = r.id === 'academy_registration';
             return (
               <button
                 key={r.id}
                 onClick={() => onSelectRole(r.id)}
                 className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-bold transition shrink-0 ${
                   isSelected
-                    ? 'bg-slate-800 text-white shadow-sm'
-                    : 'text-slate-400 hover:text-white'
+                    ? isAcademyTab 
+                      ? 'bg-gradient-to-r from-red-600 to-amber-600 text-white shadow-md font-black ring-1 ring-amber-400/50' 
+                      : 'bg-slate-800 text-white shadow-sm'
+                    : isAcademyTab
+                      ? 'text-amber-300 bg-amber-950/40 hover:bg-amber-900/60 border border-amber-500/30'
+                      : 'text-slate-400 hover:text-white'
                 }`}
               >
-                <Icon className={`w-3.5 h-3.5 ${isSelected ? r.color : 'text-slate-400'}`} />
+                <Icon className={`w-3.5 h-3.5 ${isSelected ? (isAcademyTab ? 'text-white' : r.color) : (isAcademyTab ? 'text-amber-400' : 'text-slate-400')}`} />
                 <span>{r.label}</span>
+                {r.badge && (
+                  <span className={`text-[9px] font-black px-1.5 py-0.5 rounded-full uppercase ${
+                    isSelected ? 'bg-slate-950/60 text-amber-300' : 'bg-amber-500/20 text-amber-300 border border-amber-500/40'
+                  }`}>
+                    {r.badge}
+                  </span>
+                )}
               </button>
             );
           })}
@@ -225,19 +239,28 @@ export const DeviceFrame: React.FC<DeviceFrameProps> = ({
             <span>Contrato & Termo</span>
           </button>
 
-          <button
-            onClick={onOpenFinancial}
-            className="flex items-center gap-1.5 px-3 py-1 rounded-lg bg-gradient-to-r from-emerald-600/30 to-teal-600/30 hover:from-emerald-600/50 hover:to-teal-600/50 text-emerald-300 border border-emerald-500/50 font-black text-[11px] whitespace-nowrap transition-all shadow-md"
-            title="Financeiro Multi-Academia, Mensalidades e Juros por Atraso"
-          >
-            <DollarSign className="w-3.5 h-3.5 text-emerald-400 stroke-[3]" />
-            <span>Financeiro & Juros</span>
-          </button>
+          {(activeRole === 'manager' || activeRole === 'general_manager') && (
+            <button
+              onClick={onOpenFinancial}
+              className="flex items-center gap-1.5 px-3 py-1 rounded-lg bg-gradient-to-r from-emerald-600/30 to-teal-600/30 hover:from-emerald-600/50 hover:to-teal-600/50 text-emerald-300 border border-emerald-500/50 font-black text-[11px] whitespace-nowrap transition-all shadow-md"
+              title={
+                activeRole === 'general_manager'
+                  ? 'Financeiro Geral da Rede BJJ ACADEMY (Consolidado)'
+                  : 'Financeiro e Mensalidades da sua Academia'
+              }
+            >
+              <DollarSign className="w-3.5 h-3.5 text-emerald-400 stroke-[3]" />
+              <span>{activeRole === 'general_manager' ? 'Financeiro Geral' : 'Financeiro da Filial'}</span>
+            </button>
+          )}
 
           <button
-            onClick={onOpenAcademyRegistration}
+            onClick={() => {
+              onSelectRole('academy_registration');
+              if (onOpenAcademyRegistration) onOpenAcademyRegistration();
+            }}
             className="flex items-center gap-1.5 px-3 py-1 rounded-lg bg-gradient-to-r from-red-600/40 via-amber-600/40 to-yellow-600/30 hover:from-red-600/60 hover:to-amber-600/60 text-amber-200 border border-amber-500/60 font-black text-[11px] whitespace-nowrap transition-all shadow-md"
-            title="Cadastrar Nova Academia ou Gerenciar Filiais da Rede"
+            title="Página Completa para Cadastrar Nova Academia ou Gerenciar Filiais da Rede"
           >
             <Building2 className="w-3.5 h-3.5 text-amber-400 stroke-[2.5]" />
             <span>+ Cadastrar Academia</span>

@@ -2,7 +2,8 @@ import {
   StudentProfile, DependentStudent, ClassSession, Invoice, Announcement, 
   ChatMessage, PushNotification, RankingMember, TechniqueItem, 
   GraduationEligibility, ShopProduct, ContractWaiver, TournamentItem, TeamMedal,
-  RegisteredAcademy, PlatformGeneralManager, PlatformAcademyPayment
+  RegisteredAcademy, PlatformGeneralManager, PlatformAcademyPayment,
+  RetentionAlertItem, SparringSession, BirthdayPerson
 } from '../types';
 
 export const mockStudent: StudentProfile = {
@@ -1119,8 +1120,11 @@ export const defaultPlatformGeneralManager: PlatformGeneralManager = {
   pixType: 'cpf',
   purpose: 'Para pagamentos das academias à plataforma BJJ Academy (Royalties, Licença de Software & Repasses)',
   email: 'messiasbjunior76@gmail.com',
+  phone: '(11) 98765-4321',
   status: 'verified',
   monthlyPlatformFeePerAcademy: 250.00,
+  fixedMonthlyFee: 130.00,
+  activeStudentFee: 1.30,
   registeredAt: '02/09/2026'
 };
 
@@ -1130,61 +1134,551 @@ export const mockPlatformAcademyPayments: PlatformAcademyPayment[] = [
     academyId: 'acad_bjj_jardins',
     academyName: 'BJJ Academy Jardins',
     branch: 'Matriz Jardins - SP',
-    amount: 250.00,
+    activeStudentsCount: 120,
+    fixedAmount: 130.00,
+    variableAmount: 156.00, // 120 x 1.30
+    amount: 286.00, // 130 + 156
     dueDate: '05/09/2026',
     status: 'paid',
     paidDate: '01/09/2026',
     referenceMonth: '09/2026',
     invoiceRef: 'FAT-PLAT-2026-001',
-    pixCode: '00020126580014br.gov.bcb.pix0111580876303785204000053039865406250.005802BR5925MESSIAS B SILVA JR6009SAO PAULO62170513BJJPLAT0016304D1A2'
+    pixCode: '00020126580014br.gov.bcb.pix0111580876303785204000053039865406286.005802BR5925MESSIAS B SILVA JR6009SAO PAULO62170513BJJPLAT0016304D1A2'
   },
   {
     id: 'plat_pay_2',
     academyId: 'acad_gracie_barra',
     academyName: 'Gracie Barra Centro',
     branch: 'Unidade Centro Histórico',
-    amount: 250.00,
+    activeStudentsCount: 85,
+    fixedAmount: 130.00,
+    variableAmount: 110.50, // 85 x 1.30
+    amount: 240.50, // 130 + 110.50
     dueDate: '05/09/2026',
     status: 'paid',
     paidDate: '02/09/2026',
     referenceMonth: '09/2026',
     invoiceRef: 'FAT-PLAT-2026-002',
-    pixCode: '00020126580014br.gov.bcb.pix0111580876303785204000053039865406250.005802BR5925MESSIAS B SILVA JR6009SAO PAULO62170513BJJPLAT0026304F2B3'
+    pixCode: '00020126580014br.gov.bcb.pix0111580876303785204000053039865406240.505802BR5925MESSIAS B SILVA JR6009SAO PAULO62170513BJJPLAT0026304F2B3'
   },
   {
     id: 'plat_pay_3',
     academyId: 'acad_alliance_morumbi',
     academyName: 'Alliance Jiu-Jitsu Morumbi',
     branch: 'Unidade Portal do Morumbi',
-    amount: 250.00,
+    activeStudentsCount: 150,
+    fixedAmount: 130.00,
+    variableAmount: 195.00, // 150 x 1.30
+    amount: 325.00, // 130 + 195
     dueDate: '05/09/2026',
     status: 'pending',
     referenceMonth: '09/2026',
     invoiceRef: 'FAT-PLAT-2026-003',
-    pixCode: '00020126580014br.gov.bcb.pix0111580876303785204000053039865406250.005802BR5925MESSIAS B SILVA JR6009SAO PAULO62170513BJJPLAT0036304A3C4'
+    pixCode: '00020126580014br.gov.bcb.pix0111580876303785204000053039865406325.005802BR5925MESSIAS B SILVA JR6009SAO PAULO62170513BJJPLAT0036304A3C4'
   },
   {
     id: 'plat_pay_4',
     academyId: 'acad_checkmat_vm',
     academyName: 'Checkmat Tatame Vila Mariana',
     branch: 'Unidade Vila Mariana',
-    amount: 250.00,
+    activeStudentsCount: 90,
+    fixedAmount: 130.00,
+    variableAmount: 117.00, // 90 x 1.30
+    amount: 247.00, // 130 + 117
     dueDate: '05/09/2026',
     status: 'pending',
     referenceMonth: '09/2026',
     invoiceRef: 'FAT-PLAT-2026-004',
-    pixCode: '00020126580014br.gov.bcb.pix0111580876303785204000053039865406250.005802BR5925MESSIAS B SILVA JR6009SAO PAULO62170513BJJPLAT0046304B4D5'
+    pixCode: '00020126580014br.gov.bcb.pix0111580876303785204000053039865406247.005802BR5925MESSIAS B SILVA JR6009SAO PAULO62170513BJJPLAT0046304B4D5'
   },
   {
     id: 'plat_pay_5',
     academyId: 'acad_nova_uniao',
     academyName: 'Nova União Moema',
     branch: 'Unidade Moema Pássaros',
-    amount: 250.00,
+    activeStudentsCount: 75,
+    fixedAmount: 130.00,
+    variableAmount: 97.50, // 75 x 1.30
+    amount: 227.50, // 130 + 97.50
     dueDate: '05/09/2026',
     status: 'pending',
     referenceMonth: '09/2026',
     invoiceRef: 'FAT-PLAT-2026-005',
-    pixCode: '00020126580014br.gov.bcb.pix0111580876303785204000053039865406250.005802BR5925MESSIAS B SILVA JR6009SAO PAULO62170513BJJPLAT0056304C5E6'
+    pixCode: '00020126580014br.gov.bcb.pix0111580876303785204000053039865406227.505802BR5925MESSIAS B SILVA JR6009SAO PAULO62170513BJJPLAT0056304C5E6'
   }
 ];
+
+export const mockCRMLeads: import('../types').CRMLead[] = [
+  {
+    id: 'lead_1',
+    name: 'Guilherme Sampaio',
+    phone: '(11) 98123-4567',
+    email: 'guilherme.sampaio@gmail.com',
+    interest: 'Adulto Gi',
+    stage: 'novo_lead',
+    createdAt: '01/09/2026',
+    source: 'Instagram',
+    notes: 'Nunca treinou antes. Procura condicionamento e defesa pessoal.',
+    value: 260.00
+  },
+  {
+    id: 'lead_2',
+    name: 'Beatriz Fagundes',
+    phone: '(11) 97234-8899',
+    email: 'beatriz.fagundes@outlook.com',
+    interest: 'Feminino',
+    stage: 'contato_realizado',
+    createdAt: '30/08/2026',
+    source: 'Indicação',
+    notes: 'Amiga da Mariana Costa (roxa). Quer conhecer a turma feminina.',
+    value: 260.00
+  },
+  {
+    id: 'lead_3',
+    name: 'Felipe Alcantara',
+    phone: '(11) 99345-1234',
+    email: 'felipe.alcantara@hotmail.com',
+    interest: 'No-Gi Submission',
+    stage: 'aula_agendada',
+    createdAt: '28/08/2026',
+    trialDate: '04/09/2026 às 19:30',
+    source: 'Google',
+    notes: 'Veio do judô, quer aprender guarda e chave de calcanhar.',
+    value: 280.00
+  },
+  {
+    id: 'lead_4',
+    name: 'Enzo e Nicolas (Pais: Roberto)',
+    phone: '(11) 98456-7890',
+    email: 'roberto.kids@gmail.com',
+    interest: 'Kids',
+    stage: 'compareceu',
+    createdAt: '26/08/2026',
+    trialDate: '02/09/2026 às 17:00',
+    source: 'Passante',
+    notes: 'Meninos de 7 e 9 anos. Adoraram a aula do Mestre Rodrigo!',
+    value: 400.00 // Plano 2 irmãos
+  },
+  {
+    id: 'lead_5',
+    name: 'Renan Vianna',
+    phone: '(11) 97567-3344',
+    email: 'renan.vianna@gmail.com',
+    interest: 'Competição',
+    stage: 'matricula_fechada',
+    createdAt: '22/08/2026',
+    source: 'Instagram',
+    notes: 'Faixa azul ex-aluno do RJ. Fechou plano anual!',
+    value: 220.00
+  },
+  {
+    id: 'lead_6',
+    name: 'Lucas Brandão',
+    phone: '(11) 96123-9988',
+    email: 'lucas.brandao@uol.com.br',
+    interest: 'Adulto Gi',
+    stage: 'perdido',
+    createdAt: '15/08/2026',
+    source: 'Google',
+    notes: 'Horário do trabalho incompatível com a grade atual.',
+    value: 260.00
+  }
+];
+
+export const mockAICoachPlans: import('../types').AICoachLessonPlan[] = [
+  {
+    id: 'coach_plan_1',
+    title: 'Domínio de Guarda Fechada & Ataques Triplos',
+    targetLevel: 'Intermediário / Avançado',
+    theme: 'Guarda Fechada Tradicional e Conexão de Ataques (Triângulo, Armlock, Omoplata)',
+    warmup: {
+      title: 'Drill Específico de Articulação e Fuga de Quadril',
+      durationMinutes: 10,
+      drills: [
+        'Fuga de quadril com mão no ombro do parceiro (2 min cada lado)',
+        'Escalada de guarda e ajuste de pegadas cruzadas na gola',
+        'Sprawl explosivo e entrada de guarda sentada'
+      ]
+    },
+    techniqueOfTheWeek: {
+      name: 'Sequência Triângulo da Guarda Fechada com transição para Armlock',
+      category: 'Finalizações',
+      durationMinutes: 25,
+      steps: [
+        '1. Controle da manga adversária e quebra de postura com pegada na nuca.',
+        '2. Pisar com o pé do mesmo lado no quadril adversário para angular a cintura.',
+        '3. Lançar a perna oposta por cima do ombro e fechar a pegada de canela.',
+        '4. Ajustar o ângulo de 90 graus com corte de cabeça para estrangulamento perfeito.',
+        '5. Se o adversário esconder o braço, transicionar direto para o Armlock reto esticando o quadril.'
+      ],
+      invisibleDetails: [
+        'O ângulo é tudo: nunca tente fechar o triângulo de frente, corte o pescoço em 90°.',
+        'Puxe o joelho em direção ao seu ombro para tirar a base do oponente antes de cruzar o braço.'
+      ]
+    },
+    sparringDrill: {
+      format: 'Rola Situacional com Vantagem',
+      durationMinutes: 25,
+      situationalRule: 'Quem está por baixo deve finalizar ou raspar em 3 minutos. Quem está por cima deve passar a guarda fechada e estabilizar os 100kg.'
+    },
+    coachingAdvice: 'Lembre os alunos de não fazerem força excessiva nos punhos: a alavanca do quadril substitui 90% da força dos braços.',
+    createdAt: '03/09/2026'
+  }
+];
+
+export const mockRetentionAlerts: RetentionAlertItem[] = [
+  {
+    id: 'ret_01',
+    studentId: 'stu_marcos_09',
+    studentName: 'Marcos Vinicius Andrade',
+    studentPhone: '(11) 98721-4321',
+    studentAvatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=200&auto=format&fit=crop&q=80',
+    studentBelt: 'white',
+    academyId: 'acad_bjj_jardins',
+    academyName: 'BJJ Academy Jardins',
+    lastAttendanceDate: '12/08/2026',
+    daysAbsent: 23,
+    churnRisk: 'critico',
+    contactStatus: 'pendente',
+    detectedCause: 'desmotivado',
+    monthlyFee: 240.0,
+    preferredClassTime: '19:30 (Noite)'
+  },
+  {
+    id: 'ret_02',
+    studentId: 'stu_juliana_04',
+    studentName: 'Juliana Camargo Silva',
+    studentPhone: '(11) 99342-8811',
+    studentAvatar: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=200&auto=format&fit=crop&q=80',
+    studentBelt: 'blue',
+    academyId: 'acad_bjj_jardins',
+    academyName: 'BJJ Academy Jardins',
+    lastAttendanceDate: '20/08/2026',
+    daysAbsent: 15,
+    churnRisk: 'alto',
+    contactStatus: 'contatado',
+    lastContactDate: '02/09/2026',
+    contactNotes: 'Relatou dores nas costas; fisioterapia em andamento. Volta dia 10.',
+    detectedCause: 'lesao',
+    monthlyFee: 260.0,
+    preferredClassTime: '07:00 (Manhã)'
+  },
+  {
+    id: 'ret_03',
+    studentId: 'stu_felipe_07',
+    studentName: 'Felipe Antunes Barreto',
+    studentPhone: '(11) 97123-5599',
+    studentAvatar: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=200&auto=format&fit=crop&q=80',
+    studentBelt: 'purple',
+    academyId: 'acad_bjj_jardins',
+    academyName: 'BJJ Academy Jardins',
+    lastAttendanceDate: '27/08/2026',
+    daysAbsent: 8,
+    churnRisk: 'moderado',
+    contactStatus: 'pendente',
+    detectedCause: 'trabalho',
+    monthlyFee: 220.0,
+    preferredClassTime: '20:30 (Competição)'
+  },
+  {
+    id: 'ret_04',
+    studentId: 'stu_ricardo_08',
+    studentName: 'Ricardo Duarte Meirelles',
+    studentPhone: '(11) 96543-2211',
+    studentAvatar: 'https://images.unsplash.com/photo-1522075469751-3a6694fb2f61?w=200&auto=format&fit=crop&q=80',
+    studentBelt: 'white',
+    academyId: 'acad_bjj_jardins',
+    academyName: 'BJJ Academy Jardins',
+    lastAttendanceDate: '05/08/2026',
+    daysAbsent: 30,
+    churnRisk: 'critico',
+    contactStatus: 'pendente',
+    detectedCause: 'indefinido',
+    monthlyFee: 240.0,
+    preferredClassTime: '12:00 (Almoço)'
+  },
+  {
+    id: 'ret_05',
+    studentId: 'stu_gabriel_03',
+    studentName: 'Gabriel Siqueira',
+    studentPhone: '(11) 98111-3322',
+    studentAvatar: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=200&auto=format&fit=crop&q=80',
+    studentBelt: 'blue',
+    academyId: 'acad_bjj_morumbi',
+    academyName: 'BJJ Academy Morumbi',
+    lastAttendanceDate: '18/08/2026',
+    daysAbsent: 17,
+    churnRisk: 'alto',
+    contactStatus: 'pendente',
+    detectedCause: 'trabalho',
+    monthlyFee: 280.0,
+    preferredClassTime: '19:30 (Noite)'
+  },
+  {
+    id: 'ret_06',
+    studentId: 'stu_carolina_06',
+    studentName: 'Carolina Braga',
+    studentPhone: '(11) 97444-9988',
+    studentAvatar: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=200&auto=format&fit=crop&q=80',
+    studentBelt: 'white',
+    academyId: 'acad_bjj_morumbi',
+    academyName: 'BJJ Academy Morumbi',
+    lastAttendanceDate: '26/08/2026',
+    daysAbsent: 9,
+    churnRisk: 'moderado',
+    contactStatus: 'resgatado',
+    lastContactDate: '01/09/2026',
+    contactNotes: 'Confirmou presença para o treino de sexta!',
+    detectedCause: 'desmotivado',
+    monthlyFee: 250.0,
+    preferredClassTime: '18:30 (Feminino)'
+  }
+];
+
+export const mockSparringSessions: SparringSession[] = [
+  {
+    id: 'spar_01',
+    studentId: 'stu_lucas_01',
+    studentName: 'Lucas Gracie Mendes',
+    date: '03/09/2026',
+    time: '20:15',
+    trainingPartner: 'Rodrigo "Cavalo" Sanches',
+    partnerBelt: 'purple',
+    giType: 'Gi',
+    durationMinutes: 30,
+    roundsCount: 5,
+    intensity: 'Guerra (Intenso)',
+    submissionsApplied: [
+      { id: 'sub_1', technique: 'Triângulo', position: 'Guarda Fechada', count: 2 },
+      { id: 'sub_2', technique: 'Armlock', position: 'Costas', count: 1 }
+    ],
+    submissionsConceded: [
+      { id: 'con_1', technique: 'Americana', position: '100kg / Norte-Sul', count: 1 }
+    ],
+    sweepsCount: 3,
+    guardPassesCount: 2,
+    takedownsCount: 1,
+    rating: 5,
+    notes: 'Excelente rola! Consegui ajustar a pegada na nuca para o triângulo de 90°. Preciso proteger melhor o braço quando o adversário estabiliza os 100kg.',
+    createdAt: '03/09/2026 às 21:00'
+  },
+  {
+    id: 'spar_02',
+    studentId: 'stu_lucas_01',
+    studentName: 'Lucas Gracie Mendes',
+    date: '01/09/2026',
+    time: '19:40',
+    trainingPartner: 'Gabriel Siqueira',
+    partnerBelt: 'blue',
+    giType: 'Gi',
+    durationMinutes: 24,
+    roundsCount: 4,
+    intensity: 'Moderado',
+    submissionsApplied: [
+      { id: 'sub_3', technique: 'Mata-Leão', position: 'Costas', count: 1 },
+      { id: 'sub_4', technique: 'Triângulo', position: 'Guarda Fechada', count: 1 }
+    ],
+    submissionsConceded: [
+      { id: 'con_2', technique: 'Armlock', position: 'Passagem', count: 1 }
+    ],
+    sweepsCount: 2,
+    guardPassesCount: 1,
+    takedownsCount: 0,
+    rating: 4,
+    notes: 'Treinei bastante a transição da pegada de costas para estrangulamento mão com mão. Bati num contra-ataque de armlock quando tentei passar desatento.',
+    createdAt: '01/09/2026 às 20:20'
+  },
+  {
+    id: 'spar_03',
+    studentId: 'stu_lucas_01',
+    studentName: 'Lucas Gracie Mendes',
+    date: '28/08/2026',
+    time: '20:00',
+    trainingPartner: 'Felipe Antunes',
+    partnerBelt: 'purple',
+    giType: 'No-Gi',
+    durationMinutes: 30,
+    roundsCount: 5,
+    intensity: 'Guerra (Intenso)',
+    submissionsApplied: [
+      { id: 'sub_5', technique: 'Guilhotina', position: 'Meia-Guarda', count: 1 },
+      { id: 'sub_6', technique: 'Kimura', position: 'Guarda Fechada', count: 1 }
+    ],
+    submissionsConceded: [
+      { id: 'con_3', technique: 'Chave de Pé / Botinha', position: 'Outro', count: 2 }
+    ],
+    sweepsCount: 1,
+    guardPassesCount: 0,
+    takedownsCount: 2,
+    rating: 4,
+    notes: 'Treino sem kimono bem pegado. Duas quedas boas de single-leg. Preciso afinar a defesa de leglock / chave reta de pé na guarda 50/50.',
+    createdAt: '28/08/2026 às 21:10'
+  },
+  {
+    id: 'spar_04',
+    studentId: 'stu_lucas_01',
+    studentName: 'Lucas Gracie Mendes',
+    date: '25/08/2026',
+    time: '19:30',
+    trainingPartner: 'Marcos Vinicius',
+    partnerBelt: 'white',
+    giType: 'Gi',
+    durationMinutes: 18,
+    roundsCount: 3,
+    intensity: 'Leve (Técnico)',
+    submissionsApplied: [
+      { id: 'sub_7', technique: 'Armlock', position: 'Montada', count: 2 },
+      { id: 'sub_8', technique: 'Triângulo', position: 'Guarda Fechada', count: 1 },
+      { id: 'sub_9', technique: 'Omoplata', position: 'Guarda Fechada', count: 1 }
+    ],
+    submissionsConceded: [],
+    sweepsCount: 4,
+    guardPassesCount: 3,
+    takedownsCount: 1,
+    rating: 5,
+    notes: 'Rola solto e técnico. Foquei em dar espaço para o parceiro movimentar e trabalhar minhas raspagens de guarda aranha e laçada.',
+    createdAt: '25/08/2026 às 20:15'
+  }
+];
+
+export const mockBirthdays: BirthdayPerson[] = [
+  {
+    id: 'bday_lucas_01',
+    name: 'Lucas Gracie Mendes',
+    role: 'student',
+    birthDate: '04/09',
+    birthDay: 4,
+    birthMonth: 9,
+    phone: '(11) 98452-1920',
+    email: 'lucas.mendes@bjjacademy.com',
+    avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=200&auto=format&fit=crop&q=80',
+    belt: 'blue',
+    stripes: 3,
+    academyId: 'acad_bjj_jardins',
+    academyName: 'BJJ Academy Jardins',
+    congratulated: false
+  },
+  {
+    id: 'bday_pedro_kids',
+    name: 'Pedro Henrique Mendes',
+    role: 'kids',
+    birthDate: '04/09',
+    birthDay: 4,
+    birthMonth: 9,
+    phone: '(11) 99123-4567',
+    avatar: 'https://images.unsplash.com/photo-1543610892-0b1f7e6d8ac1?w=200&auto=format&fit=crop&q=80',
+    belt: 'grey',
+    stripes: 2,
+    academyId: 'acad_bjj_jardins',
+    academyName: 'BJJ Academy Jardins',
+    congratulated: true,
+    congratulatedDate: '04/09 às 08:15',
+    congratulatedChannel: 'whatsapp'
+  },
+  {
+    id: 'bday_beatriz_prof',
+    name: 'Profª Beatriz Lima',
+    role: 'teacher',
+    birthDate: '05/09',
+    birthDay: 5,
+    birthMonth: 9,
+    phone: '(11) 98765-4321',
+    avatar: 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=200&auto=format&fit=crop&q=80',
+    belt: 'brown',
+    stripes: 1,
+    academyId: 'acad_bjj_jardins',
+    academyName: 'BJJ Academy Jardins',
+    congratulated: false
+  },
+  {
+    id: 'bday_gabriel_02',
+    name: 'Gabriel Alencar',
+    role: 'student',
+    birthDate: '07/09',
+    birthDay: 7,
+    birthMonth: 9,
+    phone: '(11) 97123-4455',
+    avatar: 'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=200&auto=format&fit=crop&q=80',
+    belt: 'white',
+    stripes: 2,
+    academyId: 'acad_bjj_jardins',
+    academyName: 'BJJ Academy Jardins',
+    congratulated: false
+  },
+  {
+    id: 'bday_rodrigo_mestre',
+    name: 'Mestre Rodrigo "Cavalo"',
+    role: 'teacher',
+    birthDate: '12/09',
+    birthDay: 12,
+    birthMonth: 9,
+    phone: '(11) 99888-1122',
+    avatar: 'https://images.unsplash.com/photo-1560250097-0b93528c311a?w=200&auto=format&fit=crop&q=80',
+    belt: 'black',
+    stripes: 3,
+    academyId: 'acad_bjj_jardins',
+    academyName: 'BJJ Academy Jardins',
+    congratulated: false
+  },
+  {
+    id: 'bday_alexandre_prof',
+    name: 'Prof. Alexandre Peçanha',
+    role: 'teacher',
+    birthDate: '18/09',
+    birthDay: 18,
+    birthMonth: 9,
+    phone: '(11) 99555-3344',
+    avatar: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=200&auto=format&fit=crop&q=80',
+    belt: 'black',
+    stripes: 1,
+    academyId: 'acad_bjj_jardins',
+    academyName: 'BJJ Academy Jardins',
+    congratulated: false
+  },
+  {
+    id: 'bday_camila_04',
+    name: 'Camila Guimarães',
+    role: 'student',
+    birthDate: '22/09',
+    birthDay: 22,
+    birthMonth: 9,
+    phone: '(11) 98222-7788',
+    avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=200&auto=format&fit=crop&q=80',
+    belt: 'white',
+    stripes: 4,
+    academyId: 'acad_bjj_jardins',
+    academyName: 'BJJ Academy Jardins',
+    congratulated: false
+  },
+  {
+    id: 'bday_felipe_05',
+    name: 'Felipe Duarte',
+    role: 'student',
+    birthDate: '25/09',
+    birthDay: 25,
+    birthMonth: 9,
+    phone: '(11) 98111-9900',
+    avatar: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=200&auto=format&fit=crop&q=80',
+    belt: 'purple',
+    stripes: 1,
+    academyId: 'acad_bjj_jardins',
+    academyName: 'BJJ Academy Jardins',
+    congratulated: false
+  },
+  {
+    id: 'bday_valentina_kids',
+    name: 'Valentina Rossi',
+    role: 'kids',
+    birthDate: '15/10',
+    birthDay: 15,
+    birthMonth: 10,
+    phone: '(11) 99333-8877',
+    avatar: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=200&auto=format&fit=crop&q=80',
+    belt: 'white',
+    stripes: 2,
+    academyId: 'acad_bjj_jardins',
+    academyName: 'BJJ Academy Jardins',
+    congratulated: false
+  }
+];
+

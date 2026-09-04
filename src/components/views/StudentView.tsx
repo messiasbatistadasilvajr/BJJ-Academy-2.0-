@@ -5,7 +5,7 @@ import {
   Camera, CheckCircle2, ChevronRight, Bell, Sparkles, 
   Flame, Lock, ArrowUpRight, Clock, MapPin, QrCode, Send,
   Timer, BookOpen, ShoppingBag, Trophy, FileText, Play,
-  AlertTriangle, Calculator, Building2
+  AlertTriangle, Calculator, Building2, Cake
 } from 'lucide-react';
 import { StudentProfile, ClassSession, Invoice, Announcement, ChatMessage, RankingMember } from '../../types';
 import { BeltBadge } from '../common/BeltBadge';
@@ -31,6 +31,7 @@ interface StudentViewProps {
   onOpenContract?: () => void;
   onOpenTournaments?: () => void;
   onOpenFinancial?: () => void;
+  onOpenSparringJournal?: () => void;
   academyName?: string;
 }
 
@@ -54,6 +55,7 @@ export const StudentView: React.FC<StudentViewProps> = ({
   onOpenContract,
   onOpenTournaments,
   onOpenFinancial,
+  onOpenSparringJournal,
   academyName,
 }) => {
   const [activeTab, setActiveTab] = useState<'treinos' | 'graduacao' | 'frequencia' | 'financeiro' | 'comunicados'>('treinos');
@@ -113,6 +115,22 @@ export const StudentView: React.FC<StudentViewProps> = ({
           </div>
         </div>
 
+        {/* 🎂 Birthday Congratulations Banner */}
+        <div className="mb-3 p-3 rounded-2xl bg-gradient-to-r from-amber-500/20 via-yellow-500/10 to-amber-950/40 border border-amber-500/40 shadow-sm flex items-center gap-3">
+          <div className="w-10 h-10 rounded-2xl bg-amber-500/20 border border-amber-500/40 text-amber-300 flex items-center justify-center shrink-0">
+            <Cake className="w-5 h-5 animate-bounce text-amber-400" />
+          </div>
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center gap-1.5">
+              <span className="text-xs font-black text-amber-300">🎉 Parabéns pelo seu dia, {student.name.split(' ')[0]}!</span>
+              <span className="text-[9px] bg-amber-500 text-slate-950 font-black px-1.5 py-0.2 rounded-full">HOJE</span>
+            </div>
+            <p className="text-[11px] text-slate-300 leading-tight mt-0.5">
+              Toda a família da <strong className="text-amber-200">{academyName || 'BJJ Academy'}</strong> te parabeniza por mais um ano de vida, saúde e muita garra no tatame! OSS! 🥋🎈
+            </p>
+          </div>
+        </div>
+
         {/* Next Degree Progress Card */}
         <div className="p-3 rounded-2xl bg-slate-900/90 border border-slate-800 shadow-md">
           <div className="flex items-center justify-between text-xs mb-1.5">
@@ -167,7 +185,7 @@ export const StudentView: React.FC<StudentViewProps> = ({
         </div>
 
         {/* Tatame 2.0 Quick Features Bar */}
-        <div className="grid grid-cols-4 gap-1.5 mt-2.5">
+        <div className="grid grid-cols-5 gap-1.5 mt-2.5">
           <button
             onClick={onOpenTechniques}
             className="p-2 rounded-xl bg-slate-900/80 border border-slate-800 hover:border-blue-500/50 flex flex-col items-center gap-1 text-center transition group"
@@ -181,7 +199,7 @@ export const StudentView: React.FC<StudentViewProps> = ({
             className="p-2 rounded-xl bg-slate-900/80 border border-slate-800 hover:border-red-500/50 flex flex-col items-center gap-1 text-center transition group"
           >
             <Timer className="w-3.5 h-3.5 text-red-400 group-hover:scale-110 transition-transform" />
-            <span className="text-[9px] font-semibold text-slate-300 leading-tight">Cronômetro</span>
+            <span className="text-[9px] font-semibold text-slate-300 leading-tight">Placar</span>
           </button>
 
           <button
@@ -199,7 +217,45 @@ export const StudentView: React.FC<StudentViewProps> = ({
             <ShoppingBag className="w-3.5 h-3.5 text-purple-400 group-hover:scale-110 transition-transform" />
             <span className="text-[9px] font-semibold text-slate-300 leading-tight">Pro-Shop</span>
           </button>
+
+          <button
+            onClick={onOpenSparringJournal}
+            className="p-2 rounded-xl bg-gradient-to-b from-red-950/80 to-slate-900/90 border border-red-800/60 hover:border-red-500/80 flex flex-col items-center gap-1 text-center transition group shadow-sm"
+          >
+            <Flame className="w-3.5 h-3.5 text-red-400 group-hover:scale-110 transition-transform" />
+            <span className="text-[9px] font-black text-red-300 leading-tight">Diário Rola</span>
+          </button>
         </div>
+
+        {/* Diário de Rola & Raio-X Técnico Banner */}
+        {onOpenSparringJournal && (
+          <div 
+            onClick={onOpenSparringJournal}
+            className="mt-2.5 p-2.5 rounded-2xl bg-gradient-to-r from-red-950/60 via-slate-900 to-amber-950/40 border border-red-800/40 hover:border-red-500/60 cursor-pointer flex items-center justify-between transition group shadow-md"
+          >
+            <div className="flex items-center gap-2.5">
+              <div className="w-8 h-8 rounded-xl bg-red-600/20 text-red-400 border border-red-500/40 flex items-center justify-center group-hover:scale-105 transition">
+                <Flame className="w-4 h-4" />
+              </div>
+              <div>
+                <div className="flex items-center gap-1.5">
+                  <span className="text-xs font-bold text-white group-hover:text-red-300 transition">
+                    📓 Diário de Rola & Raio-X Técnico
+                  </span>
+                  <span className="px-1.5 py-0.2 rounded-full text-[9px] font-extrabold bg-red-500/20 text-red-400 border border-red-500/30">
+                    Game Analysis
+                  </span>
+                </div>
+                <p className="text-[10px] text-slate-400 leading-tight">
+                  Registre seus rolas do dia, descubra seus golpes favoritos e onde você mais bate
+                </p>
+              </div>
+            </div>
+            <div className="p-1.5 rounded-xl bg-slate-800 text-slate-400 group-hover:text-white transition">
+              <ChevronRight className="w-4 h-4" />
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Internal Navigation Subtabs */}

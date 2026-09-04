@@ -1,23 +1,30 @@
 import React from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { X, Printer, Download, CheckCircle2, ShieldCheck } from 'lucide-react';
+import { X, Printer, Download, CheckCircle2, ShieldCheck, MessageCircle, Share2 } from 'lucide-react';
 import { Invoice } from '../../types';
+import { sendReceiptViaWhatsApp } from '../../utils/whatsappHelper';
 
 interface ReceiptModalProps {
   isOpen: boolean;
   onClose: () => void;
   invoice: Invoice | null;
+  academyName?: string;
 }
 
 export const ReceiptModal: React.FC<ReceiptModalProps> = ({
   isOpen,
   onClose,
   invoice,
+  academyName = 'BJJ Academy Brasil',
 }) => {
   if (!isOpen || !invoice) return null;
 
   const handlePrint = () => {
     window.print();
+  };
+
+  const handleShareWhatsApp = () => {
+    sendReceiptViaWhatsApp(invoice, academyName);
   };
 
   return (
@@ -90,21 +97,31 @@ export const ReceiptModal: React.FC<ReceiptModalProps> = ({
           </div>
 
           {/* Actions */}
-          <div className="pt-2 border-t border-slate-800 flex gap-2 print:hidden">
+          <div className="pt-2 border-t border-slate-800 space-y-2 print:hidden">
             <button
-              onClick={handlePrint}
-              className="flex-1 py-2 px-3 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold flex items-center justify-center gap-1.5 transition"
+              onClick={handleShareWhatsApp}
+              className="w-full py-2.5 px-3 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold flex items-center justify-center gap-2 transition shadow-lg shadow-emerald-950"
             >
-              <Printer className="w-3.5 h-3.5" /> Imprimir
+              <MessageCircle className="w-4 h-4 text-white fill-emerald-100/20" />
+              <span>Enviar Comprovante no WhatsApp (1 Clique)</span>
             </button>
-            <button
-              onClick={() => {
-                alert('Recibo gerado em PDF com sucesso!');
-              }}
-              className="flex-1 py-2 px-3 rounded-xl bg-red-600 hover:bg-red-700 text-white text-xs font-semibold flex items-center justify-center gap-1.5 transition shadow-md"
-            >
-              <Download className="w-3.5 h-3.5" /> Salvar PDF
-            </button>
+
+            <div className="flex gap-2">
+              <button
+                onClick={handlePrint}
+                className="flex-1 py-2 px-3 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold flex items-center justify-center gap-1.5 transition"
+              >
+                <Printer className="w-3.5 h-3.5" /> Imprimir
+              </button>
+              <button
+                onClick={() => {
+                  alert('Recibo gerado em PDF com sucesso!');
+                }}
+                className="flex-1 py-2 px-3 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold flex items-center justify-center gap-1.5 transition border border-slate-700"
+              >
+                <Download className="w-3.5 h-3.5" /> Salvar PDF
+              </button>
+            </div>
           </div>
         </motion.div>
       </div>

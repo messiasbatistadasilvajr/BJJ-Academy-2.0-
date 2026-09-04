@@ -1,4 +1,10 @@
-export type UserRole = 'student' | 'parent' | 'teacher' | 'manager';
+export type UserRole = 
+  | 'general_manager'       // 👑 Gestor Geral BJJ ACADEMY (Messias Batista da Silva Jr - Super Admin)
+  | 'manager'               // 🏢 Responsável da Academia (Gestor da Unidade Cadastrada)
+  | 'teacher'               // 🥋 Professor Cadastrado (Aulas, Alunos, Graduação, Lembretes)
+  | 'student'               // 🥋 Aluno
+  | 'parent'                // 👨‍👧 Portal Responsável
+  | 'academy_registration'; // 🏛️ Cadastrar / Gerenciar Rede de Academias
 
 export type BeltColor = 
   | 'white' 
@@ -98,7 +104,7 @@ export interface Announcement {
   id: string;
   title: string;
   date: string;
-  category: 'Geral' | 'Seminário' | 'Graduação' | 'Horários' | 'Kids';
+  category: 'Geral' | 'Seminário' | 'Graduação' | 'Horários' | 'Kids' | 'Competição' | 'Mural do Tatame';
   content: string;
   author: string;
   read: boolean;
@@ -266,6 +272,7 @@ export interface AcademyPricingPlan {
   monthlyEquivalent: number; // e.g. 220.00
   description: string;
   isPopular?: boolean;
+  billingCycle?: 'monthly' | 'quarterly' | 'semiannual' | 'annual';
 }
 
 export type FinancialAccessProfile = 'general_manager' | 'unit_manager';
@@ -282,12 +289,14 @@ export interface RegisteredAcademy {
   neighborhood?: string;
   cep?: string;
   logo?: string;
+  logoPresetId?: string;
   phone: string;
   email?: string;
   headInstructor?: string;
   crefNumber?: string;
   studentCapacity?: number;
   tatamiAreaM2?: number;
+  activeStudentsCount?: number;
   voiceEnabled: boolean;
   voiceStyle: AcademyVoiceStyle;
   notificationFormat: NotificationFormat;
@@ -305,6 +314,17 @@ export interface RegisteredAcademy {
   monthlyRevenueTarget?: number;
   status?: 'active' | 'pending_approval' | 'suspended';
   platformPlan?: 'basic' | 'pro' | 'enterprise';
+  monthlyPlatformFeeBRL?: number;
+  platformFeeStatus?: 'paid' | 'pending' | 'overdue';
+  lastPlatformPaymentDate?: string;
+  voiceSettings?: {
+    enabled: boolean;
+    voiceStyle: AcademyVoiceStyle;
+    voiceSpeed: number;
+    voiceVolume: number;
+    chimeType: ChimeType;
+    customWelcomeMessage?: string;
+  };
   createdAt?: string;
 }
 
@@ -318,8 +338,11 @@ export interface PlatformGeneralManager {
   pixType: 'cpf';
   purpose: string; // Para pagamentos das academias à plataforma BJJ Academy
   email: string;
+  phone?: string;
   status: 'active' | 'verified';
-  monthlyPlatformFeePerAcademy: number; // e.g. R$ 250,00
+  monthlyPlatformFeePerAcademy: number; // Legado (compatibilidade)
+  fixedMonthlyFee?: number; // R$ 130,00 por academia
+  activeStudentFee?: number; // R$ 1,30 por aluno ativo
   registeredAt: string;
 }
 
@@ -329,11 +352,166 @@ export interface PlatformAcademyPayment {
   academyName: string;
   branch: string;
   amount: number;
+  fixedAmount?: number; // R$ 130,00
+  variableAmount?: number; // R$ 1,30 x alunos
+  activeStudentsCount?: number;
   dueDate: string;
   status: 'paid' | 'pending' | 'overdue';
   paidDate?: string;
   referenceMonth: string;
   invoiceRef: string;
   pixCode?: string;
+}
+
+// 8. CRM Leads & Sales Funnel (Kanban)
+export type CRMLeadStage = 
+  | 'novo_lead'
+  | 'contato_realizado'
+  | 'aula_agendada'
+  | 'compareceu'
+  | 'matricula_fechada'
+  | 'perdido';
+
+export interface CRMLead {
+  id: string;
+  name: string;
+  phone: string;
+  email?: string;
+  interest: string;
+  stage: CRMLeadStage;
+  status?: string;
+  date?: string;
+  createdAt: string;
+  trialDate?: string;
+  channel?: 'instagram' | 'indicacao' | 'google' | 'passante' | 'whatsapp' | string;
+  source?: 'Instagram' | 'Indicação' | 'Google' | 'Passante' | 'WhatsApp' | string;
+  notes?: string;
+  value?: number; // Valor previsto mensalidade
+  estimatedMonthlyFee?: number;
+}
+
+// 9. Photo Attendance AI (Gemini Vision)
+export interface DetectedAthlete {
+  id: string;
+  name: string;
+  belt: BeltColor;
+  stripes: number;
+  confidence: number;
+  confirmed: boolean;
+  notes?: string;
+}
+
+// 10. AI Coach Types
+export interface AICoachLessonPlan {
+  id: string;
+  title: string;
+  targetLevel: 'Iniciantes' | 'Intermediário / Avançado' | 'Kids' | 'Competição';
+  theme: string;
+  warmup: {
+    title: string;
+    durationMinutes: number;
+    drills: string[];
+  };
+  techniqueOfTheWeek: {
+    name: string;
+    category: TechniqueCategory;
+    durationMinutes: number;
+    steps: string[];
+    invisibleDetails: string[];
+  };
+  sparringDrill: {
+    format: string;
+    durationMinutes: number;
+    situationalRule: string;
+  };
+  coachingAdvice: string;
+  createdAt: string;
+}
+
+// 11. Radar Anti-Evasão & Retenção Ativa (Churn Alert)
+export type ChurnRiskLevel = 'baixo' | 'moderado' | 'alto' | 'critico';
+export type RetentionContactStatus = 'pendente' | 'contatado' | 'resgatado' | 'pausado' | 'cancelado';
+
+export interface RetentionAlertItem {
+  id: string;
+  studentId: string;
+  studentName: string;
+  studentPhone: string;
+  studentAvatar: string;
+  studentBelt: BeltColor;
+  academyId: string;
+  academyName: string;
+  lastAttendanceDate: string;
+  daysAbsent: number;
+  churnRisk: ChurnRiskLevel;
+  contactStatus: RetentionContactStatus;
+  lastContactDate?: string;
+  contactNotes?: string;
+  detectedCause?: 'lesao' | 'trabalho' | 'financeiro' | 'desmotivado' | 'indefinido';
+  monthlyFee: number;
+  preferredClassTime?: string;
+}
+
+// 12. Diário de Rola & Análise de Jogo do Atleta (Sparring Journal & Game Analysis)
+export interface SparringSubmission {
+  id: string;
+  technique: string;
+  position: 'Guarda Fechada' | 'Meia-Guarda' | 'Passagem' | 'Montada' | 'Costas' | '100kg / Norte-Sul' | 'Outro';
+  count: number;
+}
+
+export interface SparringSession {
+  id: string;
+  studentId: string;
+  studentName?: string;
+  date: string;
+  time?: string;
+  trainingPartner: string;
+  partnerBelt: BeltColor;
+  giType: 'Gi' | 'No-Gi';
+  durationMinutes: number;
+  roundsCount: number;
+  intensity: 'Leve (Técnico)' | 'Moderado' | 'Guerra (Intenso)';
+  submissionsApplied: SparringSubmission[];
+  submissionsConceded: SparringSubmission[];
+  sweepsCount: number;
+  guardPassesCount: number;
+  takedownsCount: number;
+  notes: string;
+  rating: 1 | 2 | 3 | 4 | 5;
+  createdAt?: string;
+}
+
+export interface AthleteGameAnalysis {
+  totalSparringSessions: number;
+  totalRounds: number;
+  totalSubmissionsApplied: number;
+  totalSubmissionsConceded: number;
+  submissionRatioPercent: number;
+  topAttackingPosition: string;
+  topFavoriteSubmission: string;
+  criticalVulnerability: string;
+  defensiveRecommendation: string;
+  styleProfile: 'Passador Agressivo' | 'Guardista Técnico' | 'Finalizador Rápido' | 'Lutador Completo';
+}
+
+export interface BirthdayPerson {
+  id: string;
+  name: string;
+  role: 'student' | 'teacher' | 'kids';
+  birthDate: string; // "DD/MM" or "DD/MM/AAAA"
+  birthDay: number; // 1 - 31
+  birthMonth: number; // 1 - 12 (1 = Jan, 9 = Set)
+  phone: string;
+  email?: string;
+  avatar: string;
+  belt?: BeltColor;
+  stripes?: number;
+  academyId?: string;
+  academyName?: string;
+  congratulated?: boolean;
+  congratulatedDate?: string;
+  congratulatedChannel?: 'whatsapp' | 'mural' | 'tatame';
+  customMessage?: string;
 }
 

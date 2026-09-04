@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { motion } from 'motion/react';
 import { 
   BarChart3, Users, DollarSign, TrendingUp, AlertTriangle, 
@@ -7,15 +7,18 @@ import {
   Phone, MessageSquare, ArrowUpRight, Zap, RefreshCw,
   Tablet, ShoppingBag, Award, FileText, Trophy, Volume2,
   Lock, Unlock, Calculator, Building2, ShieldAlert, Copy, Check,
-  QrCode, CheckCheck, Edit3, Sparkles
+  QrCode, CheckCheck, Edit3, Sparkles, Download, AlertCircle, MessageCircle, Cake
 } from 'lucide-react';
 import { 
   ClassSession, Invoice, Announcement, PushNotification, 
   RegisteredAcademy, FinancialAccessProfile, PlatformGeneralManager, 
-  PlatformAcademyPayment 
+  PlatformAcademyPayment, CRMLead, CRMLeadStage
 } from '../../types';
-import { defaultPlatformGeneralManager, mockPlatformAcademyPayments } from '../../data/mockData';
-import { calculateLateFeeAndInterest, formatBRL } from '../../utils/financialCalculations';
+import { defaultPlatformGeneralManager, mockPlatformAcademyPayments, mockCRMLeads } from '../../data/mockData';
+import { calculateLateFeeAndInterest, formatBRL, calculateSaasLicenseFee, SAAS_FIXED_FEE_BRL, SAAS_PER_STUDENT_FEE_BRL } from '../../utils/financialCalculations';
+import { exportFinancialInvoicesCSV, exportAcademiesListCSV } from '../../utils/csvExport';
+import { sendReceiptViaWhatsApp, sendReminderViaWhatsApp } from '../../utils/whatsappHelper';
+import { DueAlertsDrawer } from '../common/DueAlertsDrawer';
 
 interface ManagerViewProps {
   classes: ClassSession[];
@@ -32,12 +35,21 @@ interface ManagerViewProps {
   onOpenTournaments?: () => void;
   onOpenVoiceSettings?: () => void;
   onOpenFinancial?: () => void;
+  onOpenSaaSSimulator?: () => void;
+  onOpenMySaaSSubscription?: () => void;
+  onOpenDataMigration?: () => void;
+  onOpenAICoach?: () => void;
   activeAcademyName?: string;
   activeAcademyId?: string;
   academies?: RegisteredAcademy[];
   generalManager?: PlatformGeneralManager;
   onUpdateGeneralManager?: (gm: PlatformGeneralManager) => void;
   onOpenAcademyRegistration?: () => void;
+  isGeneralManager?: boolean;
+  onOpenRetentionRadar?: () => void;
+  retentionAlertsCount?: number;
+  onOpenBirthdayAlert?: () => void;
+  todayBirthdaysCount?: number;
 }
 
 export const ManagerView: React.FC<ManagerViewProps> = ({
@@ -55,19 +67,124 @@ export const ManagerView: React.FC<ManagerViewProps> = ({
   onOpenTournaments,
   onOpenVoiceSettings,
   onOpenFinancial,
+  onOpenSaaSSimulator,
+  onOpenMySaaSSubscription,
+  onOpenDataMigration,
+  onOpenAICoach,
   activeAcademyName = 'BJJ Academy',
   activeAcademyId = 'acad_bjj_jardins',
   academies = [],
   generalManager = defaultPlatformGeneralManager,
   onUpdateGeneralManager,
   onOpenAcademyRegistration,
+  isGeneralManager = false,
+  onOpenRetentionRadar,
+  retentionAlertsCount,
+  onOpenBirthdayAlert,
+  todayBirthdaysCount,
 }) => {
   const [activeTab, setActiveTab] = useState<'dashboard' | 'financeiro' | 'crm' | 'push' | 'academies'>('dashboard');
   
+  // CRM Kanban Leads state
+  const [leads, setLeads] = useState<CRMLead[]>(() => {
+    const saved = localStorage.getItem('bjj_crm_leads');
+    return saved ? JSON.parse(saved) : mockCRMLeads;
+  });
+  const [isNewLeadOpen, setIsNewLeadOpen] = useState(false);
+  const [newLeadName, setNewLeadName] = useState('');
+  const [newLeadPhone, setNewLeadPhone] = useState('');
+  const [newLeadInterest, setNewLeadInterest] = useState('Jiu-Jitsu Adulto Fundamentos');
+  const [newLeadChannel, setNewLeadChannel] = useState<'instagram' | 'indicacao' | 'google' | 'passante' | 'whatsapp'>('instagram');
+  const [newLeadNotes, setNewLeadNotes] = useState('');
+
+  const saveLeadsToStorage = (updated: CRMLead[]) => {
+    setLeads(updated);
+    localStorage.setItem('bjj_crm_leads', JSON.stringify(updated));
+  };
+
+  const handleMoveLeadStage = (leadId: string, direction: 'next' | 'prev') => {
+    const stageOrder: CRMLeadStage[] = [
+      'novo_lead',
+      'contato_realizado',
+      'aula_agendada',
+      'compareceu',
+      'matricula_fechada',
+      'perdido'
+    ];
+
+    const updated = leads.map(ld => {
+      if (ld.id === leadId) {
+        const currentIdx = stageOrder.indexOf(ld.stage);
+        const newIdx = direction === 'next' 
+          ? Math.min(stageOrder.length - 1, currentIdx + 1)
+          : Math.max(0, currentIdx - 1);
+        return { ...ld, stage: stageOrder[newIdx] };
+      }
+      return ld;
+    });
+
+    saveLeadsToStorage(updated);
+  };
+
+  const handleAddLead = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newLeadName.trim() || !newLeadPhone.trim()) return;
+
+    const created: CRMLead = {
+      id: `lead_${Date.now()}`,
+      name: newLeadName.trim(),
+      phone: newLeadPhone.trim(),
+      interest: newLeadInterest,
+      channel: newLeadChannel,
+      stage: 'novo_lead',
+      status: 'Aguardando Primeiro Contato',
+      date: new Date().toLocaleDateString('pt-BR'),
+      createdAt: new Date().toISOString(),
+      notes: newLeadNotes.trim() || undefined,
+      estimatedMonthlyFee: 260
+    };
+
+    saveLeadsToStorage([created, ...leads]);
+    setNewLeadName('');
+    setNewLeadPhone('');
+    setNewLeadNotes('');
+    setIsNewLeadOpen(false);
+  };
+
+  const handleSendLeadWhatsApp = (lead: CRMLead, templateType: 'boas_vindas' | 'lembrete_aula' | 'matricula' | 'reengajamento') => {
+    const cleanPhone = lead.phone.replace(/\D/g, '');
+    let text = '';
+
+    if (templateType === 'boas_vindas') {
+      text = `Olá ${lead.name}! Tudo bem? Vi que você tem interesse em treinar Jiu-Jitsu conosco na ${activeAcademyName}. Gostaria de agendar uma aula experimental gratuita para conhecer nosso tatame e metodologia? Oss! 🥋`;
+    } else if (templateType === 'lembrete_aula') {
+      text = `Olá ${lead.name}! Passando para lembrar da sua aula experimental de Jiu-Jitsu amanhã na ${activeAcademyName}. Chegue 10 minutos antes com roupa confortável (bermuda e camiseta). Temos kimono higienizado para você. Te esperamos no tatame! Oss!`;
+    } else if (templateType === 'matricula') {
+      text = `Parabéns ${lead.name}! Seja muito bem-vindo(a) à família ${activeAcademyName}! Seu cadastro foi concluído com sucesso. Baixe nosso app para acompanhar seus graus, frequência e treinos. Oss!`;
+    } else {
+      text = `Olá ${lead.name}, tudo bem? Sentimos sua falta aqui no tatame da ${activeAcademyName}! Estamos com novas turmas e horários flexíveis. Vamos retomar seus treinos de Jiu-Jitsu nesta semana?`;
+    }
+
+    window.open(`https://wa.me/55${cleanPhone}?text=${encodeURIComponent(text)}`, '_blank');
+  };
+  
   // Financial RBAC & Filter state inside ManagerView
-  const [managerFinancialProfile, setManagerFinancialProfile] = useState<FinancialAccessProfile>('general_manager');
-  const [selectedAcademyId, setSelectedAcademyId] = useState<string>('all');
+  const [managerFinancialProfile, setManagerFinancialProfile] = useState<FinancialAccessProfile>(
+    isGeneralManager ? 'general_manager' : 'unit_manager'
+  );
+  const [selectedAcademyId, setSelectedAcademyId] = useState<string>(
+    isGeneralManager ? 'all' : (activeAcademyId || 'acad_bjj_jardins')
+  );
   const [copiedPixId, setCopiedPixId] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (isGeneralManager) {
+      setManagerFinancialProfile('general_manager');
+    } else {
+      setManagerFinancialProfile('unit_manager');
+      setSelectedAcademyId(activeAcademyId || 'acad_bjj_jardins');
+    }
+  }, [isGeneralManager, activeAcademyId]);
 
   // Platform General Manager credentials & state
   const [gmData, setGmData] = useState<PlatformGeneralManager>(generalManager);
@@ -85,6 +202,26 @@ export const ManagerView: React.FC<ManagerViewProps> = ({
     return saved ? JSON.parse(saved) : mockPlatformAcademyPayments;
   });
   const [selectedPlatformPixItem, setSelectedPlatformPixItem] = useState<PlatformAcademyPayment | null>(null);
+
+  // Filter platform payments for the current view
+  const displayedPlatformPayments = useMemo(() => {
+    if (managerFinancialProfile === 'unit_manager') {
+      return platformPayments.filter(p => p.academyId === activeAcademyId);
+    }
+    return platformPayments;
+  }, [platformPayments, managerFinancialProfile, activeAcademyId]);
+
+  // Smart Due Alerts Drawer State
+  const [isDueAlertsOpen, setIsDueAlertsOpen] = useState(false);
+  const overdueInvoicesCount = invoices.filter(inv => inv.status === 'overdue').length;
+
+  const handleExportInvoicesCSV = () => {
+    exportFinancialInvoicesCSV(invoices, activeAcademyName);
+  };
+
+  const handleExportAcademiesCSV = () => {
+    exportAcademiesListCSV(academies, gmData.name);
+  };
 
   const handleCopyPlatformPix = () => {
     if (navigator.clipboard) {
@@ -192,14 +329,6 @@ export const ManagerView: React.FC<ManagerViewProps> = ({
   const [broadcastTarget, setBroadcastTarget] = useState<'all' | 'students' | 'parents'>('all');
   const [broadcastSent, setBroadcastSent] = useState(false);
 
-  // CRM trial leads
-  const [leads, setLeads] = useState([
-    { id: '1', name: 'Rodrigo Santoro', phone: '(11) 98765-4321', interest: 'Adulto No-Gi', date: 'Hoje 10:15', status: 'Agendado' },
-    { id: '2', name: 'Mariana Costa (Mãe do Leo, 7a)', phone: '(11) 97654-3210', interest: 'Kids Manhã', date: 'Hoje 09:30', status: 'Contato Feito' },
-    { id: '3', name: 'Guilherme Silva', phone: '(11) 96543-2109', interest: 'Fundamentos Noite', date: 'Ontem', status: 'Matrícula Pendente' },
-    { id: '4', name: 'Amanda Torres', phone: '(11) 95432-1098', interest: 'Feminino Defesa', date: '01/09', status: 'Aula Feita' }
-  ]);
-
   const handleBroadcastSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!broadcastTitle.trim() || !broadcastBody.trim()) return;
@@ -222,36 +351,102 @@ export const ManagerView: React.FC<ManagerViewProps> = ({
       <div className="px-5 pt-4 pb-4 bg-gradient-to-b from-slate-900 via-slate-900 to-slate-950 border-b border-slate-800">
         <div className="flex items-center justify-between mb-3">
           <div className="flex items-center gap-2.5">
-            <div className="w-10 h-10 rounded-2xl bg-amber-500/20 border border-amber-500/40 flex items-center justify-center text-amber-400 font-black shadow-lg">
-              🥋
+            <div className={`w-10 h-10 rounded-2xl border flex items-center justify-center font-black shadow-lg ${
+              isGeneralManager
+                ? 'bg-amber-500/20 border-amber-500/40 text-amber-400'
+                : 'bg-cyan-500/20 border-cyan-500/40 text-cyan-400'
+            }`}>
+              {isGeneralManager ? '👑' : '🏢'}
             </div>
             <div>
               <div className="flex items-center gap-1.5">
-                <span className="text-[10px] font-bold text-amber-400 uppercase tracking-wider">
-                  {gmData.role}
+                <span className={`text-[10px] font-bold uppercase tracking-wider ${
+                  isGeneralManager ? 'text-amber-400' : 'text-cyan-400'
+                }`}>
+                  {isGeneralManager ? 'Gestor Geral BJJ ACADEMY' : 'Responsável da Academia Cadastrada'}
                 </span>
-                <span className="text-[9px] bg-emerald-950 text-emerald-300 border border-emerald-700/60 px-1.5 py-0.2 rounded-full font-bold flex items-center gap-0.5">
-                  <ShieldCheck size={10} /> Verificado
+                <span className={`text-[9px] border px-1.5 py-0.2 rounded-full font-bold flex items-center gap-0.5 ${
+                  isGeneralManager 
+                    ? 'bg-amber-950 text-amber-300 border-amber-700/60'
+                    : 'bg-cyan-950 text-cyan-300 border-cyan-700/60'
+                }`}>
+                  <ShieldCheck size={10} /> {isGeneralManager ? 'Super Admin' : 'Blindagem Ativa'}
                 </span>
               </div>
-              <h2 className="text-sm font-black text-white leading-snug">{gmData.name}</h2>
-              <div className="text-[10px] text-slate-400 font-mono flex items-center gap-1.5 mt-0.5">
-                <span>CPF: {gmData.formattedCpf || gmData.cpf}</span>
-                <span>•</span>
-                <span className="text-emerald-400 font-bold">PIX: {gmData.pixKey}</span>
-                <button
-                  type="button"
-                  onClick={() => setIsEditGmOpen(true)}
-                  className="text-slate-400 hover:text-amber-300 transition p-0.5"
-                  title="Editar Dados do Gestor Geral"
-                >
-                  <Edit3 size={11} />
-                </button>
-              </div>
+              <h2 className="text-sm font-black text-white leading-snug">
+                {isGeneralManager ? gmData.name : activeAcademyName}
+              </h2>
+              {isGeneralManager ? (
+                <div className="text-[10px] text-slate-400 font-mono flex items-center gap-1.5 mt-0.5">
+                  <span>CPF: {gmData.formattedCpf || gmData.cpf}</span>
+                  <span>•</span>
+                  <span className="text-emerald-400 font-bold">PIX: {gmData.pixKey}</span>
+                  <button
+                    type="button"
+                    onClick={() => setIsEditGmOpen(true)}
+                    className="text-slate-400 hover:text-amber-300 transition p-0.5"
+                    title="Editar Dados do Gestor Geral"
+                  >
+                    <Edit3 size={11} />
+                  </button>
+                </div>
+              ) : (
+                <div className="text-[10px] text-cyan-200/80 flex items-center gap-1 mt-0.5">
+                  <span>Gestão Financeira & Operacional restrita a esta unidade</span>
+                </div>
+              )}
             </div>
           </div>
 
           <div className="flex items-center gap-1.5">
+            {/* Radar Anti-Evasão Quick Indicator Button */}
+            {onOpenRetentionRadar && (
+              <button
+                onClick={onOpenRetentionRadar}
+                className="px-2.5 py-1.5 rounded-xl border text-[11px] font-bold flex items-center gap-1 transition shadow-sm bg-red-950/60 hover:bg-red-900/80 border-red-500/60 text-red-300 ring-1 ring-red-500/30"
+                title="Radar Anti-Evasão: Alunos com risco de abandono"
+              >
+                <ShieldAlert className="w-3.5 h-3.5 text-red-400 animate-pulse" />
+                <span>Radar Evasão</span>
+                {retentionAlertsCount !== undefined && retentionAlertsCount > 0 && (
+                  <span className="px-1.5 py-0.2 rounded-full text-[9px] bg-red-500 text-white font-black">
+                    {retentionAlertsCount}
+                  </span>
+                )}
+              </button>
+            )}
+
+            {/* Aniversariantes do Mês / Hoje Quick Indicator Button */}
+            {onOpenBirthdayAlert && (
+              <button
+                onClick={onOpenBirthdayAlert}
+                className="px-2.5 py-1.5 rounded-xl border text-[11px] font-bold flex items-center gap-1 transition shadow-sm bg-amber-950/60 hover:bg-amber-900/80 border-amber-500/60 text-amber-300 ring-1 ring-amber-500/30"
+                title="Aniversariantes: Felicitações com o nome oficial da academia"
+              >
+                <Cake className="w-3.5 h-3.5 text-amber-400" />
+                <span>Aniversariantes</span>
+                {todayBirthdaysCount !== undefined && todayBirthdaysCount > 0 && (
+                  <span className="px-1.5 py-0.2 rounded-full text-[9px] bg-amber-500 text-slate-950 font-black">
+                    {todayBirthdaysCount} hoje
+                  </span>
+                )}
+              </button>
+            )}
+
+            {/* Smart Due Alerts Indicator Button */}
+            <button
+              onClick={() => setIsDueAlertsOpen(true)}
+              className={`px-2.5 py-1.5 rounded-xl border text-[11px] font-bold flex items-center gap-1 transition shadow-sm ${
+                overdueInvoicesCount > 0
+                  ? 'bg-amber-950/60 hover:bg-amber-900/80 border-amber-500/60 text-amber-300 ring-1 ring-amber-500/30'
+                  : 'bg-slate-800 hover:bg-slate-700 border-slate-700 text-slate-300'
+              }`}
+              title="Alertas Inteligentes de Vencimento e Cobrança Rápida"
+            >
+              <AlertCircle className={`w-3.5 h-3.5 ${overdueInvoicesCount > 0 ? 'text-amber-400' : 'text-slate-400'}`} />
+              <span>{overdueInvoicesCount > 0 ? `${overdueInvoicesCount} Vencidos` : 'Faturas'}</span>
+            </button>
+
             {/* New Academy Quick Button */}
             <button
               onClick={onOpenAcademyRegistration}
@@ -321,6 +516,76 @@ export const ManagerView: React.FC<ManagerViewProps> = ({
         {/* 1. DASHBOARD */}
         {activeTab === 'dashboard' && (
           <div className="space-y-4">
+            {/* 🚨 Radar Anti-Evasão Warning Banner */}
+            {onOpenRetentionRadar && (
+              <div 
+                onClick={onOpenRetentionRadar}
+                className="p-3.5 rounded-2xl bg-gradient-to-r from-red-950/70 via-slate-900 to-amber-950/50 border border-red-800/50 hover:border-red-500/70 cursor-pointer flex items-center justify-between transition group shadow-md"
+              >
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-2xl bg-red-600/20 text-red-400 border border-red-500/40 flex items-center justify-center group-hover:scale-105 transition">
+                    <ShieldAlert className="w-5 h-5 animate-pulse" />
+                  </div>
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs font-black text-white group-hover:text-red-300 transition">
+                        🚨 Radar Anti-Evasão Ativo
+                      </span>
+                      <span className="px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-red-500/20 text-red-400 border border-red-500/40">
+                        {retentionAlertsCount ?? 4} Alunos em Risco
+                      </span>
+                    </div>
+                    <p className="text-[11px] text-slate-300 leading-tight mt-0.5">
+                      Alunos com mais de 7 dias sem check-in no tatame. Clique para abrir o Radar e disparar o WhatsApp de acolhimento.
+                    </p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-red-600 hover:bg-red-500 text-white font-bold text-xs shadow-md transition shrink-0">
+                  <span className="hidden sm:inline">Resgatar Alunos</span>
+                  <span className="sm:hidden">Resgatar</span>
+                  <ArrowUpRight className="w-4 h-4" />
+                </div>
+              </div>
+            )}
+
+            {/* 🎂 Aniversariantes do Tatame Banner */}
+            {onOpenBirthdayAlert && (
+              <div 
+                onClick={onOpenBirthdayAlert}
+                className="p-3.5 rounded-2xl bg-gradient-to-r from-amber-950/60 via-slate-900 to-yellow-950/40 border border-amber-500/40 hover:border-amber-400 cursor-pointer flex items-center justify-between transition group shadow-md"
+              >
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-2xl bg-amber-500/20 text-amber-400 border border-amber-500/40 flex items-center justify-center group-hover:scale-105 transition shadow-inner">
+                    <Cake className="w-5 h-5 text-amber-400" />
+                  </div>
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs font-black text-white group-hover:text-amber-300 transition">
+                        🎂 Aniversariantes no Tatame
+                      </span>
+                      {todayBirthdaysCount !== undefined && todayBirthdaysCount > 0 ? (
+                        <span className="px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-amber-500/20 text-amber-300 border border-amber-500/40 animate-pulse">
+                          🎉 {todayBirthdaysCount} Hoje!
+                        </span>
+                      ) : (
+                        <span className="px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-slate-800 text-slate-300 border border-slate-700">
+                          Setembro
+                        </span>
+                      )}
+                    </div>
+                    <p className="text-[11px] text-slate-300 leading-tight mt-0.5">
+                      Felicitações oficiais aos alunos e professores com o nome da <strong className="text-amber-300 font-bold">{activeAcademyName}</strong>.
+                    </p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-black text-xs shadow-md transition shrink-0">
+                  <span className="hidden sm:inline">Parabenizar</span>
+                  <span className="sm:hidden">Ver</span>
+                  <ArrowUpRight className="w-4 h-4" />
+                </div>
+              </div>
+            )}
+
             {/* KPI Cards Grid */}
             <div className="grid grid-cols-2 gap-2.5">
               <div className="p-3.5 rounded-2xl bg-slate-900 border border-slate-800 space-y-1">
@@ -425,6 +690,118 @@ export const ManagerView: React.FC<ManagerViewProps> = ({
                   <span className="text-xs font-bold text-white mt-1">Contratos & Termos</span>
                   <span className="text-[10px] text-slate-400">Assinaturas e atestados</span>
                 </button>
+
+                {onOpenRetentionRadar && (
+                  <button
+                    onClick={onOpenRetentionRadar}
+                    className="p-3 rounded-2xl bg-gradient-to-br from-rose-950/40 via-slate-950 to-slate-900 border border-rose-500/40 hover:border-rose-400 flex flex-col items-start gap-1 text-left transition group shadow-sm col-span-2"
+                  >
+                    <div className="w-full flex items-center justify-between">
+                      <div className="flex items-center gap-2.5">
+                        <div className="w-8 h-8 rounded-xl bg-rose-500/20 text-rose-400 flex items-center justify-center group-hover:scale-110 transition-transform">
+                          <ShieldAlert className="w-4 h-4" />
+                        </div>
+                        <div>
+                          <span className="text-xs font-bold text-white block">🚨 Radar Anti-Evasão & Retenção de Alunos</span>
+                          <span className="text-[10px] text-rose-300/80">Identifique alunos ausentes & resgate via WhatsApp humanizado</span>
+                        </div>
+                      </div>
+                      <span className="text-[10px] bg-rose-500/20 text-rose-300 font-bold px-2 py-0.5 rounded-full border border-rose-500/40">
+                        {retentionAlertsCount ?? 4} em risco →
+                      </span>
+                    </div>
+                  </button>
+                )}
+
+                {onOpenBirthdayAlert && (
+                  <button
+                    onClick={onOpenBirthdayAlert}
+                    className="p-3 rounded-2xl bg-gradient-to-br from-amber-950/40 via-slate-950 to-slate-900 border border-amber-500/40 hover:border-amber-400 flex flex-col items-start gap-1 text-left transition group shadow-sm col-span-2"
+                  >
+                    <div className="w-full flex items-center justify-between">
+                      <div className="flex items-center gap-2.5">
+                        <div className="w-8 h-8 rounded-xl bg-amber-500/20 text-amber-400 flex items-center justify-center group-hover:scale-110 transition-transform">
+                          <Cake className="w-4 h-4" />
+                        </div>
+                        <div>
+                          <span className="text-xs font-bold text-white block">🎂 Aniversariantes & Felicitações Oficiais</span>
+                          <span className="text-[10px] text-amber-300/80">Envie parabéns via WhatsApp e mural com o nome da {activeAcademyName}</span>
+                        </div>
+                      </div>
+                      <span className="text-[10px] bg-amber-500/20 text-amber-300 font-bold px-2 py-0.5 rounded-full border border-amber-500/40">
+                        {todayBirthdaysCount !== undefined && todayBirthdaysCount > 0 ? `${todayBirthdaysCount} hoje!` : 'Ver Todos →'}
+                      </span>
+                    </div>
+                  </button>
+                )}
+
+                <button
+                  onClick={onOpenAcademyRegistration}
+                  className="p-3 rounded-2xl bg-gradient-to-br from-red-950/50 via-slate-950 to-amber-950/40 border border-amber-500/40 hover:border-amber-400 flex flex-col items-start gap-1 text-left transition group col-span-2 shadow-sm"
+                >
+                  <div className="w-full flex items-center justify-between">
+                    <div className="flex items-center gap-2.5">
+                      <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-red-600 to-amber-600 text-white flex items-center justify-center group-hover:scale-110 transition-transform shadow-md">
+                        <Building2 className="w-4 h-4" />
+                      </div>
+                      <div>
+                        <span className="text-xs font-black text-white block">Página de Cadastro de Academias & Rede</span>
+                        <span className="text-[10px] text-amber-300/90 font-medium">Cadastrar filiais, CNPJ, PIX, Tatames, Voz e Repasses</span>
+                      </div>
+                    </div>
+                    <span className="text-[10px] bg-amber-500/20 text-amber-300 font-bold px-2 py-0.5 rounded-full border border-amber-500/40">
+                      Abrir Página →
+                    </span>
+                  </div>
+                </button>
+
+                {/* SaaS Scale Simulator */}
+                <button
+                  onClick={onOpenSaaSSimulator}
+                  className="p-3 rounded-2xl bg-gradient-to-br from-emerald-950/40 via-slate-950 to-slate-900 border border-emerald-500/40 hover:border-emerald-400 flex flex-col items-start gap-1 text-left transition group shadow-sm"
+                >
+                  <div className="w-8 h-8 rounded-xl bg-emerald-500/20 text-emerald-400 flex items-center justify-center group-hover:scale-110 transition-transform">
+                    <TrendingUp className="w-4 h-4" />
+                  </div>
+                  <span className="text-xs font-bold text-white mt-1">Simulador SaaS</span>
+                  <span className="text-[10px] text-emerald-300/80">Projetar MRR, ARR e Escala</span>
+                </button>
+
+                {/* My SaaS Subscription */}
+                <button
+                  onClick={onOpenMySaaSSubscription}
+                  className="p-3 rounded-2xl bg-gradient-to-br from-amber-950/40 via-slate-950 to-slate-900 border border-amber-500/40 hover:border-amber-400 flex flex-col items-start gap-1 text-left transition group shadow-sm"
+                >
+                  <div className="w-8 h-8 rounded-xl bg-amber-500/20 text-amber-400 flex items-center justify-center group-hover:scale-110 transition-transform">
+                    <ShieldCheck className="w-4 h-4" />
+                  </div>
+                  <span className="text-xs font-bold text-white mt-1">Minha Assinatura</span>
+                  <span className="text-[10px] text-amber-300/80">Licença & PIX do Gestor</span>
+                </button>
+
+                {/* Data Migration CSV */}
+                <button
+                  onClick={onOpenDataMigration}
+                  className="p-3 rounded-2xl bg-gradient-to-br from-indigo-950/40 via-slate-950 to-slate-900 border border-indigo-500/40 hover:border-indigo-400 flex flex-col items-start gap-1 text-left transition group shadow-sm"
+                >
+                  <div className="w-8 h-8 rounded-xl bg-indigo-500/20 text-indigo-400 flex items-center justify-center group-hover:scale-110 transition-transform">
+                    <Download className="w-4 h-4" />
+                  </div>
+                  <span className="text-xs font-bold text-white mt-1">Migração em Lote</span>
+                  <span className="text-[10px] text-indigo-300/80">Importar alunos via CSV</span>
+                </button>
+
+                {/* AI Coach */}
+                <button
+                  onClick={onOpenAICoach}
+                  className="p-3 rounded-2xl bg-gradient-to-br from-purple-950/40 via-slate-950 to-slate-900 border border-purple-500/40 hover:border-purple-400 flex flex-col items-start gap-1 text-left transition group shadow-sm"
+                >
+                  <div className="w-8 h-8 rounded-xl bg-purple-500/20 text-purple-400 flex items-center justify-center group-hover:scale-110 transition-transform">
+                    <Sparkles className="w-4 h-4" />
+                  </div>
+                  <span className="text-xs font-bold text-white mt-1">BJJ AI Coach</span>
+                  <span className="text-[10px] text-purple-300/80">Planos de aula & drills</span>
+                </button>
               </div>
 
               <button
@@ -519,78 +896,49 @@ export const ManagerView: React.FC<ManagerViewProps> = ({
                   Perfil de Acesso Financeiro:
                 </span>
                 <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
-                  managerFinancialProfile === 'general_manager'
+                  isGeneralManager
                     ? 'bg-amber-950 text-amber-300 border border-amber-800'
                     : 'bg-cyan-950 text-cyan-300 border border-cyan-800'
                 }`}>
-                  {managerFinancialProfile === 'general_manager' ? '👑 Gestor Geral (Rede Toda)' : '🔒 Gestor de Unidade'}
+                  {isGeneralManager ? '👑 Gestor Geral (Rede Toda)' : '🔒 Gestor de Unidade (Blindado)'}
                 </span>
               </div>
 
-              {/* Profile Toggle */}
-              <div className="grid grid-cols-2 gap-2 text-xs">
-                <button
-                  type="button"
-                  onClick={() => {
-                    setManagerFinancialProfile('general_manager');
-                    setSelectedAcademyId('all');
-                  }}
-                  className={`p-2 rounded-xl border text-left flex items-center gap-2 transition ${
-                    managerFinancialProfile === 'general_manager'
-                      ? 'bg-amber-500/10 border-amber-500/50 text-amber-300 font-bold'
-                      : 'bg-slate-950 border-slate-800 text-slate-400 hover:text-white'
-                  }`}
-                >
-                  <Unlock size={14} className="text-amber-400 shrink-0" />
-                  <div className="truncate">
-                    <div className="font-bold text-[11px]">Gestor Geral BJJ ACADEMY</div>
-                    <div className="text-[9px] text-slate-400">Acesso irrestrito a todas filiais</div>
+              {/* Profile Controls based on Role */}
+              {isGeneralManager ? (
+                <>
+                  <div className="p-2 rounded-xl bg-amber-950/40 border border-amber-800/40 text-amber-300 text-[11px] flex items-center gap-2">
+                    <ShieldAlert size={14} className="text-amber-400 shrink-0" />
+                    <span>
+                      <strong>Super Admin Ativo:</strong> Você pode visualizar e modificar tudo em qualquer página e filial da rede.
+                    </span>
                   </div>
-                </button>
 
-                <button
-                  type="button"
-                  onClick={() => {
-                    setManagerFinancialProfile('unit_manager');
-                    setSelectedAcademyId(activeAcademyId);
-                  }}
-                  className={`p-2 rounded-xl border text-left flex items-center gap-2 transition ${
-                    managerFinancialProfile === 'unit_manager'
-                      ? 'bg-cyan-500/10 border-cyan-500/50 text-cyan-300 font-bold'
-                      : 'bg-slate-950 border-slate-800 text-slate-400 hover:text-white'
-                  }`}
-                >
-                  <Lock size={14} className="text-cyan-400 shrink-0" />
-                  <div className="truncate">
-                    <div className="font-bold text-[11px]">Gestor da Unidade</div>
-                    <div className="text-[9px] text-slate-400">Acesso apenas às suas finanças</div>
+                  <div className="flex items-center justify-between gap-2 pt-1">
+                    <span className="text-xs text-slate-400 flex items-center gap-1 font-semibold">
+                      <Building2 size={13} className="text-amber-400" /> Filtrar Filial:
+                    </span>
+                    <select
+                      value={selectedAcademyId}
+                      onChange={(e) => setSelectedAcademyId(e.target.value)}
+                      className="bg-slate-950 border border-slate-700 text-xs text-white rounded-xl px-2.5 py-1 font-bold"
+                    >
+                      <option value="all">🌐 Todas as Filiais (Consolidado)</option>
+                      {academies.map(a => (
+                        <option key={a.id} value={a.id}>{a.name} ({a.city})</option>
+                      ))}
+                    </select>
                   </div>
-                </button>
-              </div>
-
-              {/* Security Status Message */}
-              {managerFinancialProfile === 'unit_manager' ? (
-                <div className="p-2 rounded-xl bg-cyan-950/40 border border-cyan-800/40 text-cyan-300 text-[11px] flex items-center gap-2">
-                  <ShieldAlert size={14} className="text-cyan-400 shrink-0" />
-                  <span>
-                    Visão isolada para: <strong>{academies.find(a => a.id === activeAcademyId)?.name || activeAcademyName}</strong>. Finanças de outras academias estão protegidas e restritas ao Gestor Geral.
-                  </span>
-                </div>
+                </>
               ) : (
-                <div className="flex items-center justify-between gap-2">
-                  <span className="text-xs text-slate-400 flex items-center gap-1 font-semibold">
-                    <Building2 size={13} className="text-amber-400" /> Filtrar Filial:
-                  </span>
-                  <select
-                    value={selectedAcademyId}
-                    onChange={(e) => setSelectedAcademyId(e.target.value)}
-                    className="bg-slate-950 border border-slate-700 text-xs text-white rounded-xl px-2.5 py-1 font-bold"
-                  >
-                    <option value="all">🌐 Todas as Filiais (Consolidado)</option>
-                    {academies.map(a => (
-                      <option key={a.id} value={a.id}>{a.name}</option>
-                    ))}
-                  </select>
+                <div className="p-2.5 rounded-xl bg-cyan-950/40 border border-cyan-800/40 text-cyan-300 text-xs flex items-center gap-2">
+                  <Lock size={15} className="text-cyan-400 shrink-0" />
+                  <div>
+                    <div className="font-bold text-[11px]">Blindagem de Unidade Ativa</div>
+                    <div className="text-[10px] text-cyan-200/80">
+                      Você tem acesso restrito e exclusivo às finanças, mensalidades e alunos de <strong>{activeAcademyName}</strong>. Dados de outras filiais e repasses gerais estão blindados.
+                    </div>
+                  </div>
                 </div>
               )}
             </div>
@@ -599,24 +947,32 @@ export const ManagerView: React.FC<ManagerViewProps> = ({
             <div className="p-4 rounded-3xl bg-gradient-to-br from-amber-950/40 via-slate-900 to-slate-900 border border-amber-500/40 shadow-xl space-y-3">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
-                  <div className="w-9 h-9 rounded-xl bg-amber-500/20 border border-amber-500/40 flex items-center justify-center text-amber-400 font-bold text-base shadow-sm">
+                  <div className={`w-9 h-9 rounded-xl border flex items-center justify-center font-bold text-base shadow-sm ${
+                    isGeneralManager
+                      ? 'bg-amber-500/20 border-amber-500/40 text-amber-400'
+                      : 'bg-cyan-500/20 border-cyan-500/40 text-cyan-400'
+                  }`}>
                     🏛️
                   </div>
                   <div>
                     <span className="text-[10px] font-black text-amber-400 uppercase tracking-wider flex items-center gap-1">
-                      <Sparkles size={11} /> Plataforma BJJacademy • Gestor Geral
+                      <Sparkles size={11} /> Plataforma BJJacademy • {isGeneralManager ? 'Gestor Geral Master' : 'Sua Licença'}
                     </span>
-                    <h3 className="text-xs font-black text-white">Repasses & Mensalidades das Academias</h3>
+                    <h3 className="text-xs font-black text-white">
+                      {isGeneralManager ? 'Repasses & Mensalidades de Todas as Academias' : 'Assinatura SaaS da Sua Unidade'}
+                    </h3>
                   </div>
                 </div>
 
-                <button
-                  type="button"
-                  onClick={() => setIsEditGmOpen(true)}
-                  className="px-2.5 py-1 rounded-xl bg-slate-850 hover:bg-slate-800 text-slate-300 text-[10px] font-bold flex items-center gap-1 transition border border-slate-750"
-                >
-                  <Edit3 size={11} /> Editar Perfil
-                </button>
+                {isGeneralManager && (
+                  <button
+                    type="button"
+                    onClick={() => setIsEditGmOpen(true)}
+                    className="px-2.5 py-1 rounded-xl bg-slate-850 hover:bg-slate-800 text-slate-300 text-[10px] font-bold flex items-center gap-1 transition border border-slate-750"
+                  >
+                    <Edit3 size={11} /> Editar Perfil
+                  </button>
+                )}
               </div>
 
               {/* General Manager Profile Box */}
@@ -688,17 +1044,29 @@ export const ManagerView: React.FC<ManagerViewProps> = ({
 
               {/* Repasses das Academias */}
               <div className="space-y-1.5 pt-1">
-                <div className="flex items-center justify-between text-[11px]">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1 text-[11px]">
                   <span className="font-bold text-slate-300 flex items-center gap-1">
-                    <Building2 size={12} className="text-amber-400" /> Repasses Mensais das Academias ({formatBRL(gmData.monthlyPlatformFeePerAcademy || 250)}/mês cada)
+                    <Building2 size={12} className="text-amber-400" />
+                    Faturamento SaaS Master: R$ 130,00 fixo + R$ 1,30/aluno ativo
                   </span>
-                  <span className="text-[10px] text-emerald-400 font-mono font-semibold">
-                    {platformPayments.filter(p => p.status === 'paid').length}/{platformPayments.length} Pagos
-                  </span>
+                  <div className="flex items-center gap-2">
+                    {onOpenSaaSSimulator && (
+                      <button
+                        type="button"
+                        onClick={onOpenSaaSSimulator}
+                        className="text-[10px] font-bold text-emerald-400 hover:text-emerald-300 flex items-center gap-1"
+                      >
+                        <TrendingUp size={11} /> Simular Escala MRR →
+                      </button>
+                    )}
+                    <span className="text-[10px] text-emerald-400 font-mono font-semibold">
+                      {platformPayments.filter(p => p.status === 'paid').length}/{platformPayments.length} Pagos
+                    </span>
+                  </div>
                 </div>
 
                 <div className="space-y-1.5 max-h-48 overflow-y-auto no-scrollbar pr-0.5">
-                  {platformPayments.map(p => (
+                  {displayedPlatformPayments.map(p => (
                     <div
                       key={p.id}
                       className="p-2.5 rounded-xl bg-slate-950/60 border border-slate-800/80 flex items-center justify-between gap-2"
@@ -709,7 +1077,7 @@ export const ManagerView: React.FC<ManagerViewProps> = ({
                           <span className="text-[9px] text-slate-400 font-normal">({p.branch})</span>
                         </div>
                         <div className="text-[10px] text-slate-400 font-mono">
-                          Ref: {p.referenceMonth} • Vencimento: {p.dueDate}
+                          Ref: {p.referenceMonth} • {p.activeStudentsCount || 85} alunos ativos • Venc: {p.dueDate}
                         </div>
                       </div>
 
@@ -806,16 +1174,26 @@ export const ManagerView: React.FC<ManagerViewProps> = ({
 
             {/* TRANSACTIONS & OVERDUE INVOICES */}
             <div className="space-y-2">
-              <div className="flex items-center justify-between">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
                 <h4 className="text-xs font-bold uppercase tracking-wider text-slate-400">
                   Faturas & Mensalidades ({filteredInvoices.length})
                 </h4>
-                <button
-                  onClick={onOpenFinancial}
-                  className="text-emerald-400 hover:text-emerald-300 text-[11px] font-bold flex items-center gap-0.5"
-                >
-                  Ver todas no Hub <ArrowUpRight size={12} />
-                </button>
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={handleExportInvoicesCSV}
+                    className="px-2.5 py-1 rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-700 text-emerald-400 hover:text-emerald-300 text-[11px] font-bold flex items-center gap-1.5 transition shadow-sm"
+                    title="Exportar faturas em formato CSV para Excel"
+                  >
+                    <Download size={12} />
+                    <span>Exportar CSV</span>
+                  </button>
+                  <button
+                    onClick={onOpenFinancial}
+                    className="text-emerald-400 hover:text-emerald-300 text-[11px] font-bold flex items-center gap-0.5"
+                  >
+                    Ver todas no Hub <ArrowUpRight size={12} />
+                  </button>
+                </div>
               </div>
 
               <div className="space-y-2">
@@ -886,6 +1264,24 @@ export const ManagerView: React.FC<ManagerViewProps> = ({
                         </div>
                       </div>
 
+                      {/* Paid invoice WhatsApp receipt action */}
+                      {inv.status === 'paid' && (
+                        <div className="mt-2 pt-2 border-t border-slate-800/80 flex items-center justify-between text-[10px]">
+                          <span className="text-emerald-400/80 font-medium">
+                            ✓ Pagamento confirmado
+                          </span>
+                          <button
+                            type="button"
+                            onClick={() => sendReceiptViaWhatsApp(inv)}
+                            className="px-2 py-0.5 rounded bg-emerald-950/60 hover:bg-emerald-900 text-emerald-300 border border-emerald-800/60 font-bold flex items-center gap-1 transition"
+                            title="Enviar Comprovante de Quitação via WhatsApp"
+                          >
+                            <MessageCircle size={10} />
+                            <span>Comprovante WhatsApp</span>
+                          </button>
+                        </div>
+                      )}
+
                       {/* Overdue Calculation Details & WhatsApp button */}
                       {inv.status === 'overdue' && (
                         <div className="mt-2 pt-2 border-t border-red-900/30 flex items-center justify-between text-[10px]">
@@ -906,10 +1302,7 @@ export const ManagerView: React.FC<ManagerViewProps> = ({
                               <span>Copiar PIX</span>
                             </button>
                             <button
-                              onClick={() => {
-                                const msg = `Olá ${inv.studentName}! Notificação ${inv.academyName}: Sua mensalidade de ${formatBRL(inv.amount)} venceu em ${inv.dueDate}. O total atualizado com multa e juros é ${formatBRL(calc.totalUpdatedAmount)}.`;
-                                window.open(`https://wa.me/?text=${encodeURIComponent(msg)}`, '_blank');
-                              }}
+                              onClick={() => sendReminderViaWhatsApp(inv, calc.totalUpdatedAmount)}
                               className="px-2 py-0.5 rounded bg-emerald-600 hover:bg-emerald-500 text-white font-bold flex items-center gap-1"
                             >
                               <MessageSquare size={10} />
@@ -926,50 +1319,312 @@ export const ManagerView: React.FC<ManagerViewProps> = ({
           </div>
         )}
 
-        {/* 3. CRM LEADS */}
+        {/* 3. CRM FUNIL DE VENDAS KANBAN */}
         {activeTab === 'crm' && (
-          <div className="space-y-3">
-            <div className="flex items-center justify-between">
-              <h4 className="text-xs font-bold uppercase tracking-wider text-slate-400">
-                Aulas Experimentais & Contatos Recentes
-              </h4>
-              <span className="text-[10px] text-emerald-400 font-bold bg-emerald-950 px-2 py-0.5 rounded-full border border-emerald-800">
-                4 Novos Leads
-              </span>
-            </div>
-
-            <div className="space-y-2.5">
-              {leads.map((ld) => (
-                <div key={ld.id} className="p-3.5 rounded-2xl bg-slate-900 border border-slate-800 space-y-2">
-                  <div className="flex items-start justify-between">
-                    <div>
-                      <h5 className="text-xs font-bold text-white">{ld.name}</h5>
-                      <p className="text-[11px] text-slate-400">{ld.interest} • {ld.date}</p>
-                    </div>
-                    <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-amber-950/60 border border-amber-800/40 text-amber-400">
-                      {ld.status}
+          <div className="space-y-4">
+            {/* Header with Stats & New Lead button */}
+            <div className="p-4 rounded-3xl bg-slate-900 border border-slate-800 space-y-3">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                <div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-[10px] font-black uppercase tracking-wider text-emerald-400 bg-emerald-950 px-2 py-0.5 rounded-full border border-emerald-800">
+                      CRM & Captação
                     </span>
+                    <span className="text-xs text-slate-400">Funil de Vendas de Novos Alunos</span>
+                  </div>
+                  <h3 className="text-base font-black text-white mt-0.5">Pipeline Comercial do Tatame</h3>
+                </div>
+
+                <button
+                  onClick={() => setIsNewLeadOpen(true)}
+                  className="py-2 px-3.5 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-black text-xs flex items-center justify-center gap-1.5 shadow-md transition shrink-0"
+                >
+                  <Plus className="w-4 h-4" />
+                  <span>Novo Lead / Interessado</span>
+                </button>
+              </div>
+
+              {/* Conversion Metrics Bar */}
+              <div className="grid grid-cols-2 sm:grid-cols-5 gap-2 pt-2 border-t border-slate-800/80 text-center">
+                <div className="p-2 rounded-xl bg-slate-950/60 border border-slate-800">
+                  <span className="text-[10px] font-bold text-slate-400 uppercase block">Total Leads</span>
+                  <span className="text-base font-black text-white font-mono">{leads.length}</span>
+                </div>
+                <div className="p-2 rounded-xl bg-slate-950/60 border border-slate-800">
+                  <span className="text-[10px] font-bold text-blue-400 uppercase block">Em Contato</span>
+                  <span className="text-base font-black text-blue-300 font-mono">
+                    {leads.filter(l => l.stage === 'contato_realizado').length}
+                  </span>
+                </div>
+                <div className="p-2 rounded-xl bg-slate-950/60 border border-slate-800">
+                  <span className="text-[10px] font-bold text-amber-400 uppercase block">Aulas Agendadas</span>
+                  <span className="text-base font-black text-amber-300 font-mono">
+                    {leads.filter(l => l.stage === 'aula_agendada' || l.stage === 'compareceu').length}
+                  </span>
+                </div>
+                <div className="p-2 rounded-xl bg-slate-950/60 border border-slate-800">
+                  <span className="text-[10px] font-bold text-emerald-400 uppercase block">Matrículas Fechadas</span>
+                  <span className="text-base font-black text-emerald-400 font-mono">
+                    {leads.filter(l => l.stage === 'matricula_fechada').length}
+                  </span>
+                </div>
+                <div className="p-2 rounded-xl bg-slate-950/60 border border-slate-800 col-span-2 sm:col-span-1">
+                  <span className="text-[10px] font-bold text-indigo-400 uppercase block">Taxa Conversão</span>
+                  <span className="text-base font-black text-indigo-300 font-mono">
+                    {leads.length > 0
+                      ? Math.round((leads.filter(l => l.stage === 'matricula_fechada').length / leads.length) * 100)
+                      : 0}%
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            {/* Kanban Columns */}
+            <div className="flex gap-3 overflow-x-auto pb-4 no-scrollbar">
+              {(
+                [
+                  { id: 'novo_lead', title: '1. Novo Lead', color: 'border-slate-700 text-slate-300 bg-slate-900/80', badge: 'bg-slate-800 text-slate-300' },
+                  { id: 'contato_realizado', title: '2. Contato Feito', color: 'border-blue-800/80 text-blue-300 bg-blue-950/20', badge: 'bg-blue-950 text-blue-400 border border-blue-800' },
+                  { id: 'aula_agendada', title: '3. Aula Agendada', color: 'border-amber-800/80 text-amber-300 bg-amber-950/20', badge: 'bg-amber-950 text-amber-400 border border-amber-800' },
+                  { id: 'compareceu', title: '4. Compareceu', color: 'border-purple-800/80 text-purple-300 bg-purple-950/20', badge: 'bg-purple-950 text-purple-400 border border-purple-800' },
+                  { id: 'matricula_fechada', title: '5. Matrícula Fechada', color: 'border-emerald-800/80 text-emerald-300 bg-emerald-950/30', badge: 'bg-emerald-950 text-emerald-400 border border-emerald-800' },
+                  { id: 'perdido', title: '6. Perdido', color: 'border-red-900/60 text-red-400 bg-red-950/20', badge: 'bg-red-950 text-red-400 border border-red-900' }
+                ] as const
+              ).map(col => {
+                const stageLeads = leads.filter(l => l.stage === col.id);
+                return (
+                  <div
+                    key={col.id}
+                    className={`min-w-[280px] max-w-[300px] rounded-2xl border p-3 flex flex-col gap-2.5 shrink-0 ${col.color}`}
+                  >
+                    {/* Column Header */}
+                    <div className="flex items-center justify-between pb-1 border-b border-slate-800/80">
+                      <span className="text-xs font-black uppercase tracking-wider">{col.title}</span>
+                      <span className={`text-[10px] font-mono font-black px-2 py-0.5 rounded-full ${col.badge}`}>
+                        {stageLeads.length}
+                      </span>
+                    </div>
+
+                    {/* Cards List */}
+                    <div className="space-y-2.5 flex-1 min-h-[140px]">
+                      {stageLeads.length === 0 ? (
+                        <div className="h-full flex items-center justify-center p-4 text-[11px] text-slate-500 border border-dashed border-slate-800 rounded-xl">
+                          Nenhum lead nesta etapa
+                        </div>
+                      ) : (
+                        stageLeads.map(lead => (
+                          <div
+                            key={lead.id}
+                            className="p-3 rounded-xl bg-slate-950 border border-slate-800 shadow-md space-y-2"
+                          >
+                            <div className="flex items-start justify-between gap-1">
+                              <div className="min-w-0">
+                                <h5 className="text-xs font-black text-white truncate">{lead.name}</h5>
+                                <p className="text-[10px] text-slate-400 truncate">{lead.interest}</p>
+                              </div>
+                              <span className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-slate-800 text-slate-300 shrink-0">
+                                {lead.channel.toUpperCase()}
+                              </span>
+                            </div>
+
+                            {lead.notes && (
+                              <p className="text-[10px] text-slate-400 bg-slate-900 p-1.5 rounded border border-slate-800/80 italic">
+                                "{lead.notes}"
+                              </p>
+                            )}
+
+                            {lead.estimatedMonthlyFee && (
+                              <div className="text-[10px] text-slate-400 flex items-center justify-between">
+                                <span>Mensalidade prevista:</span>
+                                <span className="font-mono font-bold text-emerald-400">
+                                  {formatBRL(lead.estimatedMonthlyFee)}
+                                </span>
+                              </div>
+                            )}
+
+                            {/* WhatsApp Automations Buttons */}
+                            <div className="pt-1.5 border-t border-slate-800/80 space-y-1">
+                              <div className="text-[9px] font-bold text-slate-400 uppercase tracking-wider">
+                                Automação WhatsApp:
+                              </div>
+                              <div className="grid grid-cols-2 gap-1">
+                                <button
+                                  type="button"
+                                  onClick={() => handleSendLeadWhatsApp(lead, 'boas_vindas')}
+                                  className="py-1 px-1.5 rounded bg-emerald-950/60 hover:bg-emerald-900 border border-emerald-800 text-emerald-300 text-[10px] font-bold truncate transition"
+                                  title="Enviar mensagem de Boas-Vindas & Convite de Aula"
+                                >
+                                  💬 Boas-Vindas
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => handleSendLeadWhatsApp(lead, 'lembrete_aula')}
+                                  className="py-1 px-1.5 rounded bg-amber-950/60 hover:bg-amber-900 border border-amber-800 text-amber-300 text-[10px] font-bold truncate transition"
+                                  title="Enviar Lembrete de Aula Experimental"
+                                >
+                                  🥋 Lembrete Aula
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => handleSendLeadWhatsApp(lead, 'matricula')}
+                                  className="py-1 px-1.5 rounded bg-indigo-950/60 hover:bg-indigo-900 border border-indigo-800 text-indigo-300 text-[10px] font-bold truncate transition"
+                                  title="Boas-vindas à Família (Matrícula Fechada)"
+                                >
+                                  🎉 Matrícula
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => handleSendLeadWhatsApp(lead, 'reengajamento')}
+                                  className="py-1 px-1.5 rounded bg-purple-950/60 hover:bg-purple-900 border border-purple-800 text-purple-300 text-[10px] font-bold truncate transition"
+                                  title="Reengajar contato antigo"
+                                >
+                                  🔄 Reengajar
+                                </button>
+                              </div>
+                            </div>
+
+                            {/* Move Pipeline Buttons */}
+                            <div className="flex items-center justify-between pt-1 border-t border-slate-800/60">
+                              <button
+                                type="button"
+                                disabled={col.id === 'novo_lead'}
+                                onClick={() => handleMoveLeadStage(lead.id, 'prev')}
+                                className="px-2 py-0.5 rounded bg-slate-900 hover:bg-slate-800 text-[10px] font-bold text-slate-400 hover:text-white disabled:opacity-30 transition"
+                              >
+                                ← Voltar
+                              </button>
+                              <span className="text-[9px] text-slate-500 font-mono">{lead.date}</span>
+                              <button
+                                type="button"
+                                disabled={col.id === 'perdido' || col.id === 'matricula_fechada'}
+                                onClick={() => handleMoveLeadStage(lead.id, 'next')}
+                                className="px-2 py-0.5 rounded bg-emerald-600/20 hover:bg-emerald-600 text-emerald-300 hover:text-white border border-emerald-500/40 text-[10px] font-bold disabled:opacity-30 transition"
+                              >
+                                Avançar →
+                              </button>
+                            </div>
+                          </div>
+                        ))
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+
+            {/* Modal Novo Lead */}
+            {isNewLeadOpen && (
+              <div className="fixed inset-0 z-50 flex items-center justify-center p-3 bg-black/80 backdrop-blur-sm">
+                <div className="w-full max-w-md bg-slate-950 border border-slate-800 rounded-3xl p-5 shadow-2xl space-y-3">
+                  <div className="flex items-center justify-between border-b border-slate-800 pb-2">
+                    <h4 className="text-sm font-black text-white flex items-center gap-1.5">
+                      <UserPlus className="w-4 h-4 text-emerald-400" /> Cadastrar Novo Lead
+                    </h4>
+                    <button
+                      onClick={() => setIsNewLeadOpen(false)}
+                      className="text-slate-400 hover:text-white"
+                    >
+                      ✕
+                    </button>
                   </div>
 
-                  <div className="flex gap-2 pt-1 border-t border-slate-800/80">
-                    <a
-                      href={`https://wa.me/55${ld.phone.replace(/\D/g, '')}`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="flex-1 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-[11px] font-bold flex items-center justify-center gap-1.5 transition"
-                    >
-                      <MessageSquare className="w-3.5 h-3.5" /> WhatsApp
-                    </a>
-                    <a
-                      href={`tel:${ld.phone.replace(/\D/g, '')}`}
-                      className="px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-[11px] font-semibold flex items-center gap-1"
-                    >
-                      <Phone className="w-3.5 h-3.5" /> Ligar
-                    </a>
-                  </div>
+                  <form onSubmit={handleAddLead} className="space-y-2.5">
+                    <div>
+                      <label className="text-[10px] font-bold uppercase text-slate-400 block mb-1">
+                        Nome do Interessado:
+                      </label>
+                      <input
+                        type="text"
+                        required
+                        value={newLeadName}
+                        onChange={e => setNewLeadName(e.target.value)}
+                        placeholder="Ex: Roberto Silveira"
+                        className="w-full bg-slate-900 border border-slate-800 rounded-xl p-2.5 text-xs text-white focus:outline-none focus:border-emerald-500"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="text-[10px] font-bold uppercase text-slate-400 block mb-1">
+                        WhatsApp (com DDD):
+                      </label>
+                      <input
+                        type="text"
+                        required
+                        value={newLeadPhone}
+                        onChange={e => setNewLeadPhone(e.target.value)}
+                        placeholder="(11) 98888-7777"
+                        className="w-full bg-slate-900 border border-slate-800 rounded-xl p-2.5 text-xs text-white focus:outline-none focus:border-emerald-500"
+                      />
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-2">
+                      <div>
+                        <label className="text-[10px] font-bold uppercase text-slate-400 block mb-1">
+                          Interesse:
+                        </label>
+                        <select
+                          value={newLeadInterest}
+                          onChange={e => setNewLeadInterest(e.target.value)}
+                          className="w-full bg-slate-900 border border-slate-800 rounded-xl p-2 text-xs text-white"
+                        >
+                          <option value="Jiu-Jitsu Adulto Fundamentos">Adulto Fundamentos</option>
+                          <option value="Jiu-Jitsu Feminino">Jiu-Jitsu Feminino</option>
+                          <option value="BJJ Kids (Infantil)">BJJ Kids (Infantil)</option>
+                          <option value="No-Gi & Submission">No-Gi & Submission</option>
+                          <option value="Defesa Pessoal">Defesa Pessoal</option>
+                        </select>
+                      </div>
+
+                      <div>
+                        <label className="text-[10px] font-bold uppercase text-slate-400 block mb-1">
+                          Canal de Origem:
+                        </label>
+                        <select
+                          value={newLeadChannel}
+                          onChange={e => setNewLeadChannel(e.target.value as any)}
+                          className="w-full bg-slate-900 border border-slate-800 rounded-xl p-2 text-xs text-white"
+                        >
+                          <option value="instagram">Instagram</option>
+                          <option value="indicacao">Indicação de Aluno</option>
+                          <option value="google">Google / Site</option>
+                          <option value="passante">Passante / Recepção</option>
+                          <option value="whatsapp">WhatsApp Direto</option>
+                        </select>
+                      </div>
+                    </div>
+
+                    <div>
+                      <label className="text-[10px] font-bold uppercase text-slate-400 block mb-1">
+                        Observações / Histórico:
+                      </label>
+                      <textarea
+                        rows={2}
+                        value={newLeadNotes}
+                        onChange={e => setNewLeadNotes(e.target.value)}
+                        placeholder="Ex: Treinou 1 ano no passado, quer voltar para perder peso."
+                        className="w-full bg-slate-900 border border-slate-800 rounded-xl p-2.5 text-xs text-white focus:outline-none focus:border-emerald-500"
+                      />
+                    </div>
+
+                    <div className="flex justify-end gap-2 pt-2">
+                      <button
+                        type="button"
+                        onClick={() => setIsNewLeadOpen(false)}
+                        className="px-3 py-2 rounded-xl bg-slate-900 text-slate-400 text-xs font-bold"
+                      >
+                        Cancelar
+                      </button>
+                      <button
+                        type="submit"
+                        className="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-black text-xs shadow-md"
+                      >
+                        Salvar no Funil
+                      </button>
+                    </div>
+                  </form>
                 </div>
-              ))}
-            </div>
+              </div>
+            )}
           </div>
         )}
 
@@ -1105,14 +1760,26 @@ export const ManagerView: React.FC<ManagerViewProps> = ({
                   </div>
                 </div>
 
-                <button
-                  type="button"
-                  onClick={onOpenAcademyRegistration}
-                  className="px-5 py-3 rounded-2xl bg-gradient-to-r from-red-600 to-amber-600 hover:from-red-500 hover:to-amber-500 text-white font-black text-xs shadow-xl shadow-red-950 flex items-center justify-center gap-2 transition shrink-0"
-                >
-                  <Plus size={15} />
-                  <span>Cadastrar Nova Academia</span>
-                </button>
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={handleExportAcademiesCSV}
+                    className="px-3 py-3 rounded-2xl bg-slate-800 hover:bg-slate-750 border border-slate-700 text-emerald-400 font-bold text-xs flex items-center justify-center gap-2 transition shrink-0"
+                    title="Exportar dados das filiais em CSV"
+                  >
+                    <Download size={14} />
+                    <span className="hidden sm:inline">Exportar CSV</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={onOpenAcademyRegistration}
+                    className="px-5 py-3 rounded-2xl bg-gradient-to-r from-red-600 to-amber-600 hover:from-red-500 hover:to-amber-500 text-white font-black text-xs shadow-xl shadow-red-950 flex items-center justify-center gap-2 transition shrink-0"
+                  >
+                    <Plus size={15} />
+                    <span>Cadastrar Nova Academia</span>
+                  </button>
+                </div>
               </div>
 
               <div className="pt-2 border-t border-slate-800/80 flex flex-wrap items-center justify-between gap-2 text-xs text-slate-400">
@@ -1374,6 +2041,14 @@ export const ManagerView: React.FC<ManagerViewProps> = ({
           </div>
         </div>
       )}
+
+      {/* Due Alerts Drawer */}
+      <DueAlertsDrawer
+        isOpen={isDueAlertsOpen}
+        onClose={() => setIsDueAlertsOpen(false)}
+        invoices={invoices}
+        activeAcademyName={activeAcademyName}
+      />
     </div>
   );
 };
