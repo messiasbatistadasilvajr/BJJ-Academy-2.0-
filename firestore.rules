@@ -1,0 +1,93 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Global Safety Net
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // Helper functions
+    function isValidId(id) {
+      return id is string && id.size() > 0 && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    // Connection test document
+    match /test/{testId} {
+      allow read: if true;
+    }
+
+    // 1. Students Collection
+    match /students/{studentId} {
+      allow read: if true;
+      allow create, update: if isValidId(studentId)
+        && request.resource.data.name is string
+        && request.resource.data.name.size() > 0
+        && request.resource.data.name.size() <= 150
+        && request.resource.data.belt is string
+        && request.resource.data.stripes is number
+        && request.resource.data.stripes >= 0
+        && request.resource.data.stripes <= 4;
+      allow delete: if isValidId(studentId);
+    }
+
+    // 2. Academies Collection
+    match /academies/{academyId} {
+      allow read: if true;
+      allow create, update: if isValidId(academyId)
+        && request.resource.data.name is string
+        && request.resource.data.name.size() > 0
+        && request.resource.data.name.size() <= 150;
+      allow delete: if isValidId(academyId);
+    }
+
+    // 3. Classes Collection
+    match /classes/{classId} {
+      allow read: if true;
+      allow create, update: if isValidId(classId)
+        && request.resource.data.name is string
+        && request.resource.data.name.size() > 0
+        && request.resource.data.instructor is string;
+      allow delete: if isValidId(classId);
+    }
+
+    // 4. Invoices Collection
+    match /invoices/{invoiceId} {
+      allow read: if true;
+      allow create, update: if isValidId(invoiceId)
+        && request.resource.data.title is string
+        && request.resource.data.amount is number
+        && request.resource.data.amount >= 0
+        && request.resource.data.status in ['paid', 'pending', 'overdue'];
+      allow delete: if isValidId(invoiceId);
+    }
+
+    // 5. Sparring Sessions
+    match /sparring_sessions/{sessionId} {
+      allow read: if true;
+      allow create, update: if isValidId(sessionId)
+        && request.resource.data.studentId is string
+        && request.resource.data.trainingPartner is string;
+      allow delete: if isValidId(sessionId);
+    }
+
+    // 6. Birthday Alerts
+    match /birthdays/{birthdayId} {
+      allow read: if true;
+      allow create, update: if isValidId(birthdayId)
+        && request.resource.data.name is string
+        && request.resource.data.birthDay is number
+        && request.resource.data.birthMonth is number;
+      allow delete: if isValidId(birthdayId);
+    }
+
+    // 7. CRM Leads
+    match /crm_leads/{leadId} {
+      allow read: if true;
+      allow create, update: if isValidId(leadId)
+        && request.resource.data.name is string
+        && request.resource.data.phone is string;
+      allow delete: if isValidId(leadId);
+    }
+  }
+}

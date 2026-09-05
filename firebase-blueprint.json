@@ -1,0 +1,168 @@
+{
+  "entities": {
+    "Student": {
+      "title": "Student",
+      "description": "Athlete/Student registered in the martial arts academy",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "maxLength": 128 },
+        "name": { "type": "string", "maxLength": 150 },
+        "email": { "type": "string", "maxLength": 150 },
+        "phone": { "type": "string", "maxLength": 30 },
+        "avatar": { "type": "string", "maxLength": 500 },
+        "belt": { "type": "string", "maxLength": 30 },
+        "stripes": { "type": "number" },
+        "degreesNeededForNext": { "type": "number" },
+        "currentAttendanceCount": { "type": "number" },
+        "classesForNextDegree": { "type": "number" },
+        "joinDate": { "type": "string", "maxLength": 30 },
+        "rankingPosition": { "type": "number" },
+        "rankingPoints": { "type": "number" },
+        "category": { "type": "string", "maxLength": 50 },
+        "weightKg": { "type": "number" },
+        "streakWeeks": { "type": "number" },
+        "academyId": { "type": "string", "maxLength": 128 }
+      },
+      "required": ["id", "name", "belt", "stripes"]
+    },
+    "Academy": {
+      "title": "Academy",
+      "description": "Affiliated or headquarters BJJ Academy unit",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "maxLength": 128 },
+        "name": { "type": "string", "maxLength": 150 },
+        "shortName": { "type": "string", "maxLength": 100 },
+        "branch": { "type": "string", "maxLength": 100 },
+        "city": { "type": "string", "maxLength": 100 },
+        "phone": { "type": "string", "maxLength": 30 },
+        "voiceEnabled": { "type": "boolean" },
+        "voiceStyle": { "type": "string", "maxLength": 50 },
+        "pixKey": { "type": "string", "maxLength": 100 },
+        "activeStudentsCount": { "type": "number" }
+      },
+      "required": ["id", "name", "shortName", "city"]
+    },
+    "ClassSession": {
+      "title": "ClassSession",
+      "description": "Scheduled mat training session with attendance",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "maxLength": 128 },
+        "name": { "type": "string", "maxLength": 150 },
+        "instructor": { "type": "string", "maxLength": 150 },
+        "time": { "type": "string", "maxLength": 30 },
+        "duration": { "type": "string", "maxLength": 30 },
+        "type": { "type": "string", "maxLength": 50 },
+        "tatame": { "type": "string", "maxLength": 50 },
+        "capacity": { "type": "number" },
+        "enrolledCount": { "type": "number" },
+        "checkedIn": { "type": "boolean" },
+        "academyId": { "type": "string", "maxLength": 128 }
+      },
+      "required": ["id", "name", "instructor", "time"]
+    },
+    "Invoice": {
+      "title": "Invoice",
+      "description": "Financial tuition or pro-shop invoice",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "maxLength": 128 },
+        "studentId": { "type": "string", "maxLength": 128 },
+        "studentName": { "type": "string", "maxLength": 150 },
+        "title": { "type": "string", "maxLength": 150 },
+        "amount": { "type": "number" },
+        "dueDate": { "type": "string", "maxLength": 50 },
+        "status": { "type": "string", "enum": ["paid", "pending", "overdue"] },
+        "invoiceNumber": { "type": "string", "maxLength": 50 },
+        "academyId": { "type": "string", "maxLength": 128 }
+      },
+      "required": ["id", "studentId", "title", "amount", "status"]
+    },
+    "SparringSession": {
+      "title": "SparringSession",
+      "description": "Athlete sparring log and game breakdown",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "maxLength": 128 },
+        "studentId": { "type": "string", "maxLength": 128 },
+        "studentName": { "type": "string", "maxLength": 150 },
+        "date": { "type": "string", "maxLength": 30 },
+        "trainingPartner": { "type": "string", "maxLength": 150 },
+        "partnerBelt": { "type": "string", "maxLength": 30 },
+        "giType": { "type": "string", "maxLength": 20 },
+        "durationMinutes": { "type": "number" },
+        "roundsCount": { "type": "number" },
+        "intensity": { "type": "string", "maxLength": 50 },
+        "sweepsCount": { "type": "number" },
+        "guardPassesCount": { "type": "number" },
+        "takedownsCount": { "type": "number" },
+        "notes": { "type": "string", "maxLength": 1000 },
+        "rating": { "type": "number" }
+      },
+      "required": ["id", "studentId", "trainingPartner", "date"]
+    },
+    "BirthdayPerson": {
+      "title": "BirthdayPerson",
+      "description": "Academy member birthday reminder",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "maxLength": 128 },
+        "name": { "type": "string", "maxLength": 150 },
+        "role": { "type": "string", "maxLength": 30 },
+        "birthDate": { "type": "string", "maxLength": 30 },
+        "birthDay": { "type": "number" },
+        "birthMonth": { "type": "number" },
+        "phone": { "type": "string", "maxLength": 30 },
+        "congratulated": { "type": "boolean" }
+      },
+      "required": ["id", "name", "birthDay", "birthMonth"]
+    },
+    "CRMLead": {
+      "title": "CRMLead",
+      "description": "Prospect or trial class lead in sales pipeline",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "maxLength": 128 },
+        "name": { "type": "string", "maxLength": 150 },
+        "phone": { "type": "string", "maxLength": 30 },
+        "email": { "type": "string", "maxLength": 150 },
+        "interest": { "type": "string", "maxLength": 100 },
+        "stage": { "type": "string", "maxLength": 50 },
+        "createdAt": { "type": "string", "maxLength": 50 },
+        "channel": { "type": "string", "maxLength": 50 }
+      },
+      "required": ["id", "name", "phone", "stage"]
+    }
+  },
+  "firestore": {
+    "/students/{studentId}": {
+      "schema": { "$ref": "#/entities/Student" },
+      "description": "Registered students and athlete profiles"
+    },
+    "/academies/{academyId}": {
+      "schema": { "$ref": "#/entities/Academy" },
+      "description": "Network academies and branch configurations"
+    },
+    "/classes/{classId}": {
+      "schema": { "$ref": "#/entities/ClassSession" },
+      "description": "Tatami scheduled class sessions"
+    },
+    "/invoices/{invoiceId}": {
+      "schema": { "$ref": "#/entities/Invoice" },
+      "description": "Financial invoices and payments"
+    },
+    "/sparring_sessions/{sessionId}": {
+      "schema": { "$ref": "#/entities/SparringSession" },
+      "description": "Sparring and technique log"
+    },
+    "/birthdays/{birthdayId}": {
+      "schema": { "$ref": "#/entities/BirthdayPerson" },
+      "description": "Academy birthdays"
+    },
+    "/crm_leads/{leadId}": {
+      "schema": { "$ref": "#/entities/CRMLead" },
+      "description": "Commercial leads and student acquisition"
+    }
+  }
+}

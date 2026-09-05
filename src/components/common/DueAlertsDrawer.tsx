@@ -9,7 +9,8 @@ interface DueAlertsDrawerProps {
   isOpen: boolean;
   onClose: () => void;
   invoices: Invoice[];
-  academyName: string;
+  academyName?: string;
+  activeAcademyName?: string;
   pixKey?: string;
   onOpenInvoicePix?: (inv: Invoice) => void;
   onMarkAsPaid?: (invId: string) => void;
@@ -20,11 +21,14 @@ export const DueAlertsDrawer: React.FC<DueAlertsDrawerProps> = ({
   onClose,
   invoices,
   academyName,
+  activeAcademyName,
   pixKey,
   onOpenInvoicePix,
   onMarkAsPaid,
 }) => {
   if (!isOpen) return null;
+
+  const currentAcademyName = activeAcademyName || academyName || 'BJJ Academy';
 
   // Filter overdue and pending invoices
   const overdueInvoices = invoices.filter((inv) => inv.status === 'overdue');
@@ -34,7 +38,7 @@ export const DueAlertsDrawer: React.FC<DueAlertsDrawerProps> = ({
   const totalOverdue = overdueInvoices.reduce((acc, curr) => acc + curr.amount, 0);
 
   const handleExportCSV = () => {
-    exportFinancialInvoicesCSV(attentionList, `${academyName}_cobranca_vencimentos`);
+    exportFinancialInvoicesCSV(attentionList, `${currentAcademyName}_cobranca_vencimentos`);
   };
 
   return (

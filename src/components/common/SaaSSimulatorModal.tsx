@@ -3,13 +3,22 @@ import { motion, AnimatePresence } from 'motion/react';
 import { X, Calculator, TrendingUp, DollarSign, Building2, Users, ArrowUpRight, Sparkles, Check } from 'lucide-react';
 import { projectSaasScale, formatBRL, SAAS_FIXED_FEE_BRL, SAAS_PER_STUDENT_FEE_BRL } from '../../utils/financialCalculations';
 
+import { PlatformGeneralManager } from '../../types';
+
 interface SaaSSimulatorModalProps {
   isOpen: boolean;
   onClose: () => void;
+  initialAcademiesCount?: number;
+  generalManager?: PlatformGeneralManager;
 }
 
-export const SaaSSimulatorModal: React.FC<SaaSSimulatorModalProps> = ({ isOpen, onClose }) => {
-  const [academiesCount, setAcademiesCount] = useState<number>(15);
+export const SaaSSimulatorModal: React.FC<SaaSSimulatorModalProps> = ({ 
+  isOpen, 
+  onClose,
+  initialAcademiesCount,
+  generalManager 
+}) => {
+  const [academiesCount, setAcademiesCount] = useState<number>(initialAcademiesCount || 15);
   const [avgStudents, setAvgStudents] = useState<number>(110);
 
   if (!isOpen) return null;

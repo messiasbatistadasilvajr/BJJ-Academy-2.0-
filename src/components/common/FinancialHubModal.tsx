@@ -13,6 +13,7 @@ import {
 } from '../../types';
 import { defaultPlatformGeneralManager, mockPlatformAcademyPayments } from '../../data/mockData';
 import { calculateLateFeeAndInterest, formatBRL } from '../../utils/financialCalculations';
+import { safeLocalStorageGet, safeLocalStorageSet } from '../../utils/safeStorage';
 
 interface FinancialHubModalProps {
   isOpen: boolean;
@@ -84,8 +85,7 @@ export const FinancialHubModal: React.FC<FinancialHubModalProps> = ({
 
   // Platform payments from academies
   const [platformPayments, setPlatformPayments] = useState<PlatformAcademyPayment[]>(() => {
-    const saved = localStorage.getItem('bjj_platform_payments');
-    return saved ? JSON.parse(saved) : mockPlatformAcademyPayments;
+    return safeLocalStorageGet<PlatformAcademyPayment[]>('bjj_platform_payments', mockPlatformAcademyPayments);
   });
   const [selectedRepasseForPix, setSelectedRepasseForPix] = useState<PlatformAcademyPayment | null>(null);
 
@@ -113,7 +113,7 @@ export const FinancialHubModal: React.FC<FinancialHubModalProps> = ({
       purpose: editGmPurpose.trim(),
     };
     setGmData(updated);
-    localStorage.setItem('bjj_general_manager', JSON.stringify(updated));
+    safeLocalStorageSet('bjj_general_manager', updated);
     if (onUpdateGeneralManager) {
       onUpdateGeneralManager(updated);
     }
@@ -137,7 +137,7 @@ export const FinancialHubModal: React.FC<FinancialHubModalProps> = ({
       return p;
     });
     setPlatformPayments(updated);
-    localStorage.setItem('bjj_platform_payments', JSON.stringify(updated));
+    safeLocalStorageSet('bjj_platform_payments', updated);
   };
   
   // Interactive Calculator State

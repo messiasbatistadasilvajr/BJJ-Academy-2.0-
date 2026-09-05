@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { UserRole, StudentProfile, DependentStudent, ClassSession, Invoice, Announcement, ChatMessage, PushNotification, BeltColor, RegisteredAcademy, PlatformGeneralManager, RetentionAlertItem, SparringSession, BirthdayPerson } from './types';
-import { mockStudent, mockDependents, mockClasses, mockInvoices, mockAnnouncements, mockChatMessages, mockRankings, mockPushNotifications, mockRegisteredAcademies, defaultPlatformGeneralManager, mockRetentionAlerts, mockSparringSessions, mockBirthdays } from './data/mockData';
+import { mockStudent, mockDependents, mockClasses, mockInvoices, mockAnnouncements, mockChatMessages, mockRankings, mockPushNotifications, mockRegisteredAcademies, defaultPlatformGeneralManager, mockRetentionAlerts, mockSparringSessions, mockBirthdays, mockInitialStudents } from './data/mockData';
 import { DeviceFrame } from './components/common/DeviceFrame';
 import { StudentView } from './components/views/StudentView';
 import { ParentView } from './components/views/ParentView';
@@ -33,10 +33,27 @@ import { RetentionRadarModal } from './components/common/RetentionRadarModal';
 import { SparringJournalModal } from './components/common/SparringJournalModal';
 import { BirthdayAlertModal } from './components/common/BirthdayAlertModal';
 import { IBJJFBeltGuideModal } from './components/common/IBJJFBeltGuideModal';
+import { StudentManagementModal } from './components/common/StudentManagementModal';
+import { CloudDatabaseStatusModal } from './components/common/CloudDatabaseStatusModal';
 import { academyVoiceEngine } from './utils/voiceNotification';
 import { useOnlineStatus } from './hooks/usePWAInstall';
 import { safeLocalStorageGet, safeLocalStorageSet } from './utils/safeStorage';
 import { ErrorBoundary } from './components/common/ErrorBoundary';
+import {
+  subscribeToStudents,
+  saveStudentToFirestore,
+  subscribeToAcademies,
+  saveAcademyToFirestore,
+  subscribeToClasses,
+  saveClassToFirestore,
+  subscribeToInvoices,
+  saveInvoiceToFirestore,
+  subscribeToSparringSessions,
+  saveSparringSessionToFirestore,
+  subscribeToBirthdays,
+  saveBirthdayToFirestore,
+  seedInitialFirestoreDataIfEmpty
+} from './firebase/firestoreService';
 
 export default function App() {
   const isOnline = useOnlineStatus();
@@ -119,9 +136,21 @@ export default function App() {
     return safeLocalStorageGet<BirthdayPerson[]>('bjj_birthdays', mockBirthdays);
   });
 
+  // Students Roster state (cloud-synced across devices and sessions)
+  const [studentsList, setStudentsList] = useState<StudentProfile[]>(() => {
+    return safeLocalStorageGet<StudentProfile[]>('bjj_students_roster', mockInitialStudents);
+  });
+  const [isCloudSynced, setIsCloudSynced] = useState<boolean>(true);
+  const [isStudentManagementOpen, setIsStudentManagementOpen] = useState(false);
+  const [isCloudStatusOpen, setIsCloudStatusOpen] = useState(false);
+
   useEffect(() => {
     safeLocalStorageSet('bjj_birthdays', birthdays);
   }, [birthdays]);
+
+  useEffect(() => {
+    safeLocalStorageSet('bjj_students_roster', studentsList);
+  }, [studentsList]);
 
   // Today's birthdays count (reference date Sept 4th)
   const todayBirthdaysCount = birthdays.filter(
@@ -133,7 +162,7 @@ export default function App() {
     return safeLocalStorageGet<PlatformGeneralManager>('bjj_general_manager', defaultPlatformGeneralManager);
   });
 
-  // Registered Academies State (Persisted in localStorage)
+  // Registered Academies State (Persisted in localStorage & Firestore)
   const [academies, setAcademies] = useState<RegisteredAcademy[]>(() => {
     return safeLocalStorageGet<RegisteredAcademy[]>('bjj_academies', mockRegisteredAcademies);
   });
@@ -146,6 +175,82 @@ export default function App() {
   // Dynamic Island & Push Notifications State
   const [activePush, setActivePush] = useState<PushNotification | null>(null);
   const [dynamicIslandNotice, setDynamicIslandNotice] = useState<string | null>(null);
+
+  // Real-time Firestore Cloud Synchronization (Multi-User, Multi-Device, Zero Data Loss)
+  useEffect(() => {
+    // 1. Initial Cloud Seeding (ensures local data is migrated to cloud without loss)
+    seedInitialFirestoreDataIfEmpty({
+      students: studentsList,
+      academies,
+      classes,
+      invoices,
+      sparringSessions,
+      birthdays,
+    });
+
+    // 2. Real-time listeners
+    const unsubStudents = subscribeToStudents((updatedStudents) => {
+      if (updatedStudents && updatedStudents.length > 0) {
+        setStudentsList(updatedStudents);
+        safeLocalStorageSet('bjj_students_roster', updatedStudents);
+        // If current active student is in the roster, keep active student profile fresh
+        setStudent((curr) => {
+          const matched = updatedStudents.find((s) => s.id === curr.id);
+          return matched || curr;
+        });
+        setIsCloudSynced(true);
+      }
+    });
+
+    const unsubAcademies = subscribeToAcademies((updatedAcademies) => {
+      if (updatedAcademies && updatedAcademies.length > 0) {
+        setAcademies(updatedAcademies);
+        safeLocalStorageSet('bjj_academies', updatedAcademies);
+        setIsCloudSynced(true);
+      }
+    });
+
+    const unsubClasses = subscribeToClasses((updatedClasses) => {
+      if (updatedClasses && updatedClasses.length > 0) {
+        setClasses(updatedClasses);
+        safeLocalStorageSet('bjj_classes', updatedClasses);
+        setIsCloudSynced(true);
+      }
+    });
+
+    const unsubInvoices = subscribeToInvoices((updatedInvoices) => {
+      if (updatedInvoices && updatedInvoices.length > 0) {
+        setInvoices(updatedInvoices);
+        safeLocalStorageSet('bjj_invoices', updatedInvoices);
+        setIsCloudSynced(true);
+      }
+    });
+
+    const unsubSparring = subscribeToSparringSessions((updatedSparring) => {
+      if (updatedSparring && updatedSparring.length > 0) {
+        setSparringSessions(updatedSparring);
+        safeLocalStorageSet('bjj_sparring_sessions', updatedSparring);
+        setIsCloudSynced(true);
+      }
+    });
+
+    const unsubBirthdays = subscribeToBirthdays((updatedBirthdays) => {
+      if (updatedBirthdays && updatedBirthdays.length > 0) {
+        setBirthdays(updatedBirthdays);
+        safeLocalStorageSet('bjj_birthdays', updatedBirthdays);
+        setIsCloudSynced(true);
+      }
+    });
+
+    return () => {
+      unsubStudents();
+      unsubAcademies();
+      unsubClasses();
+      unsubInvoices();
+      unsubSparring();
+      unsubBirthdays();
+    };
+  }, []);
 
   // Save to localStorage when critical items change
   useEffect(() => {
@@ -225,22 +330,28 @@ export default function App() {
               '🥋 Check-in Confirmado!',
               `Você está confirmado na aula ${c.name} às ${c.time}. OSS!`
             );
-            // Increase student attendances
-            setStudent((s) => ({
-              ...s,
-              currentAttendanceCount: Math.min(s.classesForNextDegree, s.currentAttendanceCount + 1),
-            }));
+            // Increase student attendances and sync to Firestore
+            setStudent((s) => {
+              const updated = {
+                ...s,
+                currentAttendanceCount: Math.min(s.classesForNextDegree, s.currentAttendanceCount + 1),
+              };
+              saveStudentToFirestore(updated);
+              return updated;
+            });
           } else {
             triggerPushNotification(
               'Cancelamento de Presença',
               `Check-in para ${c.name} foi cancelado.`
             );
           }
-          return {
+          const updatedClass: ClassSession = {
             ...c,
             checkedIn: nextState,
             enrolledCount: nextState ? c.enrolledCount + 1 : Math.max(0, c.enrolledCount - 1),
           };
+          saveClassToFirestore(updatedClass);
+          return updatedClass;
         }
         return c;
       })
@@ -257,6 +368,7 @@ export default function App() {
             status: 'paid',
             paidDate: `Hoje às ${new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}`,
           };
+          saveInvoiceToFirestore(paidInv);
           triggerPushNotification(
             '💰 Mensalidade Liquidada via PIX!',
             `O pagamento de R$ ${inv.amount.toFixed(2)} foi confirmado pelo Asaas com baixa imediata.`,
@@ -326,23 +438,54 @@ export default function App() {
   ) => {
     // Check if it is the main student Lucas
     if (studentId === student.id) {
-      setStudent((prev) => ({
-        ...prev,
-        belt: newBelt,
-        stripes: newStripes,
-        promotions: [
-          {
-            id: String(Date.now()),
+      setStudent((prev) => {
+        const updated: StudentProfile = {
+          ...prev,
+          belt: newBelt,
+          stripes: newStripes,
+          promotions: [
+            {
+              id: String(Date.now()),
+              belt: newBelt,
+              stripes: newStripes,
+              date: new Date().toLocaleDateString('pt-BR'),
+              instructor: 'Mestre Rodrigo "Cavalo" (3º Grau)',
+              notes: note,
+            },
+            ...prev.promotions,
+          ],
+        };
+        saveStudentToFirestore(updated);
+        return updated;
+      });
+    }
+
+    // Check in students roster
+    setStudentsList((prev) =>
+      prev.map((s) => {
+        if (s.id === studentId) {
+          const updated: StudentProfile = {
+            ...s,
             belt: newBelt,
             stripes: newStripes,
-            date: new Date().toLocaleDateString('pt-BR'),
-            instructor: 'Mestre Rodrigo "Cavalo" (3º Grau)',
-            notes: note,
-          },
-          ...prev.promotions,
-        ],
-      }));
-    }
+            promotions: [
+              {
+                id: String(Date.now()),
+                belt: newBelt,
+                stripes: newStripes,
+                date: new Date().toLocaleDateString('pt-BR'),
+                instructor: 'Mestre Rodrigo "Cavalo" (3º Grau)',
+                notes: note,
+              },
+              ...s.promotions,
+            ],
+          };
+          saveStudentToFirestore(updated);
+          return updated;
+        }
+        return s;
+      })
+    );
 
     // Check if it is a dependent
     setDependents((prev) =>
@@ -460,6 +603,10 @@ export default function App() {
       onOpenFinancial={() => setIsFinancialOpen(true)}
       onOpenAcademyRegistration={() => setActiveRole('academy_registration')}
       activeAcademyName={activeAcademy.shortName || activeAcademy.name}
+      onOpenCloudStatus={() => setIsCloudStatusOpen(true)}
+      onOpenStudentManagement={() => setIsStudentManagementOpen(true)}
+      studentsCount={studentsList.length}
+      isCloudSynced={isCloudSynced}
     >
       {/* Offline Mode Banner */}
       {!isOnline && (
@@ -614,7 +761,7 @@ export default function App() {
           onOpenDataMigration={() => setIsDataMigrationOpen(true)}
           onOpenAICoach={() => setIsAICoachOpen(true)}
           onOpenRetentionRadar={() => setIsRetentionRadarOpen(true)}
-          retentionAlertsCount={retentionAlerts.filter((a) => a.rescueStatus !== 'rescued').length}
+          retentionAlertsCount={retentionAlerts.filter((a) => a.contactStatus !== 'resgatado').length}
           onOpenBirthdayAlert={() => setIsBirthdayAlertOpen(true)}
           todayBirthdaysCount={todayBirthdaysCount}
           activeAcademyName={activeAcademy.shortName || activeAcademy.name}
@@ -624,6 +771,9 @@ export default function App() {
           onUpdateGeneralManager={setGeneralManager}
           onOpenAcademyRegistration={() => setActiveRole('academy_registration')}
           isGeneralManager={activeRole === 'general_manager'}
+          onOpenStudentManagement={() => setIsStudentManagementOpen(true)}
+          onOpenCloudStatus={() => setIsCloudStatusOpen(true)}
+          studentsCount={studentsList.length}
         />
       )}
 
@@ -748,6 +898,8 @@ export default function App() {
             dueDate: 'Hoje',
             status: 'pending',
             invoiceNumber: 'SHOP-' + Math.floor(1000 + Math.random() * 9000),
+            academyId: activeAcademy.id,
+            academyName: activeAcademy.shortName || activeAcademy.name,
           });
         }}
       />
@@ -1000,6 +1152,40 @@ export default function App() {
       <IBJJFBeltGuideModal
         isOpen={isBeltGuideOpen}
         onClose={() => setIsBeltGuideOpen(false)}
+      />
+
+      {/* 👥 Cloud Student Management & Multi-User Roster Modal */}
+      <StudentManagementModal
+        isOpen={isStudentManagementOpen}
+        onClose={() => setIsStudentManagementOpen(false)}
+        students={studentsList}
+        activeStudentId={student.id}
+        onSelectStudent={(selected) => {
+          setStudent(selected);
+          setActiveRole('student');
+          triggerPushNotification(
+            '👤 Perfil de Aluno Selecionado',
+            `Visualizando agora o perfil e tatame de ${selected.name}.`
+          );
+        }}
+        onStudentSaved={(saved) => {
+          triggerPushNotification(
+            '🥋 Aluno Salvo no Banco Nuvem!',
+            `${saved.name} foi sincronizado no Firebase Firestore com sucesso.`
+          );
+        }}
+        academyName={activeAcademy.name}
+      />
+
+      {/* ☁️ Cloud Database Architecture & Real-Time Sync Status Modal */}
+      <CloudDatabaseStatusModal
+        isOpen={isCloudStatusOpen}
+        onClose={() => setIsCloudStatusOpen(false)}
+        studentsCount={studentsList.length}
+        classesCount={classes.length}
+        invoicesCount={invoices.length}
+        academiesCount={academies.length}
+        isCloudSynced={isCloudSynced}
       />
     </DeviceFrame>
     </ErrorBoundary>

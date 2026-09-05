@@ -7,7 +7,8 @@ import {
   Phone, MessageSquare, ArrowUpRight, Zap, RefreshCw,
   Tablet, ShoppingBag, Award, FileText, Trophy, Volume2,
   Lock, Unlock, Calculator, Building2, ShieldAlert, Copy, Check,
-  QrCode, CheckCheck, Edit3, Sparkles, Download, AlertCircle, MessageCircle, Cake
+  QrCode, CheckCheck, Edit3, Sparkles, Download, AlertCircle, MessageCircle, Cake,
+  Database, Cloud
 } from 'lucide-react';
 import { 
   ClassSession, Invoice, Announcement, PushNotification, 
@@ -51,6 +52,9 @@ interface ManagerViewProps {
   retentionAlertsCount?: number;
   onOpenBirthdayAlert?: () => void;
   todayBirthdaysCount?: number;
+  onOpenStudentManagement?: () => void;
+  onOpenCloudStatus?: () => void;
+  studentsCount?: number;
 }
 
 export const ManagerView: React.FC<ManagerViewProps> = ({
@@ -83,6 +87,9 @@ export const ManagerView: React.FC<ManagerViewProps> = ({
   retentionAlertsCount,
   onOpenBirthdayAlert,
   todayBirthdaysCount,
+  onOpenStudentManagement,
+  onOpenCloudStatus,
+  studentsCount,
 }) => {
   const [activeTab, setActiveTab] = useState<'dashboard' | 'financeiro' | 'crm' | 'push' | 'academies'>('dashboard');
   
@@ -198,8 +205,7 @@ export const ManagerView: React.FC<ManagerViewProps> = ({
 
   // Platform monthly payments from partner academies
   const [platformPayments, setPlatformPayments] = useState<PlatformAcademyPayment[]>(() => {
-    const saved = localStorage.getItem('bjj_platform_payments');
-    return saved ? JSON.parse(saved) : mockPlatformAcademyPayments;
+    return safeLocalStorageGet<PlatformAcademyPayment[]>('bjj_platform_payments', mockPlatformAcademyPayments);
   });
   const [selectedPlatformPixItem, setSelectedPlatformPixItem] = useState<PlatformAcademyPayment | null>(null);
 
@@ -248,7 +254,7 @@ export const ManagerView: React.FC<ManagerViewProps> = ({
     };
 
     setGmData(updated);
-    localStorage.setItem('bjj_general_manager', JSON.stringify(updated));
+    safeLocalStorageSet('bjj_general_manager', updated);
     if (onUpdateGeneralManager) {
       onUpdateGeneralManager(updated);
     }
@@ -271,7 +277,7 @@ export const ManagerView: React.FC<ManagerViewProps> = ({
       return p;
     });
     setPlatformPayments(updated);
-    localStorage.setItem('bjj_platform_payments', JSON.stringify(updated));
+    safeLocalStorageSet('bjj_platform_payments', updated);
   };
 
   // Filter invoices for financeiro tab
@@ -593,16 +599,54 @@ export const ManagerView: React.FC<ManagerViewProps> = ({
               </div>
             )}
 
+            {/* Cloud Database Multi-Access Banner */}
+            <div 
+              onClick={onOpenCloudStatus}
+              className="p-3.5 rounded-2xl bg-gradient-to-r from-emerald-950/60 via-slate-900 to-slate-900 border border-emerald-500/30 flex items-center justify-between gap-3 cursor-pointer hover:border-emerald-500/50 transition-colors shadow-lg shadow-emerald-950/20"
+            >
+              <div className="flex items-center gap-3">
+                <div className="p-2.5 rounded-xl bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 shrink-0">
+                  <Database size={20} />
+                </div>
+                <div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs font-extrabold text-white">Banco em Nuvem Ativo (Firebase)</span>
+                    <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[9px] font-bold bg-emerald-500/20 text-emerald-400">
+                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
+                      MULTI-ACESSO
+                    </span>
+                  </div>
+                  <p className="text-[11px] text-slate-400 mt-0.5">
+                    Multi-acesso simultâneo com persistência total • {studentsCount ?? 6} alunos em nuvem
+                  </p>
+                </div>
+              </div>
+              <button 
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onOpenStudentManagement && onOpenStudentManagement();
+                }}
+                className="px-3 py-1.5 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-xs font-bold shrink-0 transition-colors flex items-center gap-1"
+              >
+                <Users size={13} />
+                <span>Gerenciar</span>
+              </button>
+            </div>
+
             {/* KPI Cards Grid */}
             <div className="grid grid-cols-2 gap-2.5">
-              <div className="p-3.5 rounded-2xl bg-slate-900 border border-slate-800 space-y-1">
+              <div 
+                onClick={onOpenStudentManagement}
+                className="p-3.5 rounded-2xl bg-slate-900 border border-slate-800 space-y-1 cursor-pointer hover:border-blue-500/40 transition-colors"
+                title="Clique para abrir lista e cadastro de alunos na nuvem"
+              >
                 <div className="flex items-center justify-between text-[10px] text-slate-400 uppercase font-bold">
-                  <span>Alunos Ativos</span>
+                  <span>Alunos Cadastrados</span>
                   <Users className="w-3.5 h-3.5 text-blue-400" />
                 </div>
-                <div className="text-2xl font-black text-white">{activeStudents}</div>
-                <div className="text-[10px] text-emerald-400 font-semibold flex items-center gap-1">
-                  <TrendingUp className="w-3 h-3" /> +14 matrículas no mês
+                <div className="text-2xl font-black text-white">{studentsCount || activeStudents}</div>
+                <div className="text-[10px] text-blue-400 font-semibold flex items-center gap-1">
+                  <Cloud className="w-3 h-3 text-emerald-400" /> Nuvem Firestore
                 </div>
               </div>
 

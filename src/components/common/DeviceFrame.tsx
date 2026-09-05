@@ -2,7 +2,8 @@ import React from 'react';
 import { 
   Smartphone, Monitor, Layers, Download, Wifi, 
   RotateCcw, Sparkles, Shield, User, Users, GraduationCap, Briefcase, Crown,
-  Timer, BookOpen, Tablet, Award, ShoppingBag, FileText, Trophy, Volume2, DollarSign, Building2
+  Timer, BookOpen, Tablet, Award, ShoppingBag, FileText, Trophy, Volume2, DollarSign, Building2,
+  Database, Cloud
 } from 'lucide-react';
 import { UserRole } from '../../types';
 import { NativeStatusBar } from './NativeStatusBar';
@@ -30,6 +31,10 @@ interface DeviceFrameProps {
   onOpenFinancial?: () => void;
   onOpenAcademyRegistration?: () => void;
   activeAcademyName?: string;
+  onOpenCloudStatus?: () => void;
+  onOpenStudentManagement?: () => void;
+  studentsCount?: number;
+  isCloudSynced?: boolean;
 }
 
 export const DeviceFrame: React.FC<DeviceFrameProps> = ({
@@ -55,6 +60,10 @@ export const DeviceFrame: React.FC<DeviceFrameProps> = ({
   onOpenFinancial,
   onOpenAcademyRegistration,
   activeAcademyName,
+  onOpenCloudStatus,
+  onOpenStudentManagement,
+  studentsCount,
+  isCloudSynced = true,
 }) => {
   const roles: { id: UserRole; label: string; icon: React.FC<{ className?: string }>; color: string; badge?: string }[] = [
     { id: 'general_manager', label: 'Gestor Geral BJJ', icon: Crown, color: 'text-amber-400', badge: 'SUPER ADMIN' },
@@ -125,6 +134,27 @@ export const DeviceFrame: React.FC<DeviceFrameProps> = ({
 
         {/* Viewport, OS and Tech Tools */}
         <div className="flex items-center gap-1.5">
+          {/* Cloud Database Firestore Status Chip */}
+          <button
+            onClick={onOpenCloudStatus}
+            className="px-2.5 py-1.5 rounded-xl bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/30 text-emerald-300 hover:text-emerald-200 text-xs font-bold flex items-center gap-1.5 transition shadow-sm"
+            title="Google Firebase Firestore: Multi-acesso e Tempo Real Ativo"
+          >
+            <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+            <Database className="w-3.5 h-3.5 text-emerald-400" />
+            <span className="hidden sm:inline">Nuvem</span>
+          </button>
+
+          {/* Student Roster / Management Button */}
+          <button
+            onClick={onOpenStudentManagement}
+            className="px-2.5 py-1.5 rounded-xl bg-blue-500/10 hover:bg-blue-500/20 border border-blue-500/30 text-blue-300 hover:text-blue-200 text-xs font-bold flex items-center gap-1.5 transition shadow-sm"
+            title="Ver e gerenciar alunos cadastrados na nuvem"
+          >
+            <Users className="w-3.5 h-3.5 text-blue-400" />
+            <span className="hidden sm:inline">{studentsCount ?? 6} Alunos</span>
+          </button>
+
           {/* OS Switcher */}
           <button
             onClick={onToggleOs}

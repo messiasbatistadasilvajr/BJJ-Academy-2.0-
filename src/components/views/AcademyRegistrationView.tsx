@@ -111,7 +111,9 @@ export const AcademyRegistrationView: React.FC<AcademyRegistrationViewProps> = (
     {
       id: 'plan-1',
       name: 'Plano Adulto Ilimitado (Gi & No-Gi)',
+      periodMonths: 1,
       price: 249.90,
+      monthlyEquivalent: 249.90,
       billingCycle: 'monthly',
       description: 'Acesso livre a todas as aulas de segunda a sábado, inclusive treinos livres e open mat.',
       isPopular: true
@@ -119,7 +121,9 @@ export const AcademyRegistrationView: React.FC<AcademyRegistrationViewProps> = (
     {
       id: 'plan-2',
       name: 'Plano Kids & Juvenil Tatame',
+      periodMonths: 1,
       price: 189.90,
+      monthlyEquivalent: 189.90,
       billingCycle: 'monthly',
       description: 'Formação marcial infantil, anti-bullying e fundamentos CBJJ com acompanhamento.',
       isPopular: false
@@ -127,7 +131,9 @@ export const AcademyRegistrationView: React.FC<AcademyRegistrationViewProps> = (
     {
       id: 'plan-3',
       name: 'Plano Anual Fidelidade Black Belt',
+      periodMonths: 12,
       price: 209.90,
+      monthlyEquivalent: 209.90,
       billingCycle: 'annual',
       description: '12 parcelas mensais com 15% de desconto e kimono oficial da academia incluso.',
       isPopular: true

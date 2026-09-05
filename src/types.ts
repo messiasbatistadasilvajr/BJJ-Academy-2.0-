@@ -278,9 +278,9 @@ export interface TeamMedal {
 }
 
 // 7. Registered Academy & Mercado Livre-Style Voice Notification Types
-export type AcademyVoiceStyle = 'mercado_livre' | 'tatame_master' | 'energetic' | 'gentle';
+export type AcademyVoiceStyle = 'mercado_livre' | 'tatame_master' | 'energetic' | 'gentle' | 'commercial';
 export type NotificationFormat = 'name_and_title' | 'name_only' | 'full_message';
-export type ChimeType = 'mercado_livre' | 'tatame_bell' | 'chime_bright';
+export type ChimeType = 'mercado_livre' | 'tatame_bell' | 'chime_bright' | 'gong';
 
 export interface AcademyPricingPlan {
   id: string;
