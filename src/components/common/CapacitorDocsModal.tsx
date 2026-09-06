@@ -23,29 +23,29 @@ export const CapacitorDocsModal: React.FC<CapacitorDocsModalProps> = ({
 
   const steps = [
     {
-      title: '1. Instalar Capacitor Core & CLI',
-      desc: 'Adicione o Capacitor ao projeto React existente sem quebrar a versão web:',
-      code: 'npm install @capacitor/core\nnpm install -D @capacitor/cli'
+      title: '1. Sincronizar Web & Android',
+      desc: 'Compila a aplicação React/Vite e copia os assets para o Android nativo:',
+      code: 'npm run cap:build'
     },
     {
-      title: '2. Inicializar Configuração',
-      desc: 'Cria o capacitor.config.ts com App ID e nome da academia:',
-      code: 'npx cap init "BJJ Academy" "com.bjjacademy.app" --web-dir dist'
+      title: '2. Gerar Chave de Assinatura (Keystore)',
+      desc: 'Cria o arquivo release-key.jks para assinar o pacote na Google Play:',
+      code: 'keytool -genkey -v -keystore release-key.jks -alias bjjacademy -keyalg RSA -keysize 2048 -validity 10000'
     },
     {
-      title: '3. Plugins Nativos de Tatame',
-      desc: 'Câmera para fotos de presença, biometria e push notifications nativas:',
-      code: 'npm install @capacitor/camera @capacitor/push-notifications @capacitor/app'
+      title: '3. Configurar android/key.properties',
+      desc: 'Configura o caminho da chave e senhas (ignorado no git):',
+      code: 'RELEASE_STORE_FILE=../../release-key.jks\nRELEASE_STORE_PASSWORD=sua_senha\nRELEASE_KEY_ALIAS=bjjacademy\nRELEASE_KEY_PASSWORD=sua_senha'
     },
     {
-      title: '4. Adicionar Plataformas Android e iOS',
-      desc: 'Gera as pastas nativas /android (Android Studio) e /ios (Xcode):',
-      code: 'npm install @capacitor/android @capacitor/ios\nnpx cap add android\nnpx cap add ios'
+      title: '4. Compilar o Pacote .AAB de Produção',
+      desc: 'Gera o bundle otimizado pronto para upload no Google Play Console:',
+      code: 'cd android\n./gradlew bundleRelease'
     },
     {
-      title: '5. Build & Sincronização Contínua',
-      desc: 'Gera o bundle e envia para os projetos nativos:',
-      code: 'npm run build\nnpx cap sync\nnpx cap open ios      # Abre o Xcode para compilar IPA\nnpx cap open android  # Abre o Android Studio para APK/AAB'
+      title: '5. Localização do .AAB Final',
+      desc: 'Arquivo gerado para upload no Google Play Console:',
+      code: 'android/app/build/outputs/bundle/release/app-release.aab'
     }
   ];
 

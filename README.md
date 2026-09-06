@@ -162,6 +162,40 @@ O sistema adota o sistema oficial de graduação da **International Brazilian Ji
 
 ---
 
+## 📱 Compilação Mobile Android (Capacitor 8 & Google Play Store)
+
+O projeto está totalmente configurado com **Capacitor 8**, plugins nativos (Status Bar escura, Splash Screen sem tela branca, resposta do botão Voltar do Android, Feedback Háptico e ajuste de teclado virtual) e o diretório nativo `android/` devidamente sincronizado.
+
+### 1. Sincronizar alterações da Web com o Android:
+```bash
+npm run cap:build
+```
+
+### 2. Gerar a Chave de Assinatura (Keystore):
+```bash
+keytool -genkey -v -keystore release-key.jks -alias bjjacademy -keyalg RSA -keysize 2048 -validity 10000
+```
+
+### 3. Configurar os dados no arquivo `android/key.properties`:
+```properties
+RELEASE_STORE_FILE=../../release-key.jks
+RELEASE_STORE_PASSWORD=sua_senha_do_keystore
+RELEASE_KEY_ALIAS=bjjacademy
+RELEASE_KEY_PASSWORD=sua_senha_da_chave
+```
+
+### 4. Gerar o arquivo `.aab` de produção (Release Bundle):
+```bash
+cd android
+./gradlew bundleRelease
+```
+*(No Windows, execute `.\gradlew.bat bundleRelease`)*
+
+O pacote assinado pronto para upload no Google Play Console será gerado em:
+`android/app/build/outputs/bundle/release/app-release.aab`
+
+---
+
 ## 📄 Licença
 
 Este projeto é desenvolvido para gestão de academias de artes marciais. Todos os direitos reservados.

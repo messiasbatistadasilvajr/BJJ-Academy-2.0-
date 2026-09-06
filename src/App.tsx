@@ -38,6 +38,7 @@ import { CloudDatabaseStatusModal } from './components/common/CloudDatabaseStatu
 import { academyVoiceEngine } from './utils/voiceNotification';
 import { useOnlineStatus } from './hooks/usePWAInstall';
 import { safeLocalStorageGet, safeLocalStorageSet } from './utils/safeStorage';
+import { triggerNativeHaptic } from './utils/nativeApp';
 import { ErrorBoundary } from './components/common/ErrorBoundary';
 import {
   subscribeToStudents,
@@ -308,6 +309,7 @@ export default function App() {
     };
     setActivePush(notif);
     setDynamicIslandNotice(title);
+    triggerNativeHaptic(type === 'promotion' ? 'success' : 'medium');
 
     // Dispara o jingle e a voz com o nome da academia cadastrada (estilo Mercado Livre)!
     if (activeAcademy && activeAcademy.voiceEnabled) {

@@ -1,0 +1,6 @@
+# Exemplo de configuração da Chave de Assinatura (Release Keystore)
+# Para segurança, NUNCA envie sua chave real (.jks) ou este arquivo com senhas reais para repositórios públicos.
+RELEASE_STORE_FILE=../release-key.jks
+RELEASE_STORE_PASSWORD=coloque_a_senha_do_keystore_aqui
+RELEASE_KEY_ALIAS=bjjacademy
+RELEASE_KEY_PASSWORD=coloque_a_senha_da_chave_aqui
