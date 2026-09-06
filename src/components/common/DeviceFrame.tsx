@@ -35,6 +35,7 @@ interface DeviceFrameProps {
   onOpenStudentManagement?: () => void;
   studentsCount?: number;
   isCloudSynced?: boolean;
+  onOpenCEOProfile?: () => void;
 }
 
 export const DeviceFrame: React.FC<DeviceFrameProps> = ({
@@ -64,9 +65,10 @@ export const DeviceFrame: React.FC<DeviceFrameProps> = ({
   onOpenStudentManagement,
   studentsCount,
   isCloudSynced = true,
+  onOpenCEOProfile,
 }) => {
   const roles: { id: UserRole; label: string; icon: React.FC<{ className?: string }>; color: string; badge?: string }[] = [
-    { id: 'general_manager', label: 'Gestor Geral BJJ', icon: Crown, color: 'text-amber-400', badge: 'SUPER ADMIN' },
+    { id: 'general_manager', label: 'CEO / Super Admin', icon: Crown, color: 'text-amber-400', badge: 'CEO MESSIAS' },
     { id: 'manager', label: 'Gestor Filial', icon: Briefcase, color: 'text-cyan-400', badge: 'ACADEMIA' },
     { id: 'teacher', label: 'Professor Tatame', icon: GraduationCap, color: 'text-emerald-400' },
     { id: 'student', label: 'Aluno', icon: User, color: 'text-red-400' },
@@ -134,6 +136,18 @@ export const DeviceFrame: React.FC<DeviceFrameProps> = ({
 
         {/* Viewport, OS and Tech Tools */}
         <div className="flex items-center gap-1.5">
+          {/* CEO Profile Quick Button */}
+          {onOpenCEOProfile && (
+            <button
+              onClick={onOpenCEOProfile}
+              className="px-2.5 py-1.5 rounded-xl bg-gradient-to-r from-amber-500/20 to-amber-600/20 hover:from-amber-500/30 hover:to-amber-600/30 border border-amber-500/40 text-amber-300 hover:text-amber-200 text-xs font-black flex items-center gap-1.5 transition shadow-sm"
+              title="Cadastro Oficial do CEO: Messias Batista da Silva Jr"
+            >
+              <Crown className="w-3.5 h-3.5 text-amber-400" />
+              <span className="hidden sm:inline">Perfil CEO</span>
+            </button>
+          )}
+
           {/* Cloud Database Firestore Status Chip */}
           <button
             onClick={onOpenCloudStatus}

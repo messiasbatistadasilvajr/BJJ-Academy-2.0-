@@ -8,7 +8,7 @@ import {
   Tablet, ShoppingBag, Award, FileText, Trophy, Volume2,
   Lock, Unlock, Calculator, Building2, ShieldAlert, Copy, Check,
   QrCode, CheckCheck, Edit3, Sparkles, Download, AlertCircle, MessageCircle, Cake,
-  Database, Cloud
+  Database, Cloud, Crown
 } from 'lucide-react';
 import { 
   ClassSession, Invoice, Announcement, PushNotification, 
@@ -55,6 +55,7 @@ interface ManagerViewProps {
   onOpenStudentManagement?: () => void;
   onOpenCloudStatus?: () => void;
   studentsCount?: number;
+  onOpenCEOProfile?: () => void;
 }
 
 export const ManagerView: React.FC<ManagerViewProps> = ({
@@ -90,6 +91,7 @@ export const ManagerView: React.FC<ManagerViewProps> = ({
   onOpenStudentManagement,
   onOpenCloudStatus,
   studentsCount,
+  onOpenCEOProfile,
 }) => {
   const [activeTab, setActiveTab] = useState<'dashboard' | 'financeiro' | 'crm' | 'push' | 'academies'>('dashboard');
   
@@ -365,11 +367,11 @@ export const ManagerView: React.FC<ManagerViewProps> = ({
               {isGeneralManager ? '👑' : '🏢'}
             </div>
             <div>
-              <div className="flex items-center gap-1.5">
-                <span className={`text-[10px] font-bold uppercase tracking-wider ${
+              <div className="flex items-center gap-1.5 flex-wrap">
+                <span className={`text-[10px] font-black uppercase tracking-wider ${
                   isGeneralManager ? 'text-amber-400' : 'text-cyan-400'
                 }`}>
-                  {isGeneralManager ? 'Gestor Geral BJJ ACADEMY' : 'Responsável da Academia Cadastrada'}
+                  {isGeneralManager ? '👑 CEO & Fundador BJJ ACADEMY' : 'Responsável da Academia Cadastrada'}
                 </span>
                 <span className={`text-[9px] border px-1.5 py-0.2 rounded-full font-bold flex items-center gap-0.5 ${
                   isGeneralManager 
@@ -378,20 +380,32 @@ export const ManagerView: React.FC<ManagerViewProps> = ({
                 }`}>
                   <ShieldCheck size={10} /> {isGeneralManager ? 'Super Admin' : 'Blindagem Ativa'}
                 </span>
+                {isGeneralManager && (
+                  <button
+                    type="button"
+                    onClick={() => onOpenCEOProfile ? onOpenCEOProfile() : setIsEditGmOpen(true)}
+                    className="px-2 py-0.5 rounded-full bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 text-[9px] font-black flex items-center gap-1 transition shadow-sm"
+                  >
+                    <Crown size={9} />
+                    <span>Cadastro CEO</span>
+                  </button>
+                )}
               </div>
               <h2 className="text-sm font-black text-white leading-snug">
                 {isGeneralManager ? gmData.name : activeAcademyName}
               </h2>
               {isGeneralManager ? (
-                <div className="text-[10px] text-slate-400 font-mono flex items-center gap-1.5 mt-0.5">
+                <div className="text-[10px] text-slate-400 font-mono flex items-center gap-1.5 mt-0.5 flex-wrap">
+                  <span className="text-amber-300 font-bold">{gmData.title || 'CEO & Fundador'}, ({gmData.martialArtsRank || '• Mestre Fundador'})</span>
+                  <span>•</span>
                   <span>CPF: {gmData.formattedCpf || gmData.cpf}</span>
                   <span>•</span>
                   <span className="text-emerald-400 font-bold">PIX: {gmData.pixKey}</span>
                   <button
                     type="button"
-                    onClick={() => setIsEditGmOpen(true)}
-                    className="text-slate-400 hover:text-amber-300 transition p-0.5"
-                    title="Editar Dados do Gestor Geral"
+                    onClick={() => onOpenCEOProfile ? onOpenCEOProfile() : setIsEditGmOpen(true)}
+                    className="text-slate-400 hover:text-amber-300 transition p-0.5 ml-1"
+                    title="Editar Cadastro Oficial do CEO"
                   >
                     <Edit3 size={11} />
                   </button>

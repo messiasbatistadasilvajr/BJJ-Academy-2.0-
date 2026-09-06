@@ -139,3 +139,70 @@ export function exportAttendanceReportCSV(session: ClassSession) {
   const safeTitle = session.name.toLowerCase().replace(/[^a-z0-9]/g, '_');
   downloadCSV(csvContent, `chamada_tatame_${safeTitle}_${Date.now()}.csv`);
 }
+
+/**
+ * Exports complete student, parents and medical roster to Excel-friendly CSV.
+ */
+export function exportStudentsListCSV(students: import('../types').StudentProfile[], academyName: string = 'BJJ Academy') {
+  const headers = [
+    'ID Aluno',
+    'Nome Completo',
+    'Faixa',
+    'Graus',
+    'Categoria',
+    'Idade',
+    'Data Nasc.',
+    'CPF Aluno',
+    'Telefone Aluno',
+    'E-mail Aluno',
+    'É Menor (Kids)?',
+    'Nome do Responsável',
+    'Parentesco',
+    'CPF Responsável',
+    'Telefone Responsável',
+    'E-mail Responsável',
+    'Contato Emergência',
+    'Cidade/UF',
+    'Plano / Vencimento',
+    'Plano de Saúde',
+    'Atestado Médico',
+    'Termos & LGPD'
+  ];
+
+  const rows = students.map(s => [
+    `"${s.id}"`,
+    `"${s.name}"`,
+    `"${s.belt}"`,
+    s.stripes ?? 0,
+    `"${s.category || 'Adulto'}"`,
+    s.age ?? (s.isMinor ? 'Kids' : '-'),
+    `"${s.birthDate || '-'}"`,
+    `"${s.cpf || '-'}"`,
+    `"${s.phone || '-'}"`,
+    `"${s.email || '-'}"`,
+    `"${s.isMinor ? 'SIM (Kids/Juvenil)' : 'NÃO (Adulto)'}"`,
+    `"${s.parentName || '-'}"`,
+    `"${s.parentRelationship || '-'}"`,
+    `"${s.parentCpf || '-'}"`,
+    `"${s.parentPhone || '-'}"`,
+    `"${s.parentEmail || '-'}"`,
+    `"${s.emergencyContactPhone ? `${s.emergencyContactName || ''} (${s.emergencyContactPhone})` : '-'}"`,
+    `"${s.city || '-'}/${s.state || '-'}"`,
+    `"${s.planName || 'Mensal'} (Dia ${s.billingDueDay || 10})"`,
+    `"${s.healthInsurance || 'Não informado'}"`,
+    `"${s.hasMedicalCertificate ? 'ENTREGUE' : 'PENDENTE'}"`,
+    `"${s.lgpdConsent && s.termsAccepted ? 'CONFORME LGPD' : 'PENDENTE'}"`
+  ]);
+
+  const csvContent = [
+    `CADASTRO GERAL DE ALUNOS, PAIS E RESPONSÁVEIS - ${academyName.toUpperCase()}`,
+    `Gerado em: ${new Date().toLocaleDateString('pt-BR')} às ${new Date().toLocaleTimeString('pt-BR')}`,
+    `Total de Alunos Registrados: ${students.length}`,
+    '',
+    headers.join(';'),
+    ...rows.map(r => r.join(';'))
+  ].join('\r\n');
+
+  const safeName = academyName.toLowerCase().replace(/[^a-z0-9]/g, '_');
+  downloadCSV(csvContent, `cadastro_alunos_responsaveis_${safeName}_${Date.now()}.csv`);
+}

@@ -89,5 +89,14 @@ service cloud.firestore {
         && request.resource.data.phone is string;
       allow delete: if isValidId(leadId);
     }
+
+    // 8. General Manager / CEO Profile
+    match /general_manager/{gmId} {
+      allow read: if true;
+      allow create, update: if isValidId(gmId)
+        && request.resource.data.name is string
+        && request.resource.data.name.size() > 0;
+      allow delete: if isValidId(gmId);
+    }
   }
 }

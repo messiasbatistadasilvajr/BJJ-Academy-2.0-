@@ -28,6 +28,14 @@ interface AcademyRegistrationModalProps {
 
 // Preset logos or martial shields
 const PRESET_LOGOS = [
+  { 
+    id: 'loyalty_official', 
+    label: 'Loyalty Jiu-Jitsu', 
+    icon: '/loyalty_logo.jpg', 
+    isCustomImage: true, 
+    bg: 'from-slate-950 via-slate-900 to-black',
+    badge: 'MM XXIII'
+  },
   { id: 'bjj_gold', label: 'BJJ Dourado', icon: '🥋', bg: 'from-amber-600 to-yellow-800' },
   { id: 'red_shield', label: 'Escudo Vermelho', icon: '🛡️', bg: 'from-red-600 to-red-900' },
   { id: 'eagle', label: 'Águia Marcial', icon: '🦅', bg: 'from-blue-600 to-slate-900' },
@@ -634,22 +642,26 @@ export const AcademyRegistrationModal: React.FC<AcademyRegistrationModalProps> =
                   <label className="block text-[11px] font-bold uppercase text-slate-300 mb-2">
                     Brasão / Identidade Visual da Academia no Tatame
                   </label>
-                  <div className="grid grid-cols-3 sm:grid-cols-6 gap-2">
+                  <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-2">
                     {PRESET_LOGOS.map((logo) => (
                       <button
                         type="button"
                         key={logo.id}
                         onClick={() => setSelectedLogoPreset(logo.id)}
-                        className={`p-2.5 rounded-xl border flex flex-col items-center justify-center gap-1 transition ${
+                        className={`p-2 rounded-xl border flex flex-col items-center justify-center gap-1 transition ${
                           selectedLogoPreset === logo.id
-                            ? 'bg-slate-800 border-red-500 ring-2 ring-red-500/50 text-white'
+                            ? 'bg-slate-800 border-amber-500 ring-2 ring-amber-500/50 text-white'
                             : 'bg-slate-900 border-slate-800 text-slate-400 hover:text-white'
                         }`}
                       >
-                        <div className={`w-8 h-8 rounded-lg bg-gradient-to-br ${logo.bg} flex items-center justify-center text-base shadow`}>
-                          {logo.icon}
+                        <div className={`w-9 h-9 rounded-lg bg-gradient-to-br ${logo.bg} flex items-center justify-center text-base shadow overflow-hidden p-1`}>
+                          {logo.isCustomImage ? (
+                            <img src={logo.icon} alt={logo.label} className="w-full h-full object-contain rounded" referrerPolicy="no-referrer" />
+                          ) : (
+                            logo.icon
+                          )}
                         </div>
-                        <span className="text-[10px] font-bold">{logo.label}</span>
+                        <span className="text-[10px] font-bold truncate max-w-full">{logo.label}</span>
                       </button>
                     ))}
                   </div>
@@ -1172,8 +1184,12 @@ export const AcademyRegistrationModal: React.FC<AcademyRegistrationModalProps> =
                         {/* Card Header */}
                         <div className="flex items-start justify-between gap-2">
                           <div className="flex items-center gap-3">
-                            <div className="w-11 h-11 rounded-2xl bg-gradient-to-br from-slate-800 to-slate-950 border border-slate-700 flex items-center justify-center text-xl shadow-md shrink-0">
-                              🥋
+                            <div className="w-11 h-11 rounded-2xl bg-gradient-to-br from-slate-800 to-slate-950 border border-slate-700 flex items-center justify-center text-xl shadow-md shrink-0 overflow-hidden p-1">
+                              {acad.logo ? (
+                                <img src={acad.logo} alt={acad.name} className="w-full h-full object-contain rounded-xl" referrerPolicy="no-referrer" />
+                              ) : (
+                                '🥋'
+                              )}
                             </div>
                             <div>
                               <div className="flex items-center gap-2">

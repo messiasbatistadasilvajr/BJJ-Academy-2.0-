@@ -35,6 +35,7 @@ import { BirthdayAlertModal } from './components/common/BirthdayAlertModal';
 import { IBJJFBeltGuideModal } from './components/common/IBJJFBeltGuideModal';
 import { StudentManagementModal } from './components/common/StudentManagementModal';
 import { CloudDatabaseStatusModal } from './components/common/CloudDatabaseStatusModal';
+import { CEOProfileModal } from './components/common/CEOProfileModal';
 import { academyVoiceEngine } from './utils/voiceNotification';
 import { useOnlineStatus } from './hooks/usePWAInstall';
 import { safeLocalStorageGet, safeLocalStorageSet } from './utils/safeStorage';
@@ -53,6 +54,8 @@ import {
   saveSparringSessionToFirestore,
   subscribeToBirthdays,
   saveBirthdayToFirestore,
+  subscribeToGeneralManager,
+  saveGeneralManagerToFirestore,
   seedInitialFirestoreDataIfEmpty
 } from './firebase/firestoreService';
 
@@ -158,14 +161,48 @@ export default function App() {
     (b) => b.birthDay === 4 && b.birthMonth === 9
   ).length;
 
-  // Platform General Manager (Messias Batista da Silva junior)
+  // Platform General Manager & CEO Profile (Messias Batista da Silva junior)
+  const [isCEOProfileOpen, setIsCEOProfileOpen] = useState(false);
   const [generalManager, setGeneralManager] = useState<PlatformGeneralManager>(() => {
-    return safeLocalStorageGet<PlatformGeneralManager>('bjj_general_manager', defaultPlatformGeneralManager);
+    const saved = safeLocalStorageGet<PlatformGeneralManager>('bjj_general_manager', defaultPlatformGeneralManager);
+    if (saved && (saved.martialArtsRank === 'Faixa Preta • Mestre Fundador' || !saved.martialArtsRank)) {
+      return {
+        ...saved,
+        role: 'CEO & Fundador',
+        title: 'CEO & Fundador',
+        martialArtsRank: '• Mestre Fundador',
+      };
+    }
+    return saved;
   });
+
+  const handleUpdateGeneralManager = (updated: PlatformGeneralManager) => {
+    setGeneralManager(updated);
+    safeLocalStorageSet('bjj_general_manager', updated);
+    saveGeneralManagerToFirestore(updated).catch((err) => {
+      console.warn('Sync GM to Firestore error:', err);
+    });
+  };
 
   // Registered Academies State (Persisted in localStorage & Firestore)
   const [academies, setAcademies] = useState<RegisteredAcademy[]>(() => {
-    return safeLocalStorageGet<RegisteredAcademy[]>('bjj_academies', mockRegisteredAcademies);
+    const cached = safeLocalStorageGet<RegisteredAcademy[]>('bjj_academies', mockRegisteredAcademies);
+    // Ensure Loyalty Jiu-Jitsu is included with the official photo.jpg / loyalty_logo
+    const loyaltyMock = mockRegisteredAcademies.find(a => a.id === 'acad_loyalty_jiujitsu');
+    if (loyaltyMock) {
+      const existingLoyaltyIndex = cached.findIndex(a => a.id === 'acad_loyalty_jiujitsu' || a.name.toLowerCase().includes('loyalty'));
+      if (existingLoyaltyIndex === -1) {
+        return [loyaltyMock, ...cached];
+      } else {
+        cached[existingLoyaltyIndex] = {
+          ...cached[existingLoyaltyIndex],
+          logo: '/loyalty_logo.jpg',
+          logoPresetId: 'loyalty_official'
+        };
+        return cached;
+      }
+    }
+    return cached;
   });
   const [activeAcademyId, setActiveAcademyId] = useState<string>(() => {
     return safeLocalStorageGet<string>('bjj_active_academy_id', mockRegisteredAcademies[0].id);
@@ -243,6 +280,14 @@ export default function App() {
       }
     });
 
+    const unsubGm = subscribeToGeneralManager((updatedGm) => {
+      if (updatedGm) {
+        setGeneralManager(updatedGm);
+        safeLocalStorageSet('bjj_general_manager', updatedGm);
+        setIsCloudSynced(true);
+      }
+    });
+
     return () => {
       unsubStudents();
       unsubAcademies();
@@ -250,6 +295,7 @@ export default function App() {
       unsubInvoices();
       unsubSparring();
       unsubBirthdays();
+      unsubGm();
     };
   }, []);
 
@@ -609,6 +655,7 @@ export default function App() {
       onOpenStudentManagement={() => setIsStudentManagementOpen(true)}
       studentsCount={studentsList.length}
       isCloudSynced={isCloudSynced}
+      onOpenCEOProfile={() => setIsCEOProfileOpen(true)}
     >
       {/* Offline Mode Banner */}
       {!isOnline && (
@@ -770,12 +817,13 @@ export default function App() {
           activeAcademyId={activeAcademy.id}
           academies={academies}
           generalManager={generalManager}
-          onUpdateGeneralManager={setGeneralManager}
+          onUpdateGeneralManager={handleUpdateGeneralManager}
           onOpenAcademyRegistration={() => setActiveRole('academy_registration')}
           isGeneralManager={activeRole === 'general_manager'}
           onOpenStudentManagement={() => setIsStudentManagementOpen(true)}
           onOpenCloudStatus={() => setIsCloudStatusOpen(true)}
           studentsCount={studentsList.length}
+          onOpenCEOProfile={() => setIsCEOProfileOpen(true)}
         />
       )}
 
@@ -1188,6 +1236,17 @@ export default function App() {
         invoicesCount={invoices.length}
         academiesCount={academies.length}
         isCloudSynced={isCloudSynced}
+      />
+
+      {/* 👑 Official CEO Profile & Credentials Modal (Messias Batista da Silva Jr) */}
+      <CEOProfileModal
+        isOpen={isCEOProfileOpen}
+        onClose={() => setIsCEOProfileOpen(false)}
+        generalManager={generalManager}
+        onUpdateGeneralManager={handleUpdateGeneralManager}
+        academies={academies}
+        onOpenSaaSSimulator={() => setIsSaaSSimulatorOpen(true)}
+        onOpenFinancial={() => setIsFinancialOpen(true)}
       />
     </DeviceFrame>
     </ErrorBoundary>

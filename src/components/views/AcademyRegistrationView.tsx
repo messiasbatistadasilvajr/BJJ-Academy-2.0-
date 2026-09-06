@@ -4,7 +4,8 @@ import {
   DollarSign, ShieldCheck, Sparkles, Check, CheckCircle2, AlertCircle, 
   Trash2, Edit3, Volume2, Play, QrCode, Copy, ArrowRight, ExternalLink,
   Percent, Award, Users, Compass, Eye, Filter, Sliders, RefreshCw,
-  Download, ArrowLeft, CheckCheck, Shield
+  Download, ArrowLeft, CheckCheck, Shield, Lock, Scale, FileText, 
+  FileCheck2, Loader2, HelpCircle, Info, FileSpreadsheet
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { 
@@ -15,6 +16,14 @@ import { defaultPlatformGeneralManager } from '../../data/mockData';
 import { academyVoiceEngine } from '../../utils/voiceNotification';
 import { formatBRL } from '../../utils/financialCalculations';
 import { exportAcademiesListCSV } from '../../utils/csvExport';
+import {
+  validateCNPJ, formatCNPJ,
+  validateCPF, formatCPF,
+  validateCEP, formatCEP,
+  formatPhone, fetchAddressByCEP,
+  validatePixKey, generateContractProtocol
+} from '../../utils/brazilianDocValidators';
+import { SaaSAgreementModal } from '../common/SaaSAgreementModal';
 
 interface AcademyRegistrationViewProps {
   academies: RegisteredAcademy[];
@@ -29,7 +38,15 @@ interface AcademyRegistrationViewProps {
 }
 
 // Preset logos or martial shields
-const PRESET_LOGOS = [
+export const PRESET_LOGOS = [
+  { 
+    id: 'loyalty_official', 
+    label: 'Loyalty Jiu-Jitsu', 
+    icon: '/loyalty_logo.jpg', 
+    isCustomImage: true, 
+    bg: 'from-slate-950 via-slate-900 to-black',
+    badge: 'MM XXIII'
+  },
   { id: 'bjj_gold', label: 'BJJ Dourado', icon: '🥋', bg: 'from-amber-600 to-yellow-800' },
   { id: 'red_shield', label: 'Escudo Vermelho', icon: '🛡️', bg: 'from-red-600 to-red-900' },
   { id: 'eagle', label: 'Águia Marcial', icon: '🦅', bg: 'from-blue-600 to-slate-900' },
@@ -71,6 +88,7 @@ export const AcademyRegistrationView: React.FC<AcademyRegistrationViewProps> = (
   const [branch, setBranch] = useState('');
   const [cnpj, setCnpj] = useState('');
   const [selectedLogoPreset, setSelectedLogoPreset] = useState(PRESET_LOGOS[0].id);
+  const [customLogoUrl, setCustomLogoUrl] = useState<string>('/loyalty_logo.jpg');
 
   // Form State: 2. Endereço & Localização
   const [cep, setCep] = useState('');
@@ -140,10 +158,122 @@ export const AcademyRegistrationView: React.FC<AcademyRegistrationViewProps> = (
     }
   ]);
 
+  // Form State: 4. Representante Legal & Segurança Jurídica (Sócio Administrador)
+  const [legalRepresentativeName, setLegalRepresentativeName] = useState('');
+  const [legalRepresentativeCpf, setLegalRepresentativeCpf] = useState('');
+  const [legalRepresentativeRole, setLegalRepresentativeRole] = useState('Sócio Administrador');
+  const [legalRepresentativePhone, setLegalRepresentativePhone] = useState('');
+  const [billingDueDay, setBillingDueDay] = useState<number>(10);
+  const [financialContactEmail, setFinancialContactEmail] = useState('');
+  const [financialContactPhone, setFinancialContactPhone] = useState('');
+
+  // Form State: 5. Segurança do Tatame & Filiação Marcial
+  const [federationAffiliation, setFederationAffiliation] = useState('CBJJ / IBJJF');
+  const [federationRegisterNumber, setFederationRegisterNumber] = useState('');
+  const [fireDepartmentPermit, setFireDepartmentPermit] = useState('');
+  const [operatingLicense, setOperatingLicense] = useState('');
+  const [hasFirstAidKit, setHasFirstAidKit] = useState(true);
+
+  // Form State: Termos Contratuais & Segurança Mútua (LGPD & Isenção Médica)
+  const [termsAccepted, setTermsAccepted] = useState(false);
+  const [lgpdConsent, setLgpdConsent] = useState(false);
+  const [medicalResponsibilityWaiver, setMedicalResponsibilityWaiver] = useState(false);
+  const [truthfulnessDeclaration, setTruthfulnessDeclaration] = useState(false);
+  const [isAgreementModalOpen, setIsAgreementModalOpen] = useState(false);
+  const [viewingContractAcademy, setViewingContractAcademy] = useState<RegisteredAcademy | null>(null);
+
+  // CEP lookup state
+  const [isSearchingCep, setIsSearchingCep] = useState(false);
+  const [cepLookupFeedback, setCepLookupFeedback] = useState<'success' | 'error' | null>(null);
+
   // Messages
   const [formSuccessMessage, setFormSuccessMessage] = useState<string | null>(null);
   const [formErrorMessage, setFormErrorMessage] = useState<string | null>(null);
   const [copiedPixKey, setCopiedPixKey] = useState(false);
+
+  // Mathematical & Algorithmic Validations
+  const isCnpjValid = useMemo(() => validateCNPJ(cnpj), [cnpj]);
+  const isCpfValid = useMemo(() => validateCPF(legalRepresentativeCpf), [legalRepresentativeCpf]);
+  const pixValidation = useMemo(() => validatePixKey(pixKey, pixKeyType), [pixKey, pixKeyType]);
+
+  // Protocol generation for the current contract
+  const currentContractProtocol = useMemo(() => {
+    return generateContractProtocol(editingAcademyId || 'NEW', cnpj || '0000');
+  }, [editingAcademyId, cnpj]);
+
+  // Real-time Compliance Audit Score
+  const complianceSteps = useMemo(() => {
+    return [
+      {
+        id: 'cnpj',
+        title: 'CNPJ Válido na Receita Federal',
+        ok: isCnpjValid,
+        detail: isCnpjValid ? 'Dígitos verificadores válidos' : (cnpj ? 'CNPJ matematicamente incorreto' : 'Pendente de preenchimento')
+      },
+      {
+        id: 'rep',
+        title: 'Representante Legal & CPF Válido',
+        ok: !!legalRepresentativeName.trim() && isCpfValid,
+        detail: isCpfValid && legalRepresentativeName.trim() 
+          ? `${legalRepresentativeName.trim().split(' ')[0]} (${legalRepresentativeCpf})` 
+          : 'Sócio e CPF auditado obrigatórios'
+      },
+      {
+        id: 'instructor',
+        title: 'Responsabilidade Técnica (CREF / CBJJ)',
+        ok: !!headInstructor.trim(),
+        detail: headInstructor.trim() ? `${headInstructor} • ${crefNumber || federationAffiliation}` : 'Professor responsável obrigatório'
+      },
+      {
+        id: 'pix',
+        title: 'Chave PIX Oficial (100% Direto)',
+        ok: pixValidation.isValid && !!pixKey.trim(),
+        detail: pixValidation.isValid ? `Recebimento sem intermediação (${pixKeyType.toUpperCase()})` : (pixValidation.message || 'Pendente')
+      },
+      {
+        id: 'terms',
+        title: 'Termos Jurídicos, LGPD & Isenção',
+        ok: termsAccepted && lgpdConsent && medicalResponsibilityWaiver && truthfulnessDeclaration,
+        detail: (termsAccepted && lgpdConsent && medicalResponsibilityWaiver && truthfulnessDeclaration)
+          ? 'Contrato e proteção mútua assinados digitalmente'
+          : '4 cláusulas obrigatórias pendentes de aceite'
+      }
+    ];
+  }, [isCnpjValid, cnpj, legalRepresentativeName, isCpfValid, legalRepresentativeCpf, headInstructor, crefNumber, federationAffiliation, pixValidation, pixKey, pixKeyType, termsAccepted, lgpdConsent, medicalResponsibilityWaiver, truthfulnessDeclaration]);
+
+  const complianceCompletedCount = complianceSteps.filter(s => s.ok).length;
+  const isFullyCompliant = complianceCompletedCount === complianceSteps.length;
+
+  // Search Address by CEP
+  const handleSearchCep = async (cepInput?: string) => {
+    const targetCep = cepInput || cep;
+    const clean = targetCep.replace(/\D/g, '');
+    if (clean.length !== 8) {
+      setCepLookupFeedback('error');
+      setTimeout(() => setCepLookupFeedback(null), 3000);
+      return;
+    }
+
+    setIsSearchingCep(true);
+    setCepLookupFeedback(null);
+    try {
+      const result = await fetchAddressByCEP(clean);
+      if (result && !result.erro) {
+        if (result.logradouro) setAddress(result.logradouro);
+        if (result.bairro) setNeighborhood(result.bairro);
+        if (result.localidade) setCity(result.localidade);
+        if (result.uf) setState(result.uf);
+        setCepLookupFeedback('success');
+      } else {
+        setCepLookupFeedback('error');
+      }
+    } catch {
+      setCepLookupFeedback('error');
+    } finally {
+      setIsSearchingCep(false);
+      setTimeout(() => setCepLookupFeedback(null), 3500);
+    }
+  };
 
   // Filtered academies list
   const filteredAcademies = useMemo(() => {
@@ -167,7 +297,8 @@ export const AcademyRegistrationView: React.FC<AcademyRegistrationViewProps> = (
     setShortName(academy.shortName || academy.name);
     setBranch(academy.branch || '');
     setCnpj(academy.cnpj);
-    setSelectedLogoPreset(academy.logoPresetId || PRESET_LOGOS[0].id);
+    setSelectedLogoPreset(academy.logoPresetId || (academy.logo?.includes('loyalty') ? 'loyalty_official' : PRESET_LOGOS[0].id));
+    setCustomLogoUrl(academy.logo || (academy.logoPresetId === 'loyalty_official' ? '/loyalty_logo.jpg' : ''));
 
     setCep(academy.cep || '');
     setAddress(academy.address);
@@ -181,6 +312,26 @@ export const AcademyRegistrationView: React.FC<AcademyRegistrationViewProps> = (
     setCrefNumber(academy.crefNumber || '');
     setStudentCapacity(academy.studentCapacity || 200);
     setTatamiAreaM2(academy.tatamiAreaM2 || 140);
+
+    // Legal & Compliance fields
+    setLegalRepresentativeName(academy.legalRepresentativeName || '');
+    setLegalRepresentativeCpf(academy.legalRepresentativeCpf || '');
+    setLegalRepresentativeRole(academy.legalRepresentativeRole || 'Sócio Administrador');
+    setLegalRepresentativePhone(academy.legalRepresentativePhone || academy.phone || '');
+    setBillingDueDay(academy.billingDueDay || 10);
+    setFinancialContactEmail(academy.financialContactEmail || academy.email || '');
+    setFinancialContactPhone(academy.financialContactPhone || academy.phone || '');
+
+    setFederationAffiliation(academy.federationAffiliation || 'CBJJ / IBJJF');
+    setFederationRegisterNumber(academy.federationRegisterNumber || '');
+    setFireDepartmentPermit(academy.fireDepartmentPermit || '');
+    setOperatingLicense(academy.operatingLicense || '');
+    setHasFirstAidKit(academy.hasFirstAidKit ?? true);
+
+    setTermsAccepted(academy.termsAccepted ?? true);
+    setLgpdConsent(academy.lgpdConsent ?? true);
+    setMedicalResponsibilityWaiver(academy.medicalResponsibilityWaiver ?? true);
+    setTruthfulnessDeclaration(true);
 
     setPixKey(academy.pixKey);
     setPixKeyType(academy.pixKeyType || 'cnpj');
@@ -223,6 +374,7 @@ export const AcademyRegistrationView: React.FC<AcademyRegistrationViewProps> = (
     setBranch('');
     setCnpj('');
     setSelectedLogoPreset(PRESET_LOGOS[0].id);
+    setCustomLogoUrl('/loyalty_logo.jpg');
     setCep('');
     setAddress('');
     setNeighborhood('');
@@ -234,6 +386,26 @@ export const AcademyRegistrationView: React.FC<AcademyRegistrationViewProps> = (
     setCrefNumber('');
     setStudentCapacity(200);
     setTatamiAreaM2(140);
+
+    setLegalRepresentativeName('');
+    setLegalRepresentativeCpf('');
+    setLegalRepresentativeRole('Sócio Administrador');
+    setLegalRepresentativePhone('');
+    setBillingDueDay(10);
+    setFinancialContactEmail('');
+    setFinancialContactPhone('');
+
+    setFederationAffiliation('CBJJ / IBJJF');
+    setFederationRegisterNumber('');
+    setFireDepartmentPermit('');
+    setOperatingLicense('');
+    setHasFirstAidKit(true);
+
+    setTermsAccepted(false);
+    setLgpdConsent(false);
+    setMedicalResponsibilityWaiver(false);
+    setTruthfulnessDeclaration(false);
+
     setPixKey('');
     setPixKeyType('cnpj');
     setBankAccount('');
@@ -244,6 +416,57 @@ export const AcademyRegistrationView: React.FC<AcademyRegistrationViewProps> = (
     setCustomWelcomeMessage('Atenção Tatame! Bem-vindo aos treinos da BJJ Academy.');
     setFormSuccessMessage(null);
     setFormErrorMessage(null);
+  };
+
+  // Carregar dados oficiais e brasão da Loyalty Jiu-Jitsu MM XXIII
+  const handleFillLoyaltyJiuJitsu = () => {
+    setName('Loyalty Jiu-Jitsu');
+    setShortName('Loyalty BJJ');
+    setBranch('Matriz Oficial • MM XXIII');
+    setCnpj('58.087.630/0001-78');
+    setSelectedLogoPreset('loyalty_official');
+    setCustomLogoUrl('/loyalty_logo.jpg');
+    setCep('01415-000');
+    setAddress('Rua Bela Cintra, 1280');
+    setNeighborhood('Consolação');
+    setCity('São Paulo');
+    setState('SP');
+    setPhone('(11) 98765-4321');
+    setEmail('contato@loyaltyjiujitsu.com.br');
+    setHeadInstructor('Messias Batista da Silva Junior (• Mestre Fundador)');
+    setCrefNumber('019844-G/SP');
+    setStudentCapacity(350);
+    setTatamiAreaM2(220);
+
+    setLegalRepresentativeName('Messias Batista da Silva Junior');
+    setLegalRepresentativeCpf('580.876.303-78');
+    setLegalRepresentativeRole('Sócio Fundador & Mestre Responsável');
+    setLegalRepresentativePhone('(11) 98765-4321');
+    setBillingDueDay(10);
+    setFinancialContactEmail('financeiro@loyaltyjiujitsu.com.br');
+    setFinancialContactPhone('(11) 98765-4321');
+
+    setFederationAffiliation('CBJJ / IBJJF');
+    setFederationRegisterNumber('CBJJ-SP-10928');
+    setFireDepartmentPermit('AVCB nº 2024-918293');
+    setOperatingLicense('Alvará Municipal nº 2024/0912');
+    setHasFirstAidKit(true);
+
+    setTermsAccepted(true);
+    setLgpdConsent(true);
+    setMedicalResponsibilityWaiver(true);
+    setTruthfulnessDeclaration(true);
+
+    setPixKey('58087630378');
+    setPixKeyType('cpf');
+    setBankAccount('Banco Inter (077) Ag: 0001 CC: 580876-0');
+    setDefaultFinePercent(2.0);
+    setDefaultMonthlyInterestPercent(1.0);
+    setMonthlyRevenueTarget(95000);
+    setPlatformPlan('enterprise');
+    setCustomWelcomeMessage('Atenção Tatame Loyalty Jiu-Jitsu! Honra, Lealdade e OSS!');
+    setFormSuccessMessage('🥋 Brasão Oficial e Dados da Loyalty Jiu-Jitsu com Blindagem Jurídica carregados com sucesso!');
+    setTimeout(() => setFormSuccessMessage(null), 3500);
   };
 
   // Auto fill demo values for quick testing
@@ -264,6 +487,26 @@ export const AcademyRegistrationView: React.FC<AcademyRegistrationViewProps> = (
     setCrefNumber('048123-G/SP');
     setStudentCapacity(320);
     setTatamiAreaM2(180);
+
+    setLegalRepresentativeName('Marcelo Peixoto de Oliveira');
+    setLegalRepresentativeCpf('111.444.777-35');
+    setLegalRepresentativeRole('Sócio Administrador');
+    setLegalRepresentativePhone('(11) 98877-4433');
+    setBillingDueDay(15);
+    setFinancialContactEmail('financeiro@alliancemoema.com.br');
+    setFinancialContactPhone('(11) 98877-4433');
+
+    setFederationAffiliation('CBJJ / IBJJF');
+    setFederationRegisterNumber('CBJJ-SP-8831');
+    setFireDepartmentPermit('AVCB nº 2023-88712');
+    setOperatingLicense('Alvará Municipal nº 2023/1182');
+    setHasFirstAidKit(true);
+
+    setTermsAccepted(true);
+    setLgpdConsent(true);
+    setMedicalResponsibilityWaiver(true);
+    setTruthfulnessDeclaration(true);
+
     setPixKey('14.289.442/0001-88');
     setPixKeyType('cnpj');
     setBankAccount('Banco Itaú (341) Ag: 0524 CC: 45890-2');
@@ -272,7 +515,7 @@ export const AcademyRegistrationView: React.FC<AcademyRegistrationViewProps> = (
     setMonthlyRevenueTarget(65000);
     setPlatformPlan('enterprise');
     setCustomWelcomeMessage('Atenção Tatame Alliance Moema: Respeito, disciplina e OSS!');
-    setFormSuccessMessage('Dados de exemplo preenchidos! Pronto para cadastrar.');
+    setFormSuccessMessage('Dados de exemplo com conformidade jurídica preenchidos! Pronto para cadastrar.');
     setTimeout(() => setFormSuccessMessage(null), 3000);
   };
 
@@ -340,15 +583,31 @@ export const AcademyRegistrationView: React.FC<AcademyRegistrationViewProps> = (
       return;
     }
     if (!cnpj.trim()) {
-      setFormErrorMessage('Por favor, informe o CNPJ da academia para emissão e cobrança via PIX.');
+      setFormErrorMessage('Por favor, informe o CNPJ da academia.');
+      return;
+    }
+    if (!isCnpjValid) {
+      setFormErrorMessage('⚠️ CNPJ Inválido: Os dígitos verificadores do CNPJ informado não conferem. Por favor, revise os números digitados para garantir a validade fiscal.');
       return;
     }
     if (!headInstructor.trim()) {
-      setFormErrorMessage('Por favor, informe o Professor / Faixa Preta Responsável técnico.');
+      setFormErrorMessage('Por favor, informe o Professor / Faixa Preta Responsável Técnico.');
       return;
     }
-    if (!pixKey.trim()) {
-      setFormErrorMessage('Por favor, informe a Chave PIX oficial onde os alunos pagarão as mensalidades.');
+    if (!legalRepresentativeName.trim()) {
+      setFormErrorMessage('Por favor, informe o Nome do Representante Legal / Sócio Administrador da academia.');
+      return;
+    }
+    if (!legalRepresentativeCpf.trim() || !isCpfValid) {
+      setFormErrorMessage('⚠️ CPF do Representante Inválido: O CPF do sócio administrador informado é inválido. Digite um CPF válido para assinar o termo de adesão.');
+      return;
+    }
+    if (!pixKey.trim() || !pixValidation.isValid) {
+      setFormErrorMessage(`⚠️ Chave PIX Inválida: ${pixValidation.message || 'Verifique a chave informada para receber mensalidades.'}`);
+      return;
+    }
+    if (!termsAccepted || !lgpdConsent || !medicalResponsibilityWaiver || !truthfulnessDeclaration) {
+      setFormErrorMessage('🛡️ Segurança Jurídica: É obrigatório aceitar todos os 4 termos legais (Termos SaaS, Proteção LGPD, Isenção de Tatame e Veracidade Cadastral) para proteger ambas as partes.');
       return;
     }
 
@@ -359,6 +618,7 @@ export const AcademyRegistrationView: React.FC<AcademyRegistrationViewProps> = (
       branch: branch.trim() || 'Matriz',
       cnpj: cnpj.trim(),
       logoPresetId: selectedLogoPreset,
+      logo: customLogoUrl || (selectedLogoPreset === 'loyalty_official' ? '/loyalty_logo.jpg' : undefined),
       address: address.trim(),
       neighborhood: neighborhood.trim(),
       city: city.trim(),
@@ -383,6 +643,30 @@ export const AcademyRegistrationView: React.FC<AcademyRegistrationViewProps> = (
       monthlyPlatformFeeBRL: platformPlan === 'basic' ? 149.00 : platformPlan === 'pro' ? 249.00 : 449.00,
       platformFeeStatus: 'paid',
       lastPlatformPaymentDate: '10/05/2026',
+
+      // Legal, Compliance & Structural Fields
+      legalRepresentativeName: legalRepresentativeName.trim(),
+      legalRepresentativeCpf: legalRepresentativeCpf.trim(),
+      legalRepresentativeRole: legalRepresentativeRole.trim(),
+      legalRepresentativePhone: legalRepresentativePhone.trim() || phone.trim(),
+      billingDueDay,
+      financialContactEmail: financialContactEmail.trim() || email.trim(),
+      financialContactPhone: financialContactPhone.trim() || phone.trim(),
+
+      federationAffiliation: federationAffiliation.trim(),
+      federationRegisterNumber: federationRegisterNumber.trim(),
+      fireDepartmentPermit: fireDepartmentPermit.trim(),
+      operatingLicense: operatingLicense.trim(),
+      hasFirstAidKit,
+
+      termsAccepted,
+      termsAcceptedDate: new Date().toLocaleDateString('pt-BR') + ' ' + new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }),
+      termsAcceptedIp: 'Autenticado via Painel Seguro BJJacademy',
+      termsVersion: '2026.2',
+      lgpdConsent,
+      medicalResponsibilityWaiver,
+      digitalSignatureProtocol: currentContractProtocol,
+
       voiceEnabled,
       voiceStyle,
       notificationFormat: 'name_and_title',
@@ -603,6 +887,90 @@ export const AcademyRegistrationView: React.FC<AcademyRegistrationViewProps> = (
             {/* LEFT 2 COLUMNS: FORM STEPS */}
             <div className="lg:col-span-2 space-y-5">
               
+              {/* COMPLIANCE & LEGAL SHIELD AUDIT SCORE CARD */}
+              <div className="p-5 rounded-3xl bg-gradient-to-br from-slate-900 via-slate-900/95 to-slate-950 border border-slate-700/80 shadow-2xl relative overflow-hidden">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-800 pb-3">
+                  <div className="flex items-center gap-2.5">
+                    <div className={`w-9 h-9 rounded-xl flex items-center justify-center text-lg ${
+                      isFullyCompliant 
+                        ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/40' 
+                        : 'bg-amber-500/20 text-amber-400 border border-amber-500/40'
+                    }`}>
+                      <ShieldCheck size={20} />
+                    </div>
+                    <div>
+                      <h3 className="text-sm font-black text-white flex items-center gap-2">
+                        <span>Blindagem Jurídica & Nível de Conformidade Cadastral</span>
+                        <span className={`px-2 py-0.5 rounded-full text-[10px] font-black ${
+                          isFullyCompliant
+                            ? 'bg-emerald-500 text-slate-950 shadow-sm'
+                            : 'bg-amber-500/20 text-amber-300 border border-amber-500/40'
+                        }`}>
+                          {complianceCompletedCount}/5 Requisitos
+                        </span>
+                      </h3>
+                      <p className="text-[11px] text-slate-400">
+                        Auditoria em tempo real para proteção jurídica mútua da plataforma e da academia (LGPD, Receita e Tatame).
+                      </p>
+                    </div>
+                  </div>
+
+                  {isFullyCompliant ? (
+                    <span className="px-3 py-1 rounded-xl bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 text-xs font-black flex items-center gap-1.5 self-start sm:self-auto">
+                      <CheckCircle2 size={14} />
+                      <span>Cadastro 100% Blindado</span>
+                    </span>
+                  ) : (
+                    <span className="px-3 py-1 rounded-xl bg-amber-500/10 text-amber-300 border border-amber-500/30 text-xs font-bold flex items-center gap-1.5 self-start sm:self-auto">
+                      <AlertCircle size={14} />
+                      <span>{5 - complianceCompletedCount} item(s) pendente(s)</span>
+                    </span>
+                  )}
+                </div>
+
+                {/* Progress bar */}
+                <div className="w-full bg-slate-950 rounded-full h-2 mt-3 border border-slate-800 overflow-hidden">
+                  <div 
+                    className={`h-full transition-all duration-500 rounded-full ${
+                      isFullyCompliant 
+                        ? 'bg-gradient-to-r from-emerald-500 to-teal-400' 
+                        : 'bg-gradient-to-r from-amber-500 to-yellow-400'
+                    }`}
+                    style={{ width: `${(complianceCompletedCount / 5) * 100}%` }}
+                  />
+                </div>
+
+                {/* Checklist items */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2.5 pt-3">
+                  {complianceSteps.map((step) => (
+                    <div 
+                      key={step.id}
+                      className={`p-2.5 rounded-2xl border transition text-xs flex items-start gap-2 ${
+                        step.ok 
+                          ? 'bg-slate-950/90 border-emerald-500/30 text-slate-200' 
+                          : 'bg-slate-950/60 border-slate-800/80 text-slate-400'
+                      }`}
+                    >
+                      <div className="mt-0.5 shrink-0">
+                        {step.ok ? (
+                          <CheckCircle2 size={15} className="text-emerald-400" />
+                        ) : (
+                          <div className="w-3.5 h-3.5 rounded-full border border-slate-600 flex items-center justify-center text-[9px] font-bold text-slate-500" />
+                        )}
+                      </div>
+                      <div className="min-w-0">
+                        <div className={`font-bold text-[11px] truncate ${step.ok ? 'text-white' : 'text-slate-300'}`}>
+                          {step.title}
+                        </div>
+                        <div className="text-[10px] text-slate-400 truncate">
+                          {step.detail}
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+              
               {/* Box 1: Identidade da Academia & CNPJ */}
               <div className="p-5 rounded-3xl bg-slate-900/90 border border-slate-800 shadow-xl space-y-4">
                 <div className="flex items-center justify-between border-b border-slate-800 pb-3">
@@ -626,7 +994,7 @@ export const AcademyRegistrationView: React.FC<AcademyRegistrationViewProps> = (
                       onChange={(e) => setName(e.target.value)}
                       onBlur={handleNameBlur}
                       className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3.5 py-2.5 text-white font-semibold focus:border-red-500 focus:outline-none transition"
-                      placeholder="Ex: Gracie Barra Alphaville ou Alliance BJJ Moema"
+                      placeholder="Ex: Loyalty Jiu-Jitsu ou Gracie Barra Alphaville"
                       required
                     />
                   </div>
@@ -640,7 +1008,7 @@ export const AcademyRegistrationView: React.FC<AcademyRegistrationViewProps> = (
                       value={shortName}
                       onChange={(e) => setShortName(e.target.value)}
                       className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3.5 py-2.5 text-white font-semibold focus:border-red-500 focus:outline-none transition"
-                      placeholder="Ex: GB Alphaville ou Alliance Moema"
+                      placeholder="Ex: Loyalty BJJ ou GB Alphaville"
                       required
                     />
                   </div>
@@ -654,88 +1022,261 @@ export const AcademyRegistrationView: React.FC<AcademyRegistrationViewProps> = (
                       value={branch}
                       onChange={(e) => setBranch(e.target.value)}
                       className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3.5 py-2.5 text-white font-semibold focus:border-red-500 focus:outline-none transition"
-                      placeholder="Ex: Matriz, Unidade Jardins, Filial Centro"
+                      placeholder="Ex: Matriz Oficial • MM XXIII, Unidade Jardins"
                     />
                   </div>
 
                   <div>
-                    <label className="block text-[11px] font-bold uppercase text-slate-300 mb-1">
-                      CNPJ da Academia *
-                    </label>
+                    <div className="flex items-center justify-between mb-1">
+                      <label className="block text-[11px] font-bold uppercase text-slate-300">
+                        CNPJ da Academia *
+                      </label>
+                      {cnpj.trim().length > 0 && (
+                        isCnpjValid ? (
+                          <span className="text-[10px] font-bold text-emerald-400 flex items-center gap-1">
+                            <CheckCircle2 size={11} /> CNPJ Válido
+                          </span>
+                        ) : (
+                          <span className="text-[10px] font-bold text-red-400 flex items-center gap-1">
+                            <AlertCircle size={11} /> CNPJ Inválido
+                          </span>
+                        )
+                      )}
+                    </div>
                     <input
                       type="text"
                       value={cnpj}
-                      onChange={(e) => setCnpj(e.target.value)}
+                      onChange={(e) => setCnpj(formatCNPJ(e.target.value))}
                       onBlur={handleCnpjBlur}
-                      className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3.5 py-2.5 text-white font-semibold focus:border-red-500 focus:outline-none font-mono transition"
+                      maxLength={18}
+                      className={`w-full bg-slate-950 border rounded-xl px-3.5 py-2.5 text-white font-semibold focus:outline-none font-mono transition ${
+                        cnpj && !isCnpjValid 
+                          ? 'border-red-500/80 focus:border-red-500' 
+                          : cnpj && isCnpjValid
+                          ? 'border-emerald-500/80 focus:border-emerald-500'
+                          : 'border-slate-700 focus:border-red-500'
+                      }`}
                       placeholder="00.000.000/0001-00"
                       required
                     />
                   </div>
                 </div>
 
-                {/* Preset Logo Selection */}
-                <div className="pt-2">
-                  <label className="block text-[11px] font-bold uppercase text-slate-300 mb-2">
-                    Brasão & Identidade Visual no App
-                  </label>
-                  <div className="grid grid-cols-3 sm:grid-cols-6 gap-2.5">
-                    {PRESET_LOGOS.map((p) => (
-                      <button
-                        key={p.id}
-                        type="button"
-                        onClick={() => setSelectedLogoPreset(p.id)}
-                        className={`p-2.5 rounded-2xl border text-center transition flex flex-col items-center gap-1 ${
-                          selectedLogoPreset === p.id
-                            ? 'bg-red-950/60 border-red-500 ring-2 ring-red-500/50 shadow-md'
-                            : 'bg-slate-950 border-slate-800 hover:border-slate-700'
-                        }`}
-                      >
-                        <div className={`w-9 h-9 rounded-xl bg-gradient-to-br ${p.bg} flex items-center justify-center text-lg shadow-sm`}>
-                          {p.icon}
-                        </div>
-                        <span className="text-[10px] font-bold text-slate-300 leading-tight">
-                          {p.label}
+                {/* Preset Logo & Visual Identity Selection */}
+                <div className="pt-3 border-t border-slate-800/80 space-y-3">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <label className="block text-[11px] font-black uppercase text-amber-400 tracking-wider">
+                          Brasões & Identidade Visual no App
+                        </label>
+                        <span className="px-2 py-0.5 rounded-full bg-emerald-950 text-emerald-300 border border-emerald-700/60 text-[9px] font-bold">
+                          photo.jpg Integrado
                         </span>
+                      </div>
+                      <p className="text-[11px] text-slate-400 mt-0.5">
+                        Selecione o brasão oficial da sua academia ou envie sua foto customizada (photo.jpg).
+                      </p>
+                    </div>
+
+                    <button
+                      type="button"
+                      onClick={handleFillLoyaltyJiuJitsu}
+                      className="px-3 py-1.5 rounded-xl bg-gradient-to-r from-amber-600 via-amber-500 to-yellow-500 hover:from-amber-500 hover:to-yellow-400 text-slate-950 text-xs font-black flex items-center gap-1.5 shadow-md transition shrink-0"
+                    >
+                      <span>🥋 Carregar Loyalty Jiu-Jitsu (MM XXIII)</span>
+                    </button>
+                  </div>
+
+                  {/* Logo Presets Grid */}
+                  <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-2.5">
+                    {PRESET_LOGOS.map((p) => {
+                      const isSelected = selectedLogoPreset === p.id;
+                      return (
+                        <button
+                          key={p.id}
+                          type="button"
+                          onClick={() => {
+                            setSelectedLogoPreset(p.id);
+                            if (p.id === 'loyalty_official') {
+                              setCustomLogoUrl('/loyalty_logo.jpg');
+                            }
+                          }}
+                          className={`p-2.5 rounded-2xl border text-center transition flex flex-col items-center gap-1.5 relative ${
+                            isSelected
+                              ? 'bg-amber-950/50 border-amber-500 ring-2 ring-amber-500/50 shadow-lg shadow-amber-950/40'
+                              : 'bg-slate-950 border-slate-800 hover:border-slate-700'
+                          }`}
+                        >
+                          {p.badge && (
+                            <span className="absolute -top-1.5 -right-1 bg-amber-500 text-slate-950 text-[8px] font-black px-1.5 py-0.2 rounded-full shadow-sm">
+                              {p.badge}
+                            </span>
+                          )}
+                          <div className={`w-11 h-11 rounded-xl bg-gradient-to-br ${p.bg} flex items-center justify-center text-xl shadow-sm overflow-hidden p-1 border border-slate-800`}>
+                            {p.isCustomImage ? (
+                              <img
+                                src={p.icon}
+                                alt={p.label}
+                                className="w-full h-full object-contain rounded-lg"
+                                referrerPolicy="no-referrer"
+                              />
+                            ) : (
+                              p.icon
+                            )}
+                          </div>
+                          <span className="text-[10px] font-bold text-slate-200 leading-tight truncate max-w-full">
+                            {p.label}
+                          </span>
+                        </button>
+                      );
+                    })}
+                  </div>
+
+                  {/* Dedicated photo.jpg / Custom Logo Management Card */}
+                  <div className="p-4 rounded-2xl bg-gradient-to-r from-slate-950 via-slate-900 to-slate-950 border border-slate-800 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+                    <div className="flex items-center gap-3 min-w-0">
+                      <div className="w-14 h-14 rounded-2xl bg-slate-950 border-2 border-amber-500/50 flex items-center justify-center overflow-hidden shrink-0 shadow-lg p-1">
+                        {customLogoUrl ? (
+                          <img
+                            src={customLogoUrl}
+                            alt="photo.jpg Brasão"
+                            className="w-full h-full object-contain rounded-xl"
+                            referrerPolicy="no-referrer"
+                          />
+                        ) : currentLogoPreset.isCustomImage ? (
+                          <img
+                            src={currentLogoPreset.icon}
+                            alt="photo.jpg Brasão"
+                            className="w-full h-full object-contain rounded-xl"
+                            referrerPolicy="no-referrer"
+                          />
+                        ) : (
+                          <span className="text-2xl">{currentLogoPreset.icon}</span>
+                        )}
+                      </div>
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <h4 className="text-xs font-black text-white">
+                            photo.jpg • Brasão Ativo no App
+                          </h4>
+                          <span className="px-1.5 py-0.5 rounded text-[9px] font-bold bg-amber-500/20 text-amber-300 border border-amber-500/30">
+                            {selectedLogoPreset === 'loyalty_official' ? 'Loyalty Jiu-Jitsu' : 'Personalizado'}
+                          </span>
+                        </div>
+                        <p className="text-[11px] text-slate-400 mt-0.5">
+                          Este brasão aparecerá no cabeçalho do app, carteirinha dos alunos, recibos PIX e avisos de voz.
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-2 w-full md:w-auto flex-wrap">
+                      <label className="cursor-pointer px-3 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-amber-300 border border-amber-500/30 text-xs font-bold flex items-center gap-1.5 transition text-center justify-center flex-1 md:flex-initial">
+                        <span>📷 Enviar Nova Foto (photo.jpg)</span>
+                        <input
+                          type="file"
+                          accept="image/*"
+                          className="hidden"
+                          onChange={(e) => {
+                            const file = e.target.files?.[0];
+                            if (file) {
+                              const reader = new FileReader();
+                              reader.onload = (event) => {
+                                const result = event.target?.result as string;
+                                if (result) {
+                                  setCustomLogoUrl(result);
+                                  setSelectedLogoPreset('loyalty_official');
+                                  setFormSuccessMessage('Foto photo.jpg carregada com sucesso para o brasão da academia!');
+                                  setTimeout(() => setFormSuccessMessage(null), 3000);
+                                }
+                              };
+                              reader.readAsDataURL(file);
+                            }
+                          }}
+                        />
+                      </label>
+
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setCustomLogoUrl('/loyalty_logo.jpg');
+                          setSelectedLogoPreset('loyalty_official');
+                          setFormSuccessMessage('photo.jpg da Loyalty Jiu-Jitsu aplicado!');
+                          setTimeout(() => setFormSuccessMessage(null), 3000);
+                        }}
+                        className="px-3 py-2 rounded-xl bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border border-amber-500/40 text-xs font-bold transition whitespace-nowrap"
+                        title="Restaurar photo.jpg da Loyalty Jiu-Jitsu"
+                      >
+                        Aplicar photo.jpg Loyalty
                       </button>
-                    ))}
+                    </div>
                   </div>
                 </div>
               </div>
 
               {/* Box 2: Endereço & Localização do Tatame */}
               <div className="p-5 rounded-3xl bg-slate-900/90 border border-slate-800 shadow-xl space-y-4">
-                <div className="flex items-center gap-2 border-b border-slate-800 pb-3">
-                  <span className="text-xl">📍</span>
-                  <h3 className="text-sm font-black text-white uppercase tracking-wider">
-                    2. Localização & Infraestrutura do Tatame
-                  </h3>
+                <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+                  <div className="flex items-center gap-2">
+                    <span className="text-xl">📍</span>
+                    <h3 className="text-sm font-black text-white uppercase tracking-wider">
+                      2. Localização & Infraestrutura do Tatame
+                    </h3>
+                  </div>
+                  <span className="text-[10px] text-slate-400 font-bold">Auto-busca via CEP</span>
                 </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-xs">
                   <div>
-                    <label className="block text-[11px] font-bold uppercase text-slate-300 mb-1">
-                      CEP
-                    </label>
-                    <input
-                      type="text"
-                      value={cep}
-                      onChange={(e) => setCep(e.target.value)}
-                      className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3.5 py-2.5 text-white font-semibold focus:border-red-500 focus:outline-none font-mono"
-                      placeholder="00000-000"
-                    />
+                    <div className="flex items-center justify-between mb-1">
+                      <label className="block text-[11px] font-bold uppercase text-slate-300">
+                        CEP
+                      </label>
+                      {cepLookupFeedback === 'success' && (
+                        <span className="text-[10px] font-bold text-emerald-400">CEP Encontrado</span>
+                      )}
+                      {cepLookupFeedback === 'error' && (
+                        <span className="text-[10px] font-bold text-red-400">CEP não localizado</span>
+                      )}
+                    </div>
+                    <div className="flex items-center gap-1.5">
+                      <input
+                        type="text"
+                        value={cep}
+                        onChange={(e) => {
+                          const formatted = formatCEP(e.target.value);
+                          setCep(formatted);
+                          if (formatted.replace(/\D/g, '').length === 8) {
+                            handleSearchCep(formatted);
+                          }
+                        }}
+                        maxLength={9}
+                        className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3.5 py-2.5 text-white font-semibold focus:border-red-500 focus:outline-none font-mono"
+                        placeholder="00000-000"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => handleSearchCep()}
+                        disabled={isSearchingCep}
+                        className="px-3 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-amber-300 font-bold text-xs transition shrink-0 flex items-center justify-center disabled:opacity-50"
+                        title="Buscar endereço pelo CEP"
+                      >
+                        {isSearchingCep ? <Loader2 size={15} className="animate-spin" /> : <Search size={15} />}
+                      </button>
+                    </div>
                   </div>
 
                   <div className="sm:col-span-2">
                     <label className="block text-[11px] font-bold uppercase text-slate-300 mb-1">
-                      Endereço Completo (Rua / Av. / Nº)
+                      Endereço Completo (Rua / Av. / Nº) *
                     </label>
                     <input
                       type="text"
                       value={address}
                       onChange={(e) => setAddress(e.target.value)}
                       className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3.5 py-2.5 text-white font-semibold focus:border-red-500 focus:outline-none"
-                      placeholder="Av. Paulista, 1000 - 3º Andar"
+                      placeholder="Ex: Rua Bela Cintra, 1280 ou Av. Paulista, 1000"
+                      required
                     />
                   </div>
 
@@ -748,7 +1289,7 @@ export const AcademyRegistrationView: React.FC<AcademyRegistrationViewProps> = (
                       value={neighborhood}
                       onChange={(e) => setNeighborhood(e.target.value)}
                       className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3.5 py-2.5 text-white font-semibold focus:border-red-500 focus:outline-none"
-                      placeholder="Bela Vista"
+                      placeholder="Ex: Consolação, Moema, Jardins"
                     />
                   </div>
 
@@ -790,7 +1331,7 @@ export const AcademyRegistrationView: React.FC<AcademyRegistrationViewProps> = (
                       value={tatamiAreaM2}
                       onChange={(e) => setTatamiAreaM2(Number(e.target.value))}
                       className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3.5 py-2.5 text-white font-semibold focus:border-red-500 focus:outline-none"
-                      placeholder="140"
+                      placeholder="220"
                     />
                   </div>
 
@@ -803,7 +1344,7 @@ export const AcademyRegistrationView: React.FC<AcademyRegistrationViewProps> = (
                       value={studentCapacity}
                       onChange={(e) => setStudentCapacity(Number(e.target.value))}
                       className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3.5 py-2.5 text-white font-semibold focus:border-red-500 focus:outline-none"
-                      placeholder="200"
+                      placeholder="350"
                     />
                   </div>
                 </div>
@@ -814,7 +1355,7 @@ export const AcademyRegistrationView: React.FC<AcademyRegistrationViewProps> = (
                 <div className="flex items-center gap-2 border-b border-slate-800 pb-3">
                   <span className="text-xl">🥋</span>
                   <h3 className="text-sm font-black text-white uppercase tracking-wider">
-                    3. Responsável Técnico & Contato Direto
+                    3. Responsável Técnico & Contato Geral
                   </h3>
                 </div>
 
@@ -828,21 +1369,21 @@ export const AcademyRegistrationView: React.FC<AcademyRegistrationViewProps> = (
                       value={headInstructor}
                       onChange={(e) => setHeadInstructor(e.target.value)}
                       className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3.5 py-2.5 text-white font-semibold focus:border-red-500 focus:outline-none"
-                      placeholder="Ex: Mestre Carlos Gracie Jr (Faixa Coral)"
+                      placeholder="Ex: Messias Batista da Silva Junior (• Mestre Fundador)"
                       required
                     />
                   </div>
 
                   <div>
                     <label className="block text-[11px] font-bold uppercase text-slate-300 mb-1">
-                      Registro CREF
+                      Registro CREF (Conselho Regional de Educação Física)
                     </label>
                     <input
                       type="text"
                       value={crefNumber}
                       onChange={(e) => setCrefNumber(e.target.value)}
                       className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3.5 py-2.5 text-white font-semibold focus:border-red-500 focus:outline-none font-mono"
-                      placeholder="012345-G/SP"
+                      placeholder="019844-G/SP"
                     />
                   </div>
 
@@ -853,34 +1394,254 @@ export const AcademyRegistrationView: React.FC<AcademyRegistrationViewProps> = (
                     <input
                       type="text"
                       value={phone}
-                      onChange={(e) => setPhone(e.target.value)}
+                      onChange={(e) => setPhone(formatPhone(e.target.value))}
+                      maxLength={15}
                       className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3.5 py-2.5 text-white font-semibold focus:border-red-500 focus:outline-none font-mono"
-                      placeholder="(11) 99999-8888"
+                      placeholder="(11) 98765-4321"
                     />
                   </div>
 
                   <div>
                     <label className="block text-[11px] font-bold uppercase text-slate-300 mb-1">
-                      E-mail Administrativo
+                      E-mail Administrativo da Academia
                     </label>
                     <input
                       type="email"
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
                       className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3.5 py-2.5 text-white font-semibold focus:border-red-500 focus:outline-none"
-                      placeholder="contato@minhaacademia.com.br"
+                      placeholder="contato@loyaltyjiujitsu.com.br"
                     />
                   </div>
                 </div>
               </div>
 
-              {/* Box 4: Chave PIX & Financeiro da Academia */}
+              {/* Box 4: Representante Legal & Faturamento SaaS (Segurança Jurídica) */}
+              <div className="p-5 rounded-3xl bg-slate-900/90 border border-slate-800 shadow-xl space-y-4">
+                <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+                  <div className="flex items-center gap-2">
+                    <span className="text-xl">⚖️</span>
+                    <h3 className="text-sm font-black text-white uppercase tracking-wider">
+                      4. Representante Legal & Faturamento SaaS (Blindagem Jurídica)
+                    </h3>
+                  </div>
+                  <span className="text-[10px] text-amber-400 font-bold">Validade Contratual</span>
+                </div>
+
+                <div className="p-3.5 rounded-2xl bg-slate-950 border border-slate-800 text-xs text-slate-300 flex items-start gap-2.5">
+                  <Info size={16} className="text-amber-400 shrink-0 mt-0.5" />
+                  <div>
+                    <strong>Qualificação para Contrato Digital:</strong> Para garantir a validade jurídica do contrato de licenciamento SaaS de software perante a legislação brasileira, é obrigatório indicar o sócio administrador com CPF válido.
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
+                  <div>
+                    <label className="block text-[11px] font-bold uppercase text-slate-300 mb-1">
+                      Nome do Representante Legal / Sócio Administrador *
+                    </label>
+                    <input
+                      type="text"
+                      value={legalRepresentativeName}
+                      onChange={(e) => setLegalRepresentativeName(e.target.value)}
+                      className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3.5 py-2.5 text-white font-semibold focus:border-red-500 focus:outline-none"
+                      placeholder="Ex: Messias Batista da Silva Junior"
+                      required
+                    />
+                  </div>
+
+                  <div>
+                    <div className="flex items-center justify-between mb-1">
+                      <label className="block text-[11px] font-bold uppercase text-slate-300">
+                        CPF do Representante Legal *
+                      </label>
+                      {legalRepresentativeCpf.trim().length > 0 && (
+                        isCpfValid ? (
+                          <span className="text-[10px] font-bold text-emerald-400 flex items-center gap-1">
+                            <CheckCircle2 size={11} /> CPF Válido
+                          </span>
+                        ) : (
+                          <span className="text-[10px] font-bold text-red-400 flex items-center gap-1">
+                            <AlertCircle size={11} /> CPF Inválido
+                          </span>
+                        )
+                      )}
+                    </div>
+                    <input
+                      type="text"
+                      value={legalRepresentativeCpf}
+                      onChange={(e) => setLegalRepresentativeCpf(formatCPF(e.target.value))}
+                      maxLength={14}
+                      className={`w-full bg-slate-950 border rounded-xl px-3.5 py-2.5 text-white font-semibold focus:outline-none font-mono transition ${
+                        legalRepresentativeCpf && !isCpfValid
+                          ? 'border-red-500/80 focus:border-red-500'
+                          : legalRepresentativeCpf && isCpfValid
+                          ? 'border-emerald-500/80 focus:border-emerald-500'
+                          : 'border-slate-700 focus:border-red-500'
+                      }`}
+                      placeholder="000.000.000-00"
+                      required
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-[11px] font-bold uppercase text-slate-300 mb-1">
+                      Cargo / Função na Sociedade
+                    </label>
+                    <select
+                      value={legalRepresentativeRole}
+                      onChange={(e) => setLegalRepresentativeRole(e.target.value)}
+                      className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3.5 py-2.5 text-white font-semibold focus:border-red-500 focus:outline-none"
+                    >
+                      <option value="Sócio Administrador">Sócio Administrador</option>
+                      <option value="Sócio Fundador & Mestre Responsável">Sócio Fundador & Mestre Responsável</option>
+                      <option value="Diretor Executivo / Presidente">Diretor Executivo / Presidente</option>
+                      <option value="Procurador Legal Constituído">Procurador Legal Constituído</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block text-[11px] font-bold uppercase text-slate-300 mb-1">
+                      WhatsApp Direto do Representante
+                    </label>
+                    <input
+                      type="text"
+                      value={legalRepresentativePhone}
+                      onChange={(e) => setLegalRepresentativePhone(formatPhone(e.target.value))}
+                      maxLength={15}
+                      className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3.5 py-2.5 text-white font-semibold focus:border-red-500 focus:outline-none font-mono"
+                      placeholder="(11) 98765-4321"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-[11px] font-bold uppercase text-slate-300 mb-1">
+                      Dia de Vencimento da Mensalidade SaaS
+                    </label>
+                    <select
+                      value={billingDueDay}
+                      onChange={(e) => setBillingDueDay(Number(e.target.value))}
+                      className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3.5 py-2.5 text-white font-semibold focus:border-red-500 focus:outline-none font-mono"
+                    >
+                      <option value={5}>Todo dia 05 de cada mês</option>
+                      <option value={10}>Todo dia 10 de cada mês (Padrão)</option>
+                      <option value={15}>Todo dia 15 de cada mês</option>
+                      <option value={20}>Todo dia 20 de cada mês</option>
+                      <option value={25}>Todo dia 25 de cada mês</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block text-[11px] font-bold uppercase text-slate-300 mb-1">
+                      E-mail para Faturas e NF-e
+                    </label>
+                    <input
+                      type="email"
+                      value={financialContactEmail}
+                      onChange={(e) => setFinancialContactEmail(e.target.value)}
+                      className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3.5 py-2.5 text-white font-semibold focus:border-red-500 focus:outline-none"
+                      placeholder="financeiro@loyaltyjiujitsu.com.br"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Box 5: Segurança do Tatame & Alvarás */}
+              <div className="p-5 rounded-3xl bg-slate-900/90 border border-slate-800 shadow-xl space-y-4">
+                <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+                  <div className="flex items-center gap-2">
+                    <span className="text-xl">🛡️</span>
+                    <h3 className="text-sm font-black text-white uppercase tracking-wider">
+                      5. Segurança do Tatame, Alvarás & Federação Marcial
+                    </h3>
+                  </div>
+                  <span className="text-[10px] text-emerald-400 font-bold">Conformidade Esportiva</span>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
+                  <div>
+                    <label className="block text-[11px] font-bold uppercase text-slate-300 mb-1">
+                      Federação / Confederação Filiada
+                    </label>
+                    <select
+                      value={federationAffiliation}
+                      onChange={(e) => setFederationAffiliation(e.target.value)}
+                      className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3.5 py-2.5 text-white font-semibold focus:border-red-500 focus:outline-none"
+                    >
+                      <option value="CBJJ / IBJJF">CBJJ / IBJJF (Confederação Brasileira de Jiu-Jitsu)</option>
+                      <option value="FPJJ">FPJJ (Federação Paulista de Jiu-Jitsu)</option>
+                      <option value="CBJJE">CBJJE (Confederação Brasileira de Jiu-Jitsu Esportivo)</option>
+                      <option value="UAEJJF / AJP">UAEJJF / AJP Tour (Abu Dhabi Jiu-Jitsu Pro)</option>
+                      <option value="FJJ-RIO">FJJ-RIO (Federação de Jiu-Jitsu do Estado do Rio de Janeiro)</option>
+                      <option value="Outra / Independente">Outra / Academia Tradicional Independente</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block text-[11px] font-bold uppercase text-slate-300 mb-1">
+                      Registro de Filiação na Federação
+                    </label>
+                    <input
+                      type="text"
+                      value={federationRegisterNumber}
+                      onChange={(e) => setFederationRegisterNumber(e.target.value)}
+                      className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3.5 py-2.5 text-white font-semibold focus:border-red-500 focus:outline-none font-mono"
+                      placeholder="Ex: CBJJ-SP-10928"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-[11px] font-bold uppercase text-slate-300 mb-1">
+                      Auto de Vistoria do Corpo de Bombeiros (AVCB)
+                    </label>
+                    <input
+                      type="text"
+                      value={fireDepartmentPermit}
+                      onChange={(e) => setFireDepartmentPermit(e.target.value)}
+                      className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3.5 py-2.5 text-white font-semibold focus:border-red-500 focus:outline-none"
+                      placeholder="Ex: AVCB nº 2024-918293"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-[11px] font-bold uppercase text-slate-300 mb-1">
+                      Alvará de Funcionamento Municipal
+                    </label>
+                    <input
+                      type="text"
+                      value={operatingLicense}
+                      onChange={(e) => setOperatingLicense(e.target.value)}
+                      className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3.5 py-2.5 text-white font-semibold focus:border-red-500 focus:outline-none"
+                      placeholder="Ex: Alvará Municipal nº 2024/0912"
+                    />
+                  </div>
+
+                  <div className="sm:col-span-2">
+                    <label className="p-3.5 rounded-2xl bg-slate-950 border border-slate-800 hover:border-slate-700 transition flex items-center gap-3 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={hasFirstAidKit}
+                        onChange={(e) => setHasFirstAidKit(e.target.checked)}
+                        className="w-4 h-4 rounded text-emerald-500 focus:ring-0 border-slate-700 bg-slate-900"
+                      />
+                      <div className="text-xs">
+                        <strong className="text-white block">Kit de Primeiros Socorros & Farmácia no Tatame Disponível</strong>
+                        <span className="text-slate-400 text-[11px]">
+                          Declaro que a academia mantém kit completo de atendimento imediato, gelo e material para imobilização e curativos rápidos durante os treinos.
+                        </span>
+                      </div>
+                    </label>
+                  </div>
+                </div>
+              </div>
+
+              {/* Box 6: Chave PIX & Financeiro da Academia */}
               <div className="p-5 rounded-3xl bg-slate-900/90 border border-slate-800 shadow-xl space-y-4">
                 <div className="flex items-center justify-between border-b border-slate-800 pb-3">
                   <div className="flex items-center gap-2">
                     <span className="text-xl">💰</span>
                     <h3 className="text-sm font-black text-white uppercase tracking-wider">
-                      4. Chave PIX da Academia (Recebimento dos Alunos)
+                      6. Chave PIX da Academia (Recebimento Direto dos Alunos)
                     </h3>
                   </div>
                   <span className="text-[10px] text-emerald-400 font-bold">100% Direto na Conta</span>
@@ -909,15 +1670,28 @@ export const AcademyRegistrationView: React.FC<AcademyRegistrationViewProps> = (
                   </div>
 
                   <div className="sm:col-span-2">
-                    <label className="block text-[11px] font-bold uppercase text-slate-300 mb-1">
-                      Chave PIX Oficial *
-                    </label>
+                    <div className="flex items-center justify-between mb-1">
+                      <label className="block text-[11px] font-bold uppercase text-slate-300">
+                        Chave PIX Oficial *
+                      </label>
+                      {pixKey.trim().length > 0 && (
+                        pixValidation.isValid ? (
+                          <span className="text-[10px] font-bold text-emerald-400 flex items-center gap-1">
+                            <CheckCircle2 size={11} /> Chave Válida ({pixKeyType.toUpperCase()})
+                          </span>
+                        ) : (
+                          <span className="text-[10px] font-bold text-amber-400 flex items-center gap-1">
+                            <AlertCircle size={11} /> {pixValidation.message}
+                          </span>
+                        )
+                      )}
+                    </div>
                     <input
                       type="text"
                       value={pixKey}
                       onChange={(e) => setPixKey(e.target.value)}
                       className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3.5 py-2.5 text-white font-semibold focus:border-red-500 focus:outline-none font-mono"
-                      placeholder="Informe o CNPJ, celular ou chave aleatória"
+                      placeholder="Informe a chave cadastrada no seu banco"
                       required
                     />
                   </div>
@@ -965,13 +1739,13 @@ export const AcademyRegistrationView: React.FC<AcademyRegistrationViewProps> = (
                 </div>
               </div>
 
-              {/* Box 5: Planos de Mensalidade da Unidade */}
+              {/* Box 7: Planos de Mensalidade da Unidade */}
               <div className="p-5 rounded-3xl bg-slate-900/90 border border-slate-800 shadow-xl space-y-4">
                 <div className="flex items-center justify-between border-b border-slate-800 pb-3">
                   <div className="flex items-center gap-2">
                     <span className="text-xl">🏷️</span>
                     <h3 className="text-sm font-black text-white uppercase tracking-wider">
-                      5. Planos de Mensalidade da Filial ({pricingPlans.length})
+                      7. Planos de Mensalidade da Filial ({pricingPlans.length})
                     </h3>
                   </div>
                   <button
@@ -1045,13 +1819,13 @@ export const AcademyRegistrationView: React.FC<AcademyRegistrationViewProps> = (
                 </div>
               </div>
 
-              {/* Box 6: Voz do Tatame 2.0 */}
+              {/* Box 8: Voz do Tatame 2.0 */}
               <div className="p-5 rounded-3xl bg-slate-900/90 border border-slate-800 shadow-xl space-y-4">
                 <div className="flex items-center justify-between border-b border-slate-800 pb-3">
                   <div className="flex items-center gap-2">
                     <span className="text-xl">🔊</span>
                     <h3 className="text-sm font-black text-white uppercase tracking-wider">
-                      6. Voz do Tatame (Anúncios Sonoros na Recepção)
+                      8. Voz do Tatame (Anúncios Sonoros na Recepção)
                     </h3>
                   </div>
                   <button
@@ -1110,6 +1884,140 @@ export const AcademyRegistrationView: React.FC<AcademyRegistrationViewProps> = (
                 </div>
               </div>
 
+              {/* Box 9: Blindagem Jurídica & Termos de Adesão SaaS Mútuos */}
+              <div className="p-5 rounded-3xl bg-slate-900/90 border border-slate-800 shadow-xl space-y-4">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-800 pb-3">
+                  <div className="flex items-center gap-2">
+                    <span className="text-xl">📜</span>
+                    <h3 className="text-sm font-black text-white uppercase tracking-wider">
+                      9. Termos de Adesão SaaS, LGPD & Blindagem de Responsabilidade Mútua
+                    </h3>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setIsAgreementModalOpen(true)}
+                    className="px-3 py-1.5 rounded-xl bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border border-amber-500/40 text-xs font-bold flex items-center gap-1.5 transition self-start sm:self-auto"
+                  >
+                    <FileText size={13} />
+                    <span>Ler Contrato Completo</span>
+                  </button>
+                </div>
+
+                {/* Mutual Protection Highlights */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+                  <div className="p-3.5 rounded-2xl bg-slate-950 border border-slate-800 space-y-1">
+                    <div className="font-bold text-amber-400 flex items-center gap-1.5">
+                      <ShieldCheck size={14} />
+                      <span>Proteção & Direitos da Academia:</span>
+                    </div>
+                    <ul className="text-[11px] text-slate-300 space-y-1 list-disc pl-4">
+                      <li>100% das mensalidades caem direto na sua chave PIX, sem taxas percentuais.</li>
+                      <li>Propriedade total e irrestrita da base de alunos e dados cadastrais.</li>
+                      <li>Exportação de relatórios em CSV a qualquer instante sem carência.</li>
+                    </ul>
+                  </div>
+
+                  <div className="p-3.5 rounded-2xl bg-slate-950 border border-slate-800 space-y-1">
+                    <div className="font-bold text-emerald-400 flex items-center gap-1.5">
+                      <Lock size={14} />
+                      <span>Proteção & Isenção da Plataforma:</span>
+                    </div>
+                    <ul className="text-[11px] text-slate-300 space-y-1 list-disc pl-4">
+                      <li>Isenção sobre acidentes corporais e lesões desportivas no tatame.</li>
+                      <li>Atestados médicos e liberação física sob responsabilidade do professor.</li>
+                      <li>Conformidade com LGPD (Lei 13.709/2018) para fotos e biometria.</li>
+                    </ul>
+                  </div>
+                </div>
+
+                {/* 4 Mandatory Checkboxes */}
+                <div className="space-y-3 pt-2">
+                  <label className="p-3.5 rounded-2xl bg-slate-950 border border-slate-800 hover:border-slate-700 transition flex items-start gap-3 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={termsAccepted}
+                      onChange={(e) => setTermsAccepted(e.target.checked)}
+                      className="mt-1 w-4 h-4 rounded text-emerald-500 focus:ring-0 border-slate-700 bg-slate-900 shrink-0"
+                      required
+                    />
+                    <div className="text-xs">
+                      <strong className="text-white block">
+                        1. Termos de Uso e Licença de Software SaaS Master (R$ 130 + R$ 1,30/aluno ativo) *
+                      </strong>
+                      <span className="text-slate-400 text-[11px]">
+                        Concordo com os valores de licenciamento e com o vencimento no dia {billingDueDay} de cada mês via PIX.
+                      </span>
+                    </div>
+                  </label>
+
+                  <label className="p-3.5 rounded-2xl bg-slate-950 border border-slate-800 hover:border-slate-700 transition flex items-start gap-3 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={lgpdConsent}
+                      onChange={(e) => setLgpdConsent(e.target.checked)}
+                      className="mt-1 w-4 h-4 rounded text-emerald-500 focus:ring-0 border-slate-700 bg-slate-900 shrink-0"
+                      required
+                    />
+                    <div className="text-xs">
+                      <strong className="text-white block">
+                        2. Termo de Privacidade & Proteção de Dados LGPD (Lei Federal nº 13.709/2018) *
+                      </strong>
+                      <span className="text-slate-400 text-[11px]">
+                        Autorizo o processamento de cadastros, fotos de alunos para reconhecimento facial no totem e controle de presenças conforme a LGPD.
+                      </span>
+                    </div>
+                  </label>
+
+                  <label className="p-3.5 rounded-2xl bg-slate-950 border border-slate-800 hover:border-slate-700 transition flex items-start gap-3 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={medicalResponsibilityWaiver}
+                      onChange={(e) => setMedicalResponsibilityWaiver(e.target.checked)}
+                      className="mt-1 w-4 h-4 rounded text-emerald-500 focus:ring-0 border-slate-700 bg-slate-900 shrink-0"
+                      required
+                    />
+                    <div className="text-xs">
+                      <strong className="text-white block">
+                        3. Isenção de Responsabilidade Física no Tatame & Atestados Médicos *
+                      </strong>
+                      <span className="text-slate-400 text-[11px]">
+                        A academia assume integral responsabilidade técnica, didática e de primeiros socorros das aulas, eximindo o software por lesões físicas.
+                      </span>
+                    </div>
+                  </label>
+
+                  <label className="p-3.5 rounded-2xl bg-slate-950 border border-slate-800 hover:border-slate-700 transition flex items-start gap-3 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={truthfulnessDeclaration}
+                      onChange={(e) => setTruthfulnessDeclaration(e.target.checked)}
+                      className="mt-1 w-4 h-4 rounded text-emerald-500 focus:ring-0 border-slate-700 bg-slate-900 shrink-0"
+                      required
+                    />
+                    <div className="text-xs">
+                      <strong className="text-white block">
+                        4. Declaração de Veracidade dos Dados & Poderes de Representação Legal *
+                      </strong>
+                      <span className="text-slate-400 text-[11px]">
+                        Declaro sob as penas da lei que as informações e documentos aqui fornecidos são fidedignos e que possuo legitimidade para firmar este compromisso.
+                      </span>
+                    </div>
+                  </label>
+                </div>
+
+                {/* Digital Signature Protocol Bar */}
+                <div className="p-3 rounded-2xl bg-slate-950 border border-slate-800/80 flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-[11px]">
+                  <div className="flex items-center gap-2 text-slate-400">
+                    <FileCheck2 size={14} className="text-amber-400" />
+                    <span>Protocolo de Assinatura Digital:</span>
+                    <strong className="font-mono text-white">{currentContractProtocol}</strong>
+                  </div>
+                  <div className="text-slate-500 text-[10px]">
+                    Validado via SHA-256 e Carimbo Temporal
+                  </div>
+                </div>
+              </div>
+
             </div>
 
             {/* RIGHT COLUMN: LIVE PREVIEW & FINAL ACTIONS */}
@@ -1130,8 +2038,14 @@ export const AcademyRegistrationView: React.FC<AcademyRegistrationViewProps> = (
                 {/* Academy Badge Card */}
                 <div className="p-5 rounded-2xl bg-gradient-to-br from-slate-950 to-slate-900 border border-slate-700/80 shadow-xl space-y-3 relative overflow-hidden">
                   <div className="flex items-center gap-3">
-                    <div className={`w-14 h-14 rounded-2xl bg-gradient-to-br ${currentLogoPreset.bg} flex items-center justify-center text-3xl shadow-lg shrink-0`}>
-                      {currentLogoPreset.icon}
+                    <div className={`w-14 h-14 rounded-2xl bg-gradient-to-br ${currentLogoPreset.bg} flex items-center justify-center text-3xl shadow-lg shrink-0 overflow-hidden p-1 border border-slate-700`}>
+                      {customLogoUrl ? (
+                        <img src={customLogoUrl} alt="Brasão" className="w-full h-full object-contain rounded-xl" referrerPolicy="no-referrer" />
+                      ) : currentLogoPreset.isCustomImage ? (
+                        <img src={currentLogoPreset.icon} alt="Brasão" className="w-full h-full object-contain rounded-xl" referrerPolicy="no-referrer" />
+                      ) : (
+                        currentLogoPreset.icon
+                      )}
                     </div>
                     <div className="min-w-0">
                       <h4 className="text-base font-black text-white truncate">
@@ -1163,6 +2077,13 @@ export const AcademyRegistrationView: React.FC<AcademyRegistrationViewProps> = (
                     </div>
 
                     <div className="flex items-center justify-between">
+                      <span className="text-slate-400">Representante:</span>
+                      <span className="text-white truncate max-w-[140px]">
+                        {legalRepresentativeName || 'A definir'}
+                      </span>
+                    </div>
+
+                    <div className="flex items-center justify-between">
                       <span className="text-slate-400">Chave PIX:</span>
                       <span className="font-mono text-emerald-400 truncate max-w-[150px]">
                         {pixKey || 'Não cadastrada'}
@@ -1175,6 +2096,20 @@ export const AcademyRegistrationView: React.FC<AcademyRegistrationViewProps> = (
                         {tatamiAreaM2} m² ({studentCapacity} alunos)
                       </span>
                     </div>
+                  </div>
+
+                  {/* Compliance Status Mini Badge */}
+                  <div className="pt-2 border-t border-slate-800/80 flex items-center justify-between text-[10px]">
+                    <span className="text-slate-400">Auditoria Contratual:</span>
+                    {isFullyCompliant ? (
+                      <span className="px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 font-bold flex items-center gap-1">
+                        <ShieldCheck size={11} /> 100% Conforme
+                      </span>
+                    ) : (
+                      <span className="px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/40 font-bold flex items-center gap-1">
+                        <AlertCircle size={11} /> {complianceCompletedCount}/5 Requisitos
+                      </span>
+                    )}
                   </div>
                 </div>
 
@@ -1212,9 +2147,19 @@ export const AcademyRegistrationView: React.FC<AcademyRegistrationViewProps> = (
                   </button>
                 </div>
 
-                {/* Licensing terms */}
-                <div className="text-[10px] text-slate-400 leading-relaxed border-t border-slate-800 pt-3">
-                  🛡️ <strong>Garantia BJJ Academy:</strong> Ao registrar uma filial, você concorda com o regulamento técnico CBJJ, acesso ao sistema de faixas e integração com o totem de recepção.
+                {/* Licensing terms footer */}
+                <div className="text-[10px] text-slate-400 leading-relaxed border-t border-slate-800 pt-3 flex items-center justify-between">
+                  <span className="flex items-center gap-1">
+                    <ShieldCheck size={12} className="text-emerald-400" />
+                    <span>LGPD & Proteção Mútua Ativa</span>
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => setIsAgreementModalOpen(true)}
+                    className="text-amber-400 hover:underline font-bold"
+                  >
+                    Ver Contrato
+                  </button>
                 </div>
               </div>
 
@@ -1288,8 +2233,14 @@ export const AcademyRegistrationView: React.FC<AcademyRegistrationViewProps> = (
                   <div className="space-y-3">
                     <div className="flex items-start justify-between gap-2">
                       <div className="flex items-center gap-3 min-w-0">
-                        <div className={`w-12 h-12 rounded-2xl bg-gradient-to-br ${logo.bg} flex items-center justify-center text-2xl shadow-md shrink-0`}>
-                          {logo.icon}
+                        <div className={`w-12 h-12 rounded-2xl bg-gradient-to-br ${logo.bg} flex items-center justify-center text-2xl shadow-md shrink-0 overflow-hidden p-1 border border-slate-800`}>
+                          {acad.logo ? (
+                            <img src={acad.logo} alt={acad.name} className="w-full h-full object-contain rounded-xl" referrerPolicy="no-referrer" />
+                          ) : logo.isCustomImage ? (
+                            <img src={logo.icon} alt={acad.name} className="w-full h-full object-contain rounded-xl" referrerPolicy="no-referrer" />
+                          ) : (
+                            logo.icon
+                          )}
                         </div>
                         <div className="min-w-0">
                           <h4 className="text-sm font-black text-white truncate">
@@ -1449,6 +2400,36 @@ export const AcademyRegistrationView: React.FC<AcademyRegistrationViewProps> = (
             </div>
           </div>
         </div>
+      )}
+
+      {/* SaaS Agreement Modal for Digital Signing & Terms Inspection */}
+      {(isAgreementModalOpen || viewingContractAcademy) && (
+        <SaaSAgreementModal
+          isOpen={true}
+          onClose={() => {
+            setIsAgreementModalOpen(false);
+            setViewingContractAcademy(null);
+          }}
+          academyName={viewingContractAcademy ? viewingContractAcademy.name : (name || 'Sua Academia BJJ')}
+          academyCnpj={viewingContractAcademy ? viewingContractAcademy.cnpj : (cnpj || '00.000.000/0001-00')}
+          representativeName={viewingContractAcademy ? (viewingContractAcademy.legalRepresentativeName || '') : (legalRepresentativeName || 'Representante Legal')}
+          representativeCpf={viewingContractAcademy ? (viewingContractAcademy.legalRepresentativeCpf || '') : (legalRepresentativeCpf || '000.000.000-00')}
+          generalManager={generalManager}
+          platformPlan="Plano Master SaaS Filial"
+          monthlyFeeFormatted="R$ 130,00 + R$ 1,30 por aluno ativo"
+          protocol={viewingContractAcademy ? (viewingContractAcademy.digitalSignatureProtocol || currentContractProtocol) : currentContractProtocol}
+          isAccepted={viewingContractAcademy ? viewingContractAcademy.termsAccepted : termsAccepted}
+          onAcceptAllTerms={() => {
+            setTermsAccepted(true);
+            setLgpdConsent(true);
+            setMedicalResponsibilityWaiver(true);
+            setTruthfulnessDeclaration(true);
+            setIsAgreementModalOpen(false);
+            setViewingContractAcademy(null);
+            setFormSuccessMessage(`✅ Termos de Licenciamento SaaS aceitos e assinados digitalmente com sucesso! Protocolo: ${currentContractProtocol}`);
+            setTimeout(() => setFormSuccessMessage(null), 4000);
+          }}
+        />
       )}
 
     </div>

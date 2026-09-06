@@ -16,7 +16,8 @@ import {
   SparringSession,
   BirthdayPerson,
   CRMLead,
-  RetentionAlertItem
+  RetentionAlertItem,
+  PlatformGeneralManager
 } from '../types';
 
 // Helper to remove undefined values since Firestore rejects undefined fields
@@ -257,6 +258,41 @@ export async function saveBirthdayToFirestore(person: BirthdayPerson): Promise<v
     await setDoc(docRef, sanitizeForFirestore(person), { merge: true });
   } catch (error) {
     handleFirestoreError(error, OperationType.WRITE, `${colPath}/${person.id}`);
+  }
+}
+
+// -------------------------------------------------------------
+// GENERAL MANAGER / CEO PROFILE (Messias Batista da Silva Jr)
+// -------------------------------------------------------------
+export function subscribeToGeneralManager(
+  onUpdate: (gm: PlatformGeneralManager) => void,
+  onError?: (err: unknown) => void
+) {
+  const colPath = 'general_manager';
+  return onSnapshot(
+    collection(db, colPath),
+    (snapshot) => {
+      if (!snapshot.empty) {
+        const docSnap = snapshot.docs[0];
+        if (docSnap && docSnap.exists()) {
+          onUpdate(docSnap.data() as PlatformGeneralManager);
+        }
+      }
+    },
+    (error) => {
+      if (onError) onError(error);
+      handleFirestoreError(error, OperationType.GET, colPath);
+    }
+  );
+}
+
+export async function saveGeneralManagerToFirestore(gm: PlatformGeneralManager): Promise<void> {
+  const colPath = 'general_manager';
+  try {
+    const docRef = doc(db, colPath, gm.id || 'mgr_messias_general');
+    await setDoc(docRef, sanitizeForFirestore(gm), { merge: true });
+  } catch (error) {
+    handleFirestoreError(error, OperationType.WRITE, `${colPath}/${gm.id}`);
   }
 }
 

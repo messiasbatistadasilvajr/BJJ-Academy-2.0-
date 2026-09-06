@@ -58,10 +58,62 @@ export interface StudentProfile {
   joinDate: string;
   rankingPosition: number;
   rankingPoints: number;
-  category: 'Adulto Médio' | 'Infantil B' | 'Master 1 Pesado' | 'Juvenil Leve';
+  category: string;
   weightKg: number;
   promotions: PromotionRecord[];
   streakWeeks: number;
+
+  // Identificação Civil & Dados Pessoais
+  birthDate?: string;
+  age?: number;
+  cpf?: string;
+  rg?: string;
+  gender?: 'male' | 'female' | 'other';
+  heightCm?: number;
+  academyId?: string;
+  academyName?: string;
+  planName?: string;
+  billingDueDay?: number;
+  monthlyFee?: number;
+
+  // Endereço Residencial
+  cep?: string;
+  address?: string;
+  addressNumber?: string;
+  addressComplement?: string;
+  neighborhood?: string;
+  city?: string;
+  state?: string;
+
+  // Ficha Médica & Anamnese Tatame
+  bloodType?: string;
+  healthInsurance?: string;
+  healthInsuranceNumber?: string;
+  allergies?: string;
+  medicalConditions?: string;
+  continuousMedication?: string;
+  hasMedicalCertificate?: boolean;
+  medicalCertificateExpiry?: string;
+
+  // Pais & Responsáveis Legais (Obrigatório para menores ou dependentes)
+  isMinor?: boolean;
+  parentName?: string;
+  parentRelationship?: string;
+  parentCpf?: string;
+  parentRg?: string;
+  parentPhone?: string;
+  parentEmail?: string;
+  parentProfession?: string;
+  emergencyContactName?: string;
+  emergencyContactPhone?: string;
+
+  // Termos, LGPD & Blindagem Jurídica
+  termsAccepted?: boolean;
+  lgpdConsent?: boolean;
+  imageRightsConsent?: boolean;
+  medicalWaiverAccepted?: boolean;
+  digitalSignatureProtocol?: string;
+  signatureDate?: string;
 }
 
 export interface DependentStudent extends StudentProfile {
@@ -335,6 +387,26 @@ export interface RegisteredAcademy {
   monthlyPlatformFeeBRL?: number;
   platformFeeStatus?: 'paid' | 'pending' | 'overdue';
   lastPlatformPaymentDate?: string;
+  // Legal, Compliance & Security for Both Parties
+  legalRepresentativeName?: string;
+  legalRepresentativeCpf?: string;
+  legalRepresentativeRole?: string;
+  legalRepresentativePhone?: string;
+  federationAffiliation?: string;
+  federationRegisterNumber?: string;
+  fireDepartmentPermit?: string; // AVCB
+  operatingLicense?: string; // Alvará
+  hasFirstAidKit?: boolean;
+  billingDueDay?: number; // 5, 10, 15, 20, 25
+  financialContactEmail?: string;
+  financialContactPhone?: string;
+  termsAccepted?: boolean;
+  termsAcceptedDate?: string;
+  termsAcceptedIp?: string;
+  termsVersion?: string;
+  lgpdConsent?: boolean;
+  medicalResponsibilityWaiver?: boolean;
+  digitalSignatureProtocol?: string;
   voiceSettings?: {
     enabled: boolean;
     voiceStyle: AcademyVoiceStyle;
@@ -349,7 +421,12 @@ export interface RegisteredAcademy {
 export interface PlatformGeneralManager {
   id: string;
   name: string; // Messias Batista da Silva junior
-  role: string; // Gestor Geral BJJ Academy
+  role: string; // CEO & Fundador BJJ Academy
+  title?: string; // CEO & Diretor Executivo da Plataforma
+  companyName?: string; // BJJ Academy Tecnologia & Gestão Esportiva
+  cnpj?: string; // CNPJ da Plataforma
+  bio?: string; // Biografia / Missão do CEO
+  martialArtsRank?: string; // Faixa de Tatame / Mestre Fundador
   cpf: string; // 58087630378
   formattedCpf: string; // 580.876.303-78
   pixKey: string; // 58087630378
@@ -357,6 +434,8 @@ export interface PlatformGeneralManager {
   purpose: string; // Para pagamentos das academias à plataforma BJJ Academy
   email: string;
   phone?: string;
+  city?: string;
+  state?: string;
   status: 'active' | 'verified';
   monthlyPlatformFeePerAcademy: number; // Legado (compatibilidade)
   fixedMonthlyFee?: number; // R$ 130,00 por academia
