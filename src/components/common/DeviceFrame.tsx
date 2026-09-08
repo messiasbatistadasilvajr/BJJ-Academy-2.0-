@@ -3,7 +3,7 @@ import {
   Smartphone, Monitor, Layers, Download, Wifi, 
   RotateCcw, Sparkles, Shield, User, Users, GraduationCap, Briefcase, Crown,
   Timer, BookOpen, Tablet, Award, ShoppingBag, FileText, Trophy, Volume2, DollarSign, Building2,
-  Database, Cloud
+  Database, Cloud, Key
 } from 'lucide-react';
 import { UserRole, isCeoRole, isSuperAdminOrCeoRole } from '../../types';
 import { NativeStatusBar } from './NativeStatusBar';
@@ -36,6 +36,7 @@ interface DeviceFrameProps {
   studentsCount?: number;
   isCloudSynced?: boolean;
   onOpenCEOProfile?: () => void;
+  onOpenCEOLogin?: () => void;
 }
 
 export const DeviceFrame: React.FC<DeviceFrameProps> = ({
@@ -66,6 +67,7 @@ export const DeviceFrame: React.FC<DeviceFrameProps> = ({
   studentsCount,
   isCloudSynced = true,
   onOpenCEOProfile,
+  onOpenCEOLogin,
 }) => {
   const isSuperAdminOrCEO = isSuperAdminOrCeoRole(activeRole);
 
@@ -139,6 +141,18 @@ export const DeviceFrame: React.FC<DeviceFrameProps> = ({
 
         {/* Viewport, OS and Tech Tools */}
         <div className="flex items-center gap-1.5">
+          {/* CEO Login Quick Button */}
+          {onOpenCEOLogin && (
+            <button
+              onClick={onOpenCEOLogin}
+              className="px-2.5 py-1.5 rounded-xl bg-slate-900 hover:bg-slate-800 border border-amber-500/40 text-amber-300 hover:text-amber-200 text-xs font-bold flex items-center gap-1.5 transition shadow-sm"
+              title="Acesso com Login e Senha do CEO (messiasbjunior@yahoo.com.br)"
+            >
+              <Key className="w-3.5 h-3.5 text-amber-400" />
+              <span className="hidden sm:inline">Login CEO</span>
+            </button>
+          )}
+
           {/* CEO Profile Quick Button */}
           {onOpenCEOProfile && (
             <button

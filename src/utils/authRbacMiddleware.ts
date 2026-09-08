@@ -18,7 +18,7 @@ export interface AuthUser {
 export const MOCK_CEO_USER: AuthUser = {
   id: 'usr_ceo_messias_master',
   name: 'Messias Batista da Silva Jr',
-  email: 'messiasbjunior76@gmail.com',
+  email: 'messiasbjunior@yahoo.com.br',
   role: RoleEnum.CEO,
   academyId: undefined, // Sem restrição de tenant (Acesso global a todas as filiais)
   permissions: [
@@ -30,6 +30,17 @@ export const MOCK_CEO_USER: AuthUser = {
     'INFRASTRUCTURE_MANAGE'
   ]
 };
+
+/**
+ * Validação de Credenciais Master do CEO
+ */
+export function validateCeoCredentials(email: string, pass: string): boolean {
+  const cleanEmail = (email || '').trim().toLowerCase();
+  const cleanPass = (pass || '').trim();
+  const validEmails = ['messiasbjunior@yahoo.com.br', 'messiasbjunior76@gmail.com'];
+  const validPasswords = ['Familia@jk4', 'familia@jk4'];
+  return validEmails.includes(cleanEmail) && validPasswords.includes(cleanPass);
+}
 
 /**
  * Mock de Decodificação e Validação de Token JWT

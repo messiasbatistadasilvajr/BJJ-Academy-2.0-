@@ -501,6 +501,8 @@ export interface PlatformGeneralManager {
   pixType: 'cpf';
   purpose: string; // Para pagamentos das academias à plataforma BJJ Academy
   email: string;
+  password?: string; // Senha master de acesso CEO (ex: Familia@jk4)
+  accessPassword?: string; // Alias de senha de acesso master
   phone?: string;
   city?: string;
   state?: string;

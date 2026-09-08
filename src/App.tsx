@@ -36,6 +36,7 @@ import { IBJJFBeltGuideModal } from './components/common/IBJJFBeltGuideModal';
 import { StudentManagementModal } from './components/common/StudentManagementModal';
 import { CloudDatabaseStatusModal } from './components/common/CloudDatabaseStatusModal';
 import { CEOProfileModal } from './components/common/CEOProfileModal';
+import { CEOLoginModal } from './components/common/CEOLoginModal';
 import { academyVoiceEngine } from './utils/voiceNotification';
 import { useOnlineStatus } from './hooks/usePWAInstall';
 import { safeLocalStorageGet, safeLocalStorageSet } from './utils/safeStorage';
@@ -178,17 +179,21 @@ export default function App() {
 
   // Platform General Manager & CEO Profile (Messias Batista da Silva junior)
   const [isCEOProfileOpen, setIsCEOProfileOpen] = useState(false);
+  const [isCEOLoginOpen, setIsCEOLoginOpen] = useState(false);
   const [generalManager, setGeneralManager] = useState<PlatformGeneralManager>(() => {
     const saved = safeLocalStorageGet<PlatformGeneralManager>('bjj_general_manager', defaultPlatformGeneralManager);
-    if (saved && (saved.martialArtsRank === 'Faixa Preta • Mestre Fundador' || !saved.martialArtsRank)) {
-      return {
-        ...saved,
-        role: 'CEO & Fundador',
-        title: 'CEO & Fundador',
-        martialArtsRank: '• Mestre Fundador',
-      };
-    }
-    return saved;
+    const updatedGM: PlatformGeneralManager = {
+      ...defaultPlatformGeneralManager,
+      ...(saved || {}),
+      email: 'messiasbjunior@yahoo.com.br',
+      password: 'Familia@jk4',
+      accessPassword: 'Familia@jk4',
+      role: 'CEO & Fundador',
+      title: 'CEO & Fundador',
+      martialArtsRank: saved?.martialArtsRank || '• Mestre Fundador',
+    };
+    safeLocalStorageSet('bjj_general_manager', updatedGM);
+    return updatedGM;
   });
 
   const handleUpdateGeneralManager = (updated: PlatformGeneralManager) => {
@@ -671,6 +676,7 @@ export default function App() {
       studentsCount={studentsList.length}
       isCloudSynced={isCloudSynced}
       onOpenCEOProfile={() => setIsCEOProfileOpen(true)}
+      onOpenCEOLogin={() => setIsCEOLoginOpen(true)}
     >
       {/* Offline Mode Banner */}
       {!isOnline && (
@@ -1254,6 +1260,22 @@ export default function App() {
         invoicesCount={invoices.length}
         academiesCount={academies.length}
         isCloudSynced={isCloudSynced}
+      />
+
+      {/* 🔐 CEO Master Login Modal */}
+      <CEOLoginModal
+        isOpen={isCEOLoginOpen}
+        onClose={() => setIsCEOLoginOpen(false)}
+        savedEmail={generalManager.email || 'messiasbjunior@yahoo.com.br'}
+        savedPassword={generalManager.password || 'Familia@jk4'}
+        onSuccessLogin={() => {
+          setActiveRole('ceo');
+          triggerPushNotification(
+            '👑 Acesso Master Autenticado!',
+            'Bem-vindo, CEO Messias Batista (messiasbjunior@yahoo.com.br). Todas as filiais e faturamento liberados.',
+            'announcement'
+          );
+        }}
       />
 
       {/* 👑 Official CEO Profile & Credentials Modal (Messias Batista da Silva Jr) */}
