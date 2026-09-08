@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { 
   X, Database, CheckCircle2, ShieldCheck, Users, 
-  RefreshCw, Cloud, Server, Zap, Globe
+  RefreshCw, Cloud, Server, Zap, Globe, RotateCcw, AlertTriangle
 } from 'lucide-react';
 import { testConnection } from '../../firebase/config';
 
@@ -26,6 +26,7 @@ export const CloudDatabaseStatusModal: React.FC<CloudDatabaseStatusModalProps> =
 }) => {
   const [isTesting, setIsTesting] = useState(false);
   const [testResult, setTestResult] = useState<'idle' | 'success' | 'warning'>('idle');
+  const [isConfirmingReset, setIsConfirmingReset] = useState(false);
 
   if (!isOpen) return null;
 
@@ -37,6 +38,16 @@ export const CloudDatabaseStatusModal: React.FC<CloudDatabaseStatusModalProps> =
     setTimeout(() => {
       setTestResult('idle');
     }, 4000);
+  };
+
+  const handleFactoryResetAndRestart = () => {
+    try {
+      localStorage.clear();
+      sessionStorage.clear();
+      window.location.reload();
+    } catch {
+      window.location.reload();
+    }
   };
 
   return (
@@ -163,6 +174,56 @@ export const CloudDatabaseStatusModal: React.FC<CloudDatabaseStatusModalProps> =
                 <span><strong>Auditoria de Dados:</strong> Nenhuma alteração é perdida em recarregamentos ou trocas de dispositivo.</span>
               </div>
             </div>
+          </div>
+
+          {/* Opção de Limpeza de Cache e Reinício do Sistema */}
+          <div className="bg-slate-950/60 border border-slate-800 rounded-2xl p-4 space-y-3">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <RotateCcw size={16} className="text-amber-400" />
+                <h4 className="text-xs font-bold text-white uppercase tracking-wider">
+                  Reinicialização & Limpeza do Sistema
+                </h4>
+              </div>
+              <span className="text-[10px] text-slate-400 font-mono">Redefinição Limpa</span>
+            </div>
+            <p className="text-xs text-slate-400 leading-relaxed">
+              Deseja restaurar o aplicativo para o estado original e recarregar? A limpeza de dados locais redefine o cache do navegador e reinicia o sistema imediatamente.
+            </p>
+            {isConfirmingReset ? (
+              <div className="p-3 bg-red-950/50 border border-red-500/40 rounded-xl space-y-2.5">
+                <div className="flex items-center gap-2 text-xs text-red-300 font-semibold">
+                  <AlertTriangle size={15} className="text-red-400 shrink-0" />
+                  <span>Confirmar limpeza de cache e reinício completo da aplicação?</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={handleFactoryResetAndRestart}
+                    className="px-3 py-1.5 rounded-lg bg-red-600 hover:bg-red-500 text-white text-xs font-bold transition flex items-center gap-1.5 cursor-pointer"
+                  >
+                    <RotateCcw size={12} />
+                    <span>Sim, Limpar e Reiniciar</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setIsConfirmingReset(false)}
+                    className="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold transition cursor-pointer"
+                  >
+                    Cancelar
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <button
+                type="button"
+                onClick={() => setIsConfirmingReset(true)}
+                className="w-full py-2 px-3 rounded-xl border border-slate-700 bg-slate-800/80 hover:bg-slate-800 hover:border-amber-500/50 text-slate-200 text-xs font-bold flex items-center justify-center gap-2 transition cursor-pointer"
+              >
+                <RotateCcw size={14} className="text-amber-400" />
+                <span>Limpar Dados Locais & Reiniciar Sistema</span>
+              </button>
+            )}
           </div>
 
           {testResult === 'success' && (
