@@ -48,6 +48,7 @@ interface ManagerViewProps {
   onUpdateGeneralManager?: (gm: PlatformGeneralManager) => void;
   onOpenAcademyRegistration?: () => void;
   isGeneralManager?: boolean;
+  isCEO?: boolean;
   onOpenRetentionRadar?: () => void;
   retentionAlertsCount?: number;
   onOpenBirthdayAlert?: () => void;
@@ -84,6 +85,7 @@ export const ManagerView: React.FC<ManagerViewProps> = ({
   onUpdateGeneralManager,
   onOpenAcademyRegistration,
   isGeneralManager = false,
+  isCEO = false,
   onOpenRetentionRadar,
   retentionAlertsCount,
   onOpenBirthdayAlert,
@@ -357,6 +359,39 @@ export const ManagerView: React.FC<ManagerViewProps> = ({
     <div className="flex flex-col h-full bg-slate-950 text-slate-100 overflow-y-auto pb-20 no-scrollbar">
       {/* Manager Top Bar */}
       <div className="px-5 pt-4 pb-4 bg-gradient-to-b from-slate-900 via-slate-900 to-slate-950 border-b border-slate-800">
+        {/* CEO Exclusive Executive Welcome & Global RBAC Priority Header */}
+        {isCEO && (
+          <div className="mb-3.5 p-3 rounded-2xl bg-gradient-to-r from-amber-500/25 via-amber-600/15 to-red-600/20 border-2 border-amber-400/60 shadow-xl shadow-amber-950/40 animate-fadeIn backdrop-blur-sm">
+            <div className="flex items-center justify-between gap-2 flex-wrap">
+              <div className="flex items-center gap-2.5">
+                <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-amber-400 to-amber-600 text-slate-950 flex items-center justify-center font-black text-lg shadow-md ring-2 ring-amber-300/50">
+                  👑
+                </div>
+                <div>
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <h1 className="text-sm sm:text-base font-black text-white tracking-tight">
+                      Olá, CEO Messias! Oss. 🥋
+                    </h1>
+                    <span className="text-[9px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full bg-gradient-to-r from-amber-400 to-amber-500 text-slate-950 shadow-sm">
+                      PODER TOTAL & IRRESTRITO
+                    </span>
+                  </div>
+                  <p className="text-[11px] text-amber-200/90 font-medium mt-0.5">
+                    Acesso Master Ativo • Visão global de todas as academias (Multi-Tenant), Faturamento Consolidado, Split Asaas e Monitor de Churn por IA.
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-1.5 text-[10px] font-mono">
+                <span className="px-2.5 py-1 rounded-lg bg-slate-950/80 text-emerald-400 border border-emerald-500/30 flex items-center gap-1 font-bold">
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-ping" />
+                  RBAC: CEO_MASTER
+                </span>
+              </div>
+            </div>
+          </div>
+        )}
+
         <div className="flex items-center justify-between mb-3">
           <div className="flex items-center gap-2.5">
             <div className={`w-10 h-10 rounded-2xl border flex items-center justify-center font-black shadow-lg ${

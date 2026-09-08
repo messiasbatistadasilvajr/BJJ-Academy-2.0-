@@ -1,7 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
-  X, QrCode, CheckCircle, AlertTriangle, UserCheck, ShieldCheck, 
-  Delete, Sparkles, RefreshCw, Volume2, Lock, Unlock, Camera
+  X, QrCode, CheckCircle2, AlertTriangle, UserCheck, 
+  Delete, RefreshCw, Lock, Unlock, Camera, Shield
 } from 'lucide-react';
 import { bjjAudio } from '../../utils/audio';
 import { mockStudent } from '../../data/mockData';
@@ -10,23 +10,54 @@ import { BeltBadge } from './BeltBadge';
 interface KioskTurnstileModalProps {
   isOpen: boolean;
   onClose: () => void;
+  academyName?: string;
+  academyBranch?: string;
 }
 
-export const KioskTurnstileModal: React.FC<KioskTurnstileModalProps> = ({ isOpen, onClose }) => {
+export const KioskTurnstileModal: React.FC<KioskTurnstileModalProps> = ({ 
+  isOpen, 
+  onClose,
+  academyName = 'BJJ Academy',
+  academyBranch = 'Jardins (Matriz)'
+}) => {
   const [pin, setPin] = useState<string>('');
-  const [status, setStatus] = useState<'idle' | 'success' | 'denied' | 'scanning'>('idle');
+  const [status, setStatus] = useState<'idle' | 'success' | 'denied' | 'camera_scan'>('idle');
   const [recognizedStudent, setRecognizedStudent] = useState<any>(null);
-  const [attendanceCount, setAttendanceCount] = useState<number>(38);
+  const [attendanceCount, setAttendanceCount] = useState<number>(39);
+  const [countdown, setCountdown] = useState<number>(3);
+
+  // Auto-reset countdown when in success state
+  useEffect(() => {
+    let timer: NodeJS.Timeout;
+    if (status === 'success') {
+      setCountdown(3);
+      const interval = setInterval(() => {
+        setCountdown((prev) => (prev > 1 ? prev - 1 : 1));
+      }, 1000);
+
+      timer = setTimeout(() => {
+        setPin('');
+        setStatus('idle');
+        setRecognizedStudent(null);
+        clearInterval(interval);
+      }, 3000);
+
+      return () => {
+        clearTimeout(timer);
+        clearInterval(interval);
+      };
+    }
+  }, [status]);
 
   if (!isOpen) return null;
 
   const handleDigit = (digit: string) => {
-    if (pin.length < 6 && status === 'idle') {
+    if (pin.length < 6 && (status === 'idle' || status === 'denied')) {
       const nextPin = pin + digit;
       setPin(nextPin);
-      bjjAudio.playBeep(600, 0.05);
+      bjjAudio.playBeep(520, 0.04);
 
-      // Auto trigger if 4 digits (e.g. 1024 or 2024 or 1234)
+      // Auto trigger if 4 digits (e.g. phone last digits or code)
       if (nextPin.length === 4) {
         verifyPin(nextPin);
       }
@@ -44,9 +75,7 @@ export const KioskTurnstileModal: React.FC<KioskTurnstileModalProps> = ({ isOpen
   };
 
   const verifyPin = (code: string) => {
-    // If student pin or mock demo codes
     if (code === '1024' || code === '1234' || code === '2024' || code.length === 4) {
-      // Access granted
       bjjAudio.playAccessGranted();
       setStatus('success');
       setAttendanceCount(prev => prev + 1);
@@ -55,198 +84,200 @@ export const KioskTurnstileModal: React.FC<KioskTurnstileModalProps> = ({ isOpen
         avatar: mockStudent.avatar,
         belt: mockStudent.belt,
         stripes: mockStudent.stripes,
-        financialStatus: 'Mensalidade em Dia (Set/2026)',
-        lastGraduation: '3º Grau',
-        trainingType: 'Jiu-Jitsu Noturno • Tatame 1'
+        financialStatus: 'Plano Ativo (Em Dia)',
+        sessionName: 'Fundamentos Adulto • Tatame 1',
+        totalCheckins: attendanceCount + 1
       });
-
-      // Auto reset back to idle after 4 seconds
-      setTimeout(() => {
-        setPin('');
-        setStatus('idle');
-        setRecognizedStudent(null);
-      }, 4000);
     } else {
-      // Access denied
       bjjAudio.playAccessDenied();
       setStatus('denied');
       setTimeout(() => {
         setPin('');
         setStatus('idle');
-      }, 2500);
+      }, 2000);
     }
   };
 
-  const simulateQrScan = () => {
-    setStatus('scanning');
-    bjjAudio.playBeep(700, 0.1);
+  const simulateCameraScan = () => {
+    setStatus('camera_scan');
+    bjjAudio.playBeep(640, 0.08);
     setTimeout(() => {
       verifyPin('1024');
-    }, 1200);
+    }, 1500);
   };
 
   return (
     <div 
-      className="fixed inset-0 z-50 bg-slate-950 flex flex-col text-white"
+      className="fixed inset-0 z-50 bg-slate-950 flex flex-col text-slate-100 select-none font-sans"
       id="modal-kiosk-turnstile"
     >
-      {/* Kiosk Header */}
-      <div className="px-6 py-4 border-b border-slate-800/80 bg-slate-900/90 flex items-center justify-between">
+      {/* Kiosk Header Sóbrio */}
+      <div className="px-6 py-4 border-b border-slate-800/80 bg-slate-950 flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-red-600 flex items-center justify-center font-black text-lg shadow-lg shadow-red-600/30">
+          <div className="w-9 h-9 rounded-xl bg-slate-900 border border-slate-700 flex items-center justify-center font-serif font-black text-amber-400 text-sm">
             BJJ
           </div>
           <div>
-            <h1 className="font-extrabold text-base tracking-wide flex items-center gap-2">
-              TOTEM DE RECEPÇÃO & CATRACA ELETRÔNICA
-              <span className="text-[10px] bg-emerald-500/20 text-emerald-400 border border-emerald-500/40 px-2 py-0.5 rounded-full font-bold uppercase">
+            <h1 className="font-bold text-sm tracking-tight text-white flex items-center gap-2">
+              {academyName} • Totem de Check-in
+              <span className="text-[9px] bg-emerald-950/60 text-emerald-400 border border-emerald-500/30 px-2 py-0.5 rounded-full font-mono uppercase font-bold">
                 Online
               </span>
             </h1>
-            <p className="text-xs text-slate-400">BJJ Academy • Unidade Jardins • Check-in por Matrícula ou QR</p>
+            <p className="text-[11px] text-slate-400">Unidade {academyBranch} • Acesso ao Tatame</p>
           </div>
         </div>
 
         <button
           onClick={onClose}
-          className="px-3 py-1.5 rounded-xl bg-slate-800 text-slate-400 hover:text-white text-xs font-semibold flex items-center gap-1.5 transition-colors"
+          className="px-3.5 py-1.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-slate-400 hover:text-white text-xs font-semibold flex items-center gap-1.5 transition border border-slate-800"
         >
-          <X size={16} /> Sair do Totem
+          <X size={14} /> Sair do Totem
         </button>
       </div>
 
       {/* Main Kiosk Area */}
-      <div className="flex-1 flex flex-col md:flex-row items-center justify-center p-6 gap-8 max-w-5xl mx-auto w-full">
+      <div className="flex-1 flex flex-col md:flex-row items-center justify-center p-6 gap-8 max-w-4xl mx-auto w-full">
         {/* Left Side: Instructions & Scan Action */}
-        <div className="w-full md:w-1/2 flex flex-col items-center text-center space-y-5">
+        <div className="w-full md:w-1/2 flex flex-col items-center text-center space-y-4">
           {status === 'idle' && (
             <>
-              <div className="w-24 h-24 rounded-3xl bg-slate-900 border-2 border-slate-700 flex items-center justify-center shadow-inner text-slate-400">
-                <Lock size={42} className="text-red-500 animate-pulse" />
+              <div className="w-20 h-20 rounded-2xl bg-slate-900 border border-slate-800 flex items-center justify-center text-slate-400 shadow-sm">
+                <Lock size={32} className="text-slate-400" />
               </div>
 
               <div>
-                <h2 className="text-2xl font-black text-white">BEM-VINDO AO TATAME</h2>
-                <p className="text-sm text-slate-400 mt-1 max-w-xs mx-auto">
-                  Digite sua matrícula no teclado ao lado ou aponte a câmera para o QR Code do seu app.
+                <h2 className="text-xl font-bold text-white tracking-tight">Check-in no Tatame</h2>
+                <p className="text-xs text-slate-400 mt-1 max-w-xs mx-auto leading-relaxed">
+                  Digite os 4 últimos dígitos do seu telefone ou matrícula no teclado numérico ao lado.
                 </p>
               </div>
 
-              {/* QR Code fast check-in button */}
               <button
-                onClick={simulateQrScan}
-                className="flex items-center gap-2.5 px-6 py-3 rounded-2xl bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-200 text-sm font-bold shadow-lg transition-all active:scale-95"
+                type="button"
+                onClick={simulateCameraScan}
+                className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-slate-900 hover:bg-slate-800 border border-slate-700/80 text-slate-300 text-xs font-semibold transition active:scale-95"
               >
-                <QrCode size={20} className="text-red-400" />
-                Simular Leitura de QR Code / Face ID
+                <Camera size={16} className="text-amber-400" />
+                <span>Biometria Facial / Leitura de QR</span>
               </button>
             </>
           )}
 
-          {status === 'scanning' && (
-            <div className="flex flex-col items-center space-y-4 py-8">
-              <div className="w-20 h-20 rounded-full border-4 border-red-500 border-t-transparent animate-spin" />
-              <p className="text-sm font-bold text-slate-300">Lendo código do app do aluno...</p>
+          {status === 'camera_scan' && (
+            <div className="flex flex-col items-center space-y-3 py-6">
+              <div className="w-28 h-28 rounded-full border-2 border-dashed border-amber-400 flex items-center justify-center animate-pulse bg-slate-900/50">
+                <Camera size={36} className="text-amber-400" />
+              </div>
+              <p className="text-xs font-medium text-slate-300">Posicione seu rosto ou QR Code na moldura...</p>
             </div>
           )}
 
           {status === 'success' && recognizedStudent && (
-            <div className="bg-emerald-950/40 border-2 border-emerald-500/60 rounded-3xl p-6 w-full max-w-md shadow-2xl flex flex-col items-center animate-in fade-in zoom-in duration-300">
-              <div className="relative mb-3">
+            <div className="bg-slate-900 border border-emerald-500/50 rounded-2xl p-5 w-full max-w-sm shadow-xl flex flex-col items-center animate-fadeIn text-slate-100">
+              <div className="relative mb-2">
                 <img 
                   src={recognizedStudent.avatar} 
                   alt={recognizedStudent.name} 
-                  className="w-24 h-24 rounded-full object-cover border-4 border-emerald-500 shadow-xl"
+                  className="w-20 h-20 rounded-xl object-cover border-2 border-emerald-500 shadow-md"
                 />
-                <div className="absolute -bottom-2 -right-2 p-2 bg-emerald-500 text-white rounded-full shadow-md">
-                  <CheckCircle size={22} />
+                <div className="absolute -bottom-1.5 -right-1.5 p-1 bg-emerald-500 text-slate-950 rounded-full shadow">
+                  <CheckCircle2 size={16} />
                 </div>
               </div>
 
-              <span className="text-xs font-bold text-emerald-400 uppercase tracking-wider mb-1 flex items-center gap-1">
-                <Unlock size={14} /> Catraca Liberada
-              </span>
-
-              <h3 className="text-xl font-black text-white">{recognizedStudent.name}</h3>
-
-              <div className="my-2">
-                <BeltBadge belt={recognizedStudent.belt} stripes={recognizedStudent.stripes} size="md" showLabel />
+              <div className="text-[10px] font-bold text-emerald-400 uppercase tracking-wider mb-0.5 flex items-center gap-1">
+                <Unlock size={12} /> Acesso Liberado
               </div>
 
-              <div className="bg-emerald-900/40 rounded-xl px-4 py-2 border border-emerald-600/30 text-xs text-emerald-200 font-medium space-y-0.5 mt-2 text-center w-full">
-                <div>✓ {recognizedStudent.financialStatus}</div>
-                <div>🥋 Treino #{attendanceCount} computado para grau</div>
+              <h3 className="text-base font-bold text-white text-center">{recognizedStudent.name}</h3>
+
+              <div className="my-1.5">
+                <BeltBadge belt={recognizedStudent.belt} stripes={recognizedStudent.stripes} size="sm" showLabel />
               </div>
 
-              <p className="text-xs text-emerald-400/80 font-bold mt-3 animate-pulse">
-                Bom treino, guerreiro! Oss!
+              <div className="bg-slate-950 rounded-xl px-3.5 py-2 border border-slate-800 text-[11px] space-y-0.5 text-center w-full mt-1.5">
+                <div className="text-emerald-400 font-semibold">{recognizedStudent.financialStatus}</div>
+                <div className="text-slate-400">Presença #{recognizedStudent.totalCheckins} registrada no sistema</div>
+              </div>
+
+              <p className="text-xs font-serif font-bold text-amber-400 mt-3">
+                Bom treino, guerreiro. Oss! 🥋
               </p>
+
+              <div className="mt-3 w-full bg-slate-950 rounded-full h-1 overflow-hidden">
+                <div className="bg-emerald-500 h-full w-full animate-pulse" />
+              </div>
+              <span className="text-[10px] text-slate-500 mt-1">Retornando em {countdown}s...</span>
             </div>
           )}
 
           {status === 'denied' && (
-            <div className="bg-red-950/40 border-2 border-red-500/60 rounded-3xl p-6 w-full max-w-md shadow-2xl flex flex-col items-center animate-in fade-in duration-200">
-              <div className="w-20 h-20 rounded-full bg-red-600/20 text-red-400 flex items-center justify-center mb-3">
-                <AlertTriangle size={40} />
+            <div className="bg-slate-900 border border-red-500/50 rounded-2xl p-5 w-full max-w-sm shadow-xl flex flex-col items-center animate-fadeIn text-slate-100">
+              <div className="w-12 h-12 rounded-xl bg-red-950/60 border border-red-800/60 text-red-400 flex items-center justify-center mb-2">
+                <AlertTriangle size={24} />
               </div>
-              <h3 className="text-lg font-bold text-white">Matrícula não identificada</h3>
-              <p className="text-xs text-red-300 mt-1 text-center">
-                Verifique os números digitados ou dirija-se à recepção para regularização.
+              <h3 className="text-sm font-bold text-white">Matrícula não localizada</h3>
+              <p className="text-xs text-slate-400 mt-1 text-center">
+                Verifique os números digitados ou dirija-se à recepção da academia.
               </p>
             </div>
           )}
         </div>
 
-        {/* Right Side: Big Touch Keypad */}
-        <div className="w-full md:w-1/2 max-w-sm bg-slate-900 border border-slate-800 rounded-3xl p-6 shadow-2xl">
+        {/* Right Side: Clean Numeric Keypad */}
+        <div className="w-full md:w-1/2 max-w-xs bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow-xl">
           {/* Display screen */}
-          <div className="bg-slate-950 border border-slate-800 rounded-2xl p-4 mb-5 text-center">
-            <div className="text-xs text-slate-400 font-medium mb-1">Matrícula do Aluno</div>
-            <div className="font-mono text-3xl font-black tracking-widest text-red-400 h-10 flex items-center justify-center">
-              {pin ? pin : <span className="text-slate-700 text-2xl font-normal">_ _ _ _</span>}
+          <div className="bg-slate-950 border border-slate-800 rounded-xl p-3 mb-4 text-center">
+            <div className="text-[11px] text-slate-400 font-medium mb-1">Matrícula / 4 Dígitos</div>
+            <div className="font-mono text-2xl font-bold tracking-widest text-amber-400 h-8 flex items-center justify-center">
+              {pin ? pin : <span className="text-slate-700 text-xl font-normal">_ _ _ _</span>}
             </div>
-            <div className="text-[10px] text-slate-500 mt-1">Dica teste: digite 1024</div>
           </div>
 
           {/* 3x4 Touch Grid */}
-          <div className="grid grid-cols-3 gap-3">
+          <div className="grid grid-cols-3 gap-2">
             {['1', '2', '3', '4', '5', '6', '7', '8', '9'].map((digit) => (
               <button
                 key={digit}
+                type="button"
                 onClick={() => handleDigit(digit)}
-                className="h-16 rounded-2xl bg-slate-800/80 hover:bg-slate-700 border border-slate-700/80 text-2xl font-black text-white active:scale-95 transition-all shadow-md flex items-center justify-center"
+                className="h-13 rounded-xl bg-slate-950 hover:bg-slate-800 border border-slate-800 text-lg font-bold text-white active:scale-95 transition shadow-sm flex items-center justify-center"
               >
                 {digit}
               </button>
             ))}
 
             <button
+              type="button"
               onClick={handleClear}
-              className="h-16 rounded-2xl bg-slate-800/40 hover:bg-slate-800 text-xs font-bold text-slate-400 uppercase tracking-wider active:scale-95 transition-all flex items-center justify-center"
+              className="h-13 rounded-xl bg-slate-950/50 hover:bg-slate-800 text-xs font-semibold text-slate-400 uppercase tracking-wider active:scale-95 transition flex items-center justify-center"
             >
               Limpar
             </button>
 
             <button
+              type="button"
               onClick={() => handleDigit('0')}
-              className="h-16 rounded-2xl bg-slate-800/80 hover:bg-slate-700 border border-slate-700/80 text-2xl font-black text-white active:scale-95 transition-all shadow-md flex items-center justify-center"
+              className="h-13 rounded-xl bg-slate-950 hover:bg-slate-800 border border-slate-800 text-lg font-bold text-white active:scale-95 transition shadow-sm flex items-center justify-center"
             >
               0
             </button>
 
             <button
+              type="button"
               onClick={handleBackspace}
-              className="h-16 rounded-2xl bg-slate-800/40 hover:bg-slate-800 text-slate-300 active:scale-95 transition-all flex items-center justify-center"
+              className="h-13 rounded-xl bg-slate-950/50 hover:bg-slate-800 text-slate-400 active:scale-95 transition flex items-center justify-center"
             >
-              <Delete size={22} />
+              <Delete size={18} />
             </button>
           </div>
         </div>
       </div>
 
       {/* Footer Info */}
-      <div className="py-3 px-6 text-center text-xs text-slate-500 border-t border-slate-800/60 bg-slate-950">
-        Modo Kiosk Tablet • Suporta leitor USB/NFC de proximidade ou teclado de tela de toque.
+      <div className="py-2.5 px-6 text-center text-[11px] text-slate-500 border-t border-slate-800/60 bg-slate-950 font-mono">
+        BJJ ACADEMY OS • TOTEM KIOSK v2.4 • PROTOCOLO DE ACESSO CRIPTOGRAFADO
       </div>
     </div>
   );

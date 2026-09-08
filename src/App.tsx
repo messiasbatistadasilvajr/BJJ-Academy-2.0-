@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { UserRole, StudentProfile, DependentStudent, ClassSession, Invoice, Announcement, ChatMessage, PushNotification, BeltColor, RegisteredAcademy, PlatformGeneralManager, RetentionAlertItem, SparringSession, BirthdayPerson } from './types';
+import { UserRole, RoleEnum, isCeoRole, isSuperAdminOrCeoRole, StudentProfile, DependentStudent, ClassSession, Invoice, Announcement, ChatMessage, PushNotification, BeltColor, RegisteredAcademy, PlatformGeneralManager, RetentionAlertItem, SparringSession, BirthdayPerson } from './types';
 import { mockStudent, mockDependents, mockClasses, mockInvoices, mockAnnouncements, mockChatMessages, mockRankings, mockPushNotifications, mockRegisteredAcademies, defaultPlatformGeneralManager, mockRetentionAlerts, mockSparringSessions, mockBirthdays, mockInitialStudents } from './data/mockData';
 import { DeviceFrame } from './components/common/DeviceFrame';
 import { StudentView } from './components/views/StudentView';
@@ -66,6 +66,21 @@ export default function App() {
   const [activeRole, setActiveRole] = useState<UserRole>('student');
   const [isDesktopView, setIsDesktopView] = useState<boolean>(false);
   const [os, setOs] = useState<'ios' | 'android'>('ios');
+
+  // RBAC Privileges: CEO possui prioridade total e permissões globais irrestritas
+  const isCEO = isCeoRole(activeRole);
+  const isSuperAdminOrCEO = isSuperAdminOrCeoRole(activeRole);
+
+  const handleSelectRole = (newRole: UserRole) => {
+    setActiveRole(newRole);
+    if (isCeoRole(newRole)) {
+      triggerPushNotification(
+        '👑 Olá, CEO Messias! Oss. 🥋',
+        'Acesso Master Total Ativado. Visão global de todas as academias (Multi-Tenant), Split Asaas e Churn por IA liberados.',
+        'announcement'
+      );
+    }
+  };
 
   // Domain Data State (Reactive with persistence fallback)
   const [student, setStudent] = useState<StudentProfile>(() => {
@@ -631,7 +646,7 @@ export default function App() {
     <ErrorBoundary>
       <DeviceFrame
       activeRole={activeRole}
-      onSelectRole={(r) => setActiveRole(r)}
+      onSelectRole={handleSelectRole}
       isDesktopView={isDesktopView}
       onToggleDesktopView={() => setIsDesktopView((prev) => !prev)}
       os={os}
@@ -789,7 +804,7 @@ export default function App() {
         />
       )}
 
-      {(activeRole === 'manager' || activeRole === 'general_manager') && (
+      {(activeRole === 'manager' || isSuperAdminOrCEO) && (
         <ManagerView
           classes={classes}
           invoices={invoices}
@@ -819,7 +834,8 @@ export default function App() {
           generalManager={generalManager}
           onUpdateGeneralManager={handleUpdateGeneralManager}
           onOpenAcademyRegistration={() => setActiveRole('academy_registration')}
-          isGeneralManager={activeRole === 'general_manager'}
+          isGeneralManager={isSuperAdminOrCEO}
+          isCEO={isCEO}
           onOpenStudentManagement={() => setIsStudentManagementOpen(true)}
           onOpenCloudStatus={() => setIsCloudStatusOpen(true)}
           studentsCount={studentsList.length}
@@ -928,6 +944,8 @@ export default function App() {
       <KioskTurnstileModal
         isOpen={isKioskOpen}
         onClose={() => setIsKioskOpen(false)}
+        academyName={activeAcademy.name}
+        academyBranch={activeAcademy.branch}
       />
 
       <GraduationExamModal
@@ -991,7 +1009,7 @@ export default function App() {
         academies={academies}
         invoices={invoices}
         activeAcademy={activeAcademy}
-        isGeneralManager={activeRole === 'general_manager'}
+        isGeneralManager={isSuperAdminOrCEO}
         onUpdateInvoices={(updated) => {
           setInvoices(updated);
           localStorage.setItem('bjj_invoices', JSON.stringify(updated));
@@ -1145,7 +1163,7 @@ export default function App() {
         academies={academies}
         activeAcademyId={activeAcademy.id}
         activeAcademyName={activeAcademy.shortName || activeAcademy.name}
-        isGeneralManager={activeRole === 'general_manager'}
+        isGeneralManager={isSuperAdminOrCEO}
         onAnnounceVoice={(title, body) => {
           academyVoiceEngine.announceAcademyMessage(activeAcademy, title, body);
         }}

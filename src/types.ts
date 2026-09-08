@@ -1,10 +1,47 @@
+export enum RoleEnum {
+  CEO = 'CEO',
+  SUPER_ADMIN = 'SUPER_ADMIN',
+  ADMIN_ACADEMIA = 'ADMIN_ACADEMIA',
+  PROFESSOR = 'PROFESSOR',
+  ALUNO = 'ALUNO'
+}
+
 export type UserRole = 
-  | 'general_manager'       // 👑 Gestor Geral BJJ ACADEMY (Messias Batista da Silva Jr - Super Admin)
+  | 'ceo'                   // 👑 CEO & Fundador BJJ ACADEMY (Messias Batista da Silva Jr - Acesso Irrestrito / Poder Total)
+  | 'CEO'                   // Role oficial RBAC (Maiúsculo)
+  | 'SUPER_ADMIN'           // Super Administrador do Sistema
+  | 'general_manager'       // 👑 Gestor Geral BJJ ACADEMY (Alias compatível)
+  | 'ADMIN_ACADEMIA'        // Gestor / Responsável da Unidade Franqueada
   | 'manager'               // 🏢 Responsável da Academia (Gestor da Unidade Cadastrada)
+  | 'PROFESSOR'             // Professor do Tatame
   | 'teacher'               // 🥋 Professor Cadastrado (Aulas, Alunos, Graduação, Lembretes)
+  | 'ALUNO'                 // Aluno do Tatame
   | 'student'               // 🥋 Aluno
-  | 'parent'                // 👨‍👧 Portal Responsável
+  | 'parent'                // 👨‍👧 Portal Responsável Legal (Kids/Menor)
   | 'academy_registration'; // 🏛️ Cadastrar / Gerenciar Rede de Academias
+
+/**
+ * Helper de Autorização RBAC:
+ * Verifica se a role é do CEO (Acesso Total / Sem Restrições)
+ */
+export function isCeoRole(role?: UserRole | string | null): boolean {
+  if (!role) return false;
+  return role === 'ceo' || role === 'CEO' || role === RoleEnum.CEO;
+}
+
+/**
+ * Helper de Autorização RBAC:
+ * Verifica se a role possui privilégio Master (CEO ou SUPER_ADMIN)
+ */
+export function isSuperAdminOrCeoRole(role?: UserRole | string | null): boolean {
+  if (!role) return false;
+  return (
+    isCeoRole(role) ||
+    role === 'general_manager' ||
+    role === 'SUPER_ADMIN' ||
+    role === RoleEnum.SUPER_ADMIN
+  );
+}
 
 export type BeltColor = 
   // Branca (Kids e Adulto)
@@ -95,6 +132,11 @@ export interface StudentProfile {
   hasMedicalCertificate?: boolean;
   medicalCertificateExpiry?: string;
 
+  // Lesões Ativas & Restrições de Rola (Alerta Discreto para Professores)
+  activeInjuries?: string;
+  injurySeverity?: 'mild' | 'moderate' | 'strict';
+  sparringRestrictions?: string;
+
   // Pais & Responsáveis Legais (Obrigatório para menores ou dependentes)
   isMinor?: boolean;
   parentName?: string;
@@ -135,6 +177,8 @@ export interface ClassSession {
   capacity: number;
   enrolledCount: number;
   checkedIn: boolean;
+  tatameAreaM2?: number; // Área útil do tatame em metros quadrados (ex: 80 m²)
+  maxSafeSparringPairs?: number; // Limite de duplas seguras simultâneas no rola
   registeredStudents: {
     id: string;
     name: string;
@@ -142,7 +186,30 @@ export interface ClassSession {
     avatar: string;
     status: 'present' | 'absent' | 'pending';
     note?: string;
+    hasInjuryWarning?: boolean; // Ponto de atenção discreto para o professor
+    injuryNote?: string; // Ex: "Ombro direito em reabilitação — evitar chaves"
+    injurySeverity?: 'mild' | 'moderate' | 'strict';
   }[];
+}
+
+export interface AccountingStatement {
+  id: string;
+  month: string; // Ex: "Setembro / 2026"
+  competenceDate: string; // "2026-09"
+  academyId: string;
+  academyName: string;
+  cnpj: string;
+  legalEntityName: string;
+  taxRegime: string; // Ex: "Simples Nacional - Anexo III"
+  grossRevenue: number;
+  invoicesCount: number;
+  gatewayFeeRate: number; // Ex: 2.2% + R$ 1.99
+  gatewayFeeTotal: number;
+  platformSplitTotal: number;
+  netRevenue: number;
+  estimatedTaxAmount: number;
+  generatedAt: string;
+  status: 'closed' | 'draft';
 }
 
 export interface Invoice {
@@ -350,6 +417,7 @@ export type FinancialAccessProfile = 'general_manager' | 'unit_manager';
 export interface RegisteredAcademy {
   id: string;
   name: string;
+  legalName?: string;
   shortName: string;
   branch: string;
   city: string;

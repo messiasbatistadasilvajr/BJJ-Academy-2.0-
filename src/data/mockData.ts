@@ -254,6 +254,8 @@ export const mockClasses: ClassSession[] = [
     capacity: 20,
     enrolledCount: 16,
     checkedIn: true,
+    tatameAreaM2: 50,
+    maxSafeSparringPairs: 7,
     registeredStudents: [
       { id: 'dep_pedro_01', name: 'Pedro Henrique Mendes', belt: 'grey', avatar: 'https://images.unsplash.com/photo-1543610892-0b1f7e6d8ac1?w=120&auto=format&fit=crop&q=80', status: 'present', note: 'Excelente foco no aquecimento' },
       { id: 'dep_sofia_02', name: 'Sofia Mendes', belt: 'white', avatar: 'https://images.unsplash.com/photo-1517841905240-472988babdf9?w=120&auto=format&fit=crop&q=80', status: 'present', note: 'Ajudou os colegas na guarda' },
@@ -274,13 +276,33 @@ export const mockClasses: ClassSession[] = [
     capacity: 35,
     enrolledCount: 28,
     checkedIn: true,
+    tatameAreaM2: 80,
+    maxSafeSparringPairs: 10,
     registeredStudents: [
       { id: 'stu_lucas_01', name: 'Lucas Gracie Mendes', belt: 'blue', avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=120&auto=format&fit=crop&q=80', status: 'present' },
       { id: 'stu_2', name: 'Gabriel Alencar', belt: 'white', avatar: 'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=120&auto=format&fit=crop&q=80', status: 'present' },
-      { id: 'stu_3', name: 'Renato Silveira', belt: 'blue', avatar: 'https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?w=120&auto=format&fit=crop&q=80', status: 'present' },
+      { 
+        id: 'stu_3', 
+        name: 'Renato Silveira', 
+        belt: 'blue', 
+        avatar: 'https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?w=120&auto=format&fit=crop&q=80', 
+        status: 'present',
+        hasInjuryWarning: true,
+        injuryNote: 'Ombro direito em reabilitação (evitar projeções e chaves de ombro)',
+        injurySeverity: 'moderate'
+      },
       { id: 'stu_4', name: 'Camila Guimarães', belt: 'white', avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=120&auto=format&fit=crop&q=80', status: 'pending' },
       { id: 'stu_5', name: 'Felipe Duarte', belt: 'purple', avatar: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=120&auto=format&fit=crop&q=80', status: 'present' },
-      { id: 'stu_6', name: 'Marcos Vinicius', belt: 'blue', avatar: 'https://images.unsplash.com/photo-1522075469751-3a6694fb2f61?w=120&auto=format&fit=crop&q=80', status: 'present' }
+      { 
+        id: 'stu_6', 
+        name: 'Marcos Vinicius', 
+        belt: 'blue', 
+        avatar: 'https://images.unsplash.com/photo-1522075469751-3a6694fb2f61?w=120&auto=format&fit=crop&q=80', 
+        status: 'present',
+        hasInjuryWarning: true,
+        injuryNote: 'Entorse leve de tornozelo — apenas rola posicional sem chaves de pé',
+        injurySeverity: 'mild'
+      }
     ]
   },
   {
@@ -295,6 +317,8 @@ export const mockClasses: ClassSession[] = [
     capacity: 30,
     enrolledCount: 22,
     checkedIn: false,
+    tatameAreaM2: 80,
+    maxSafeSparringPairs: 10,
     registeredStudents: [
       { id: 'stu_lucas_01', name: 'Lucas Gracie Mendes', belt: 'blue', avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=120&auto=format&fit=crop&q=80', status: 'pending' },
       { id: 'stu_7', name: 'Thiago Tavares', belt: 'brown', avatar: 'https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?w=120&auto=format&fit=crop&q=80', status: 'present' },

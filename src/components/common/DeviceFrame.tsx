@@ -5,7 +5,7 @@ import {
   Timer, BookOpen, Tablet, Award, ShoppingBag, FileText, Trophy, Volume2, DollarSign, Building2,
   Database, Cloud
 } from 'lucide-react';
-import { UserRole } from '../../types';
+import { UserRole, isCeoRole, isSuperAdminOrCeoRole } from '../../types';
 import { NativeStatusBar } from './NativeStatusBar';
 
 interface DeviceFrameProps {
@@ -67,8 +67,11 @@ export const DeviceFrame: React.FC<DeviceFrameProps> = ({
   isCloudSynced = true,
   onOpenCEOProfile,
 }) => {
+  const isSuperAdminOrCEO = isSuperAdminOrCeoRole(activeRole);
+
   const roles: { id: UserRole; label: string; icon: React.FC<{ className?: string }>; color: string; badge?: string }[] = [
-    { id: 'general_manager', label: 'CEO / Super Admin', icon: Crown, color: 'text-amber-400', badge: 'CEO MESSIAS' },
+    { id: 'ceo', label: '👑 CEO Messias', icon: Crown, color: 'text-amber-400', badge: 'ACESSO TOTAL' },
+    { id: 'general_manager', label: 'Super Admin', icon: Shield, color: 'text-amber-300', badge: 'MASTER' },
     { id: 'manager', label: 'Gestor Filial', icon: Briefcase, color: 'text-cyan-400', badge: 'ACADEMIA' },
     { id: 'teacher', label: 'Professor Tatame', icon: GraduationCap, color: 'text-emerald-400' },
     { id: 'student', label: 'Aluno', icon: User, color: 'text-red-400' },
@@ -283,18 +286,18 @@ export const DeviceFrame: React.FC<DeviceFrameProps> = ({
             <span>Contrato & Termo</span>
           </button>
 
-          {(activeRole === 'manager' || activeRole === 'general_manager') && (
+          {(activeRole === 'manager' || isSuperAdminOrCEO) && (
             <button
               onClick={onOpenFinancial}
               className="flex items-center gap-1.5 px-3 py-1 rounded-lg bg-gradient-to-r from-emerald-600/30 to-teal-600/30 hover:from-emerald-600/50 hover:to-teal-600/50 text-emerald-300 border border-emerald-500/50 font-black text-[11px] whitespace-nowrap transition-all shadow-md"
               title={
-                activeRole === 'general_manager'
-                  ? 'Financeiro Geral da Rede BJJ ACADEMY (Consolidado)'
+                isSuperAdminOrCEO
+                  ? 'Financeiro Global da Rede BJJ ACADEMY (Consolidado & Split Asaas)'
                   : 'Financeiro e Mensalidades da sua Academia'
               }
             >
               <DollarSign className="w-3.5 h-3.5 text-emerald-400 stroke-[3]" />
-              <span>{activeRole === 'general_manager' ? 'Financeiro Geral' : 'Financeiro da Filial'}</span>
+              <span>{isSuperAdminOrCEO ? 'Financeiro Global & Split' : 'Financeiro da Filial'}</span>
             </button>
           )}
 

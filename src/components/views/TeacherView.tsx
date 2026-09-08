@@ -12,6 +12,7 @@ import { ClassSession, BeltColor } from '../../types';
 import { BeltBadge } from '../common/BeltBadge';
 import { exportAttendanceReportCSV } from '../../utils/csvExport';
 import { sendMissedClassWhatsApp } from '../../utils/whatsappHelper';
+import { MedicalInjuryModal, StudentInjuryRecord } from '../common/MedicalInjuryModal';
 
 interface TeacherViewProps {
   classes: ClassSession[];
@@ -261,7 +262,64 @@ export const TeacherView: React.FC<TeacherViewProps> = ({
     setTimeout(() => setAttendanceSavedMessage(null), 4500);
   };
 
+  // State for Medical / Injury Modal (Item 2)
+  const [selectedStudentForInjury, setSelectedStudentForInjury] = useState<StudentInjuryRecord | null>(null);
+  
+  // State for Sparring Rounds Splitter Modal (Item 3)
+  const [isSparringRoundsOpen, setIsSparringRoundsOpen] = useState<boolean>(false);
+  const [activeRoundTab, setActiveRoundTab] = useState<'A' | 'B'>('A');
+
   const presentCount = currentClass.registeredStudents.filter(s => s.status === 'present').length;
+  const presentStudents = currentClass.registeredStudents.filter(s => s.status === 'present');
+
+  // Item 3: Densidade e Capacidade do Tatame (Cálculo Físico-Marcial)
+  const matArea = currentClass.tatameAreaM2 || (currentClass.tatame.includes('2') ? 50 : 80);
+  const sparringPairs = Math.floor(presentCount / 2);
+  const m2PerPair = sparringPairs > 0 ? (matArea / sparringPairs).toFixed(1) : matArea.toFixed(1);
+  const maxSafePairs = currentClass.maxSafeSparringPairs || Math.floor(matArea / 8);
+
+  const densityStatus: 'safe' | 'moderate' | 'full' = 
+    sparringPairs <= maxSafePairs * 0.7 ? 'safe' :
+    sparringPairs <= maxSafePairs ? 'moderate' : 'full';
+
+  const densityLabel = 
+    densityStatus === 'safe' ? 'Espaçamento Ideal' :
+    densityStatus === 'moderate' ? 'Atenção às Bordas' : 'Lotação Máxima (Dividir)';
+
+  const densityBadgeColor = 
+    densityStatus === 'safe' ? 'bg-emerald-950/60 border-emerald-500/40 text-emerald-400' :
+    densityStatus === 'moderate' ? 'bg-amber-950/60 border-amber-500/40 text-amber-400' :
+    'bg-red-950/60 border-red-500/40 text-red-400';
+
+  const handleOpenInjuryModal = (stu: any) => {
+    setSelectedStudentForInjury({
+      studentId: stu.id,
+      studentName: stu.name,
+      belt: stu.belt,
+      avatar: stu.avatar,
+      bloodType: 'A+',
+      hasInjuryWarning: !!stu.hasInjuryWarning,
+      injuryNote: stu.injuryNote || '',
+      injurySeverity: stu.injurySeverity || 'moderate',
+      sparringRestrictions: stu.injuryNote ? 'Evitar membro afetado e quedas duras' : '',
+    });
+  };
+
+  const handleSaveInjuryRecord = (updated: StudentInjuryRecord) => {
+    currentClass.registeredStudents = currentClass.registeredStudents.map(stu => {
+      if (stu.id === updated.studentId) {
+        return {
+          ...stu,
+          hasInjuryWarning: updated.hasInjuryWarning,
+          injuryNote: updated.injuryNote,
+          injurySeverity: updated.injurySeverity
+        };
+      }
+      return stu;
+    });
+    setAttendanceSavedMessage(`🛡️ Ficha médica de ${updated.studentName} atualizada.`);
+    setTimeout(() => setAttendanceSavedMessage(null), 3500);
+  };
 
   return (
     <div className="flex flex-col h-full bg-slate-950 text-slate-100 overflow-y-auto pb-20 no-scrollbar">
@@ -508,6 +566,38 @@ export const TeacherView: React.FC<TeacherViewProps> = ({
             </div>
           </div>
 
+          {/* Item 3: Densidade & Capacidade do Tatame (Segurança de Treino) */}
+          <div className="p-3 rounded-2xl bg-slate-950 border border-slate-800 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
+            <div className="flex items-center gap-3">
+              <div className={`w-8 h-8 rounded-xl flex items-center justify-center font-bold text-xs shrink-0 ${densityBadgeColor}`}>
+                ⏱️
+              </div>
+              <div>
+                <div className="flex items-center gap-2 flex-wrap">
+                  <span className="font-bold text-white">Tatame: {matArea}m²</span>
+                  <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold border ${densityBadgeColor}`}>
+                    {densityLabel}
+                  </span>
+                </div>
+                <p className="text-[11px] text-slate-400 mt-0.5">
+                  {presentCount} presentes • {sparringPairs} duplas no rola ({m2PerPair} m²/dupla • máx seguro: {maxSafePairs} duplas)
+                </p>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-2 self-end sm:self-auto shrink-0">
+              <button
+                type="button"
+                onClick={() => setIsSparringRoundsOpen(true)}
+                className="px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-[11px] font-semibold text-slate-200 border border-slate-700 flex items-center gap-1.5 transition"
+                title="Organizar rounds intercalados de sparring com segurança"
+              >
+                <Users className="w-3.5 h-3.5 text-amber-400" />
+                <span>Rounds A / B</span>
+              </button>
+            </div>
+          </div>
+
           {/* AI Tatame Superpowers (Gemini Vision + AI Coach) */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-1">
             <button
@@ -704,6 +794,18 @@ export const TeacherView: React.FC<TeacherViewProps> = ({
                         <div className="mt-0.5">
                           <BeltBadge belt={stu.belt} size="sm" />
                         </div>
+                        {/* Item 2: Alerta Discreto de Lesão / Restrição de Tatame */}
+                        {stu.hasInjuryWarning && (
+                          <button
+                            type="button"
+                            onClick={() => handleOpenInjuryModal(stu)}
+                            className="flex items-center gap-1.5 mt-1 px-2 py-0.5 rounded-md bg-amber-950/40 border border-amber-500/30 text-amber-300 text-[10px] hover:bg-amber-950/70 transition max-w-fit"
+                            title="Clique para ver ou editar restrições médicas do atleta"
+                          >
+                            <span className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse shrink-0" />
+                            <span className="font-medium truncate max-w-[190px]">{stu.injuryNote || 'Restrição Médica'}</span>
+                          </button>
+                        )}
                         {stu.note && (
                           <div className="text-[10px] text-amber-400 italic mt-0.5 truncate max-w-[180px]">
                             Obs: {stu.note}
@@ -714,6 +816,20 @@ export const TeacherView: React.FC<TeacherViewProps> = ({
 
                     {/* Actions for this student */}
                     <div className="flex items-center gap-1.5 shrink-0">
+                      {/* Ficha Médica / Alerta de Lesão */}
+                      <button
+                        type="button"
+                        onClick={() => handleOpenInjuryModal(stu)}
+                        className={`p-2 rounded-xl transition ${
+                          stu.hasInjuryWarning
+                            ? 'bg-amber-950/70 text-amber-300 border border-amber-500/50 hover:bg-amber-900/80'
+                            : 'bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white'
+                        }`}
+                        title={stu.hasInjuryWarning ? `Restrição Ativa: ${stu.injuryNote}` : 'Ficha Médica & Lesões'}
+                      >
+                        <ShieldAlert className="w-3.5 h-3.5" />
+                      </button>
+
                       {/* WhatsApp absence notice if absent */}
                       {!isPresent && (
                         <button
@@ -1378,6 +1494,137 @@ export const TeacherView: React.FC<TeacherViewProps> = ({
                   </button>
                 </div>
               </form>
+            </motion.div>
+          </div>
+        )}
+        {/* Modal Item 2: Ficha Médica e Restrições de Rola */}
+        <MedicalInjuryModal
+          isOpen={!!selectedStudentForInjury}
+          onClose={() => setSelectedStudentForInjury(null)}
+          record={selectedStudentForInjury}
+          onSave={handleSaveInjuryRecord}
+        />
+
+        {/* Modal Item 3: Divisão de Rounds A/B para Tatame Cheio */}
+        {isSparringRoundsOpen && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm" id="modal-sparring-rounds">
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              className="bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-lg shadow-2xl overflow-hidden flex flex-col text-slate-100"
+            >
+              <div className="px-5 py-4 border-b border-slate-800 flex items-center justify-between bg-slate-900/90">
+                <div className="flex items-center gap-3">
+                  <div className="w-9 h-9 rounded-xl bg-slate-800 border border-slate-700 flex items-center justify-center text-amber-400">
+                    <Users className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <h3 className="text-sm font-bold text-white tracking-tight">Divisão de Rounds • Sparring Seguro</h3>
+                    <p className="text-[11px] text-slate-400">Tatame: {matArea}m² • {presentCount} atletas presentes ({sparringPairs} duplas)</p>
+                  </div>
+                </div>
+                <button
+                  onClick={() => setIsSparringRoundsOpen(false)}
+                  className="w-8 h-8 rounded-lg bg-slate-800 hover:bg-slate-700 flex items-center justify-center text-slate-400 hover:text-white transition"
+                >
+                  <XCircle className="w-4 h-4" />
+                </button>
+              </div>
+
+              <div className="p-5 space-y-4">
+                <div className="p-3 rounded-xl bg-slate-950 border border-slate-800/80 flex items-center justify-between text-xs">
+                  <div>
+                    <span className="text-slate-400">Densidade física: </span>
+                    <span className="font-bold text-white">{m2PerPair} m²/dupla</span>
+                  </div>
+                  <span className={`px-2 py-0.5 rounded-full font-bold text-[10px] border ${densityBadgeColor}`}>
+                    {densityLabel}
+                  </span>
+                </div>
+
+                <div className="flex rounded-xl bg-slate-950 p-1 border border-slate-800">
+                  <button
+                    type="button"
+                    onClick={() => setActiveRoundTab('A')}
+                    className={`flex-1 py-1.5 rounded-lg text-xs font-bold transition flex items-center justify-center gap-1.5 ${
+                      activeRoundTab === 'A'
+                        ? 'bg-amber-500 text-slate-950 shadow-sm'
+                        : 'text-slate-400 hover:text-white'
+                    }`}
+                  >
+                    <span>Turma A (Rounds Ímpares)</span>
+                    <span className="text-[10px] px-1.5 py-0.2 bg-black/20 rounded-full font-mono">
+                      {Math.ceil(presentStudents.length / 2)}
+                    </span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setActiveRoundTab('B')}
+                    className={`flex-1 py-1.5 rounded-lg text-xs font-bold transition flex items-center justify-center gap-1.5 ${
+                      activeRoundTab === 'B'
+                        ? 'bg-amber-500 text-slate-950 shadow-sm'
+                        : 'text-slate-400 hover:text-white'
+                    }`}
+                  >
+                    <span>Turma B (Rounds Pares)</span>
+                    <span className="text-[10px] px-1.5 py-0.2 bg-black/20 rounded-full font-mono">
+                      {Math.floor(presentStudents.length / 2)}
+                    </span>
+                  </button>
+                </div>
+
+                <div className="space-y-2 max-h-56 overflow-y-auto pr-1">
+                  {presentStudents
+                    .filter((_, idx) => (activeRoundTab === 'A' ? idx % 2 === 0 : idx % 2 === 1))
+                    .map((s, idx) => (
+                      <div
+                        key={s.id}
+                        className="p-2.5 rounded-xl bg-slate-950 border border-slate-800 flex items-center justify-between text-xs"
+                      >
+                        <div className="flex items-center gap-2.5">
+                          <span className="text-[10px] font-mono text-slate-500 w-4">{idx + 1}.</span>
+                          <img src={s.avatar} alt={s.name} className="w-7 h-7 rounded-lg object-cover border border-slate-700" />
+                          <span className="font-bold text-white truncate max-w-[180px]">{s.name}</span>
+                          <BeltBadge belt={s.belt} size="sm" />
+                        </div>
+                        {s.hasInjuryWarning && (
+                          <span className="text-[10px] font-medium text-amber-400 bg-amber-950/60 border border-amber-800/50 px-2 py-0.5 rounded-md">
+                            ⚠️ Restrição
+                          </span>
+                        )}
+                      </div>
+                    ))}
+                </div>
+
+                <div className="p-3 rounded-xl bg-slate-950 border border-slate-800 text-[11px] text-slate-400 space-y-1">
+                  <div className="font-bold text-slate-200">Protocolo de Rola Seguro:</div>
+                  <div>• Cada round dura 6 minutos com 1 minuto de transição.</div>
+                  <div>• A turma em espera hidrata e observa os detalhes técnicos do rola.</div>
+                  <div>• Duplas com atletas sob restrição médica não podem ser projetadas para fora da área segura.</div>
+                </div>
+              </div>
+
+              <div className="px-5 py-3.5 border-t border-slate-800 bg-slate-900/90 flex items-center justify-between">
+                <button
+                  type="button"
+                  onClick={() => setIsSparringRoundsOpen(false)}
+                  className="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-xs font-medium text-slate-300 transition"
+                >
+                  Fechar
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (onOpenScoreboard) onOpenScoreboard();
+                    setIsSparringRoundsOpen(false);
+                  }}
+                  className="px-4 py-2 rounded-xl bg-gradient-to-r from-amber-600 to-amber-500 hover:from-amber-500 hover:to-amber-400 text-slate-950 font-bold text-xs flex items-center gap-1.5 transition shadow"
+                >
+                  <Timer className="w-3.5 h-3.5" />
+                  Abrir Placar / Cronômetro Oficial
+                </button>
+              </div>
             </motion.div>
           </div>
         )}
