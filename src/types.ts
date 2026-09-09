@@ -218,23 +218,196 @@ export interface Invoice {
   studentName: string;
   studentAvatar?: string;
   title: string;
-  amount: number;
+  amount: number; // Valor nominal ou valor base original
+  originalAmount?: number; // Preservação do valor original sem juros/multas
+  discountAmount?: number; // Desconto pontualidade ou bolsa
   dueDate: string;
-  status: 'paid' | 'pending' | 'overdue';
+  status: 'paid' | 'pending' | 'overdue' | 'refunded' | 'canceled';
   paidDate?: string;
+  confirmedDate?: string;
+  refundDate?: string;
+  refundAmount?: number;
   pixCode?: string;
   paymentMethod?: 'pix' | 'credit_card' | 'boleto';
   invoiceNumber: string;
-  // Multi-Academy & Financial Fields
+  // Multi-Tenant & Academy Isolation
   academyId: string;
   academyName: string;
+  tenantId?: string; // Alias explícito do tenant
   planName?: string;
+  // Categorias de Contas a Receber
+  financialCategory?: 'mensalidade' | 'matricula' | 'exame_faixa' | 'evento' | 'produto' | 'outras';
+  // Juros e Multas (Decreto Legal CDC Art. 52 & Código Civil)
   lateFeePercent?: number; // default 2%
   dailyInterestPercent?: number; // default 0.0333% (1% monthly)
   daysOverdue?: number;
   calculatedFine?: number;
   calculatedInterest?: number;
   totalUpdatedAmount?: number;
+  // Integração Asaas & Conciliação
+  asaasPaymentId?: string;
+  asaasInvoiceUrl?: string;
+  asaasStatus?: string;
+  asaasBillingType?: 'PIX' | 'BOLETO' | 'CREDIT_CARD';
+  lastWebhookEvent?: string;
+  lastWebhookProcessedAt?: string;
+}
+
+// -------------------------------------------------------------
+// MOTOR FINANCEIRO - AUDITORIA, ASASS, QUEUE & CONTABILIDADE
+// -------------------------------------------------------------
+
+export type AsaasEventType = 
+  | 'PAYMENT_CREATED'
+  | 'PAYMENT_AWAITING_RISK_ANALYSIS'
+  | 'PAYMENT_APPROVED_BY_RISK_ANALYSIS'
+  | 'PAYMENT_REAUTHORIZED'
+  | 'PAYMENT_UPDATED'
+  | 'PAYMENT_CONFIRMED'
+  | 'PAYMENT_RECEIVED'
+  | 'PAYMENT_CREDIT_CARD_CAPTURE_REFUSED'
+  | 'PAYMENT_ANTICIPATED'
+  | 'PAYMENT_OVERDUE'
+  | 'PAYMENT_DELETED'
+  | 'PAYMENT_RESTORED'
+  | 'PAYMENT_REFUNDED'
+  | 'PAYMENT_PARTIALLY_REFUNDED'
+  | 'PAYMENT_REFUND_IN_PROGRESS'
+  | 'PAYMENT_CHARGEBACK_REQUESTED'
+  | 'PAYMENT_CHARGEBACK_DISPUTE'
+  | 'PAYMENT_AWAITING_CHARGEBACK_REVERSAL'
+  | 'PAYMENT_DUNNING_RECEIVED'
+  | 'PAYMENT_DUNNING_REQUESTED'
+  | 'PAYMENT_BANK_SLIP_VIEWED'
+  | 'PAYMENT_CHECKOUT_VIEWED';
+
+export interface AsaasPaymentPayload {
+  object: string;
+  id: string;
+  dateCreated?: string;
+  customer?: string;
+  paymentLink?: string | null;
+  value: number;
+  netValue?: number;
+  originalValue?: number | null;
+  interestValue?: number | null;
+  description?: string;
+  billingType: 'BOLETO' | 'CREDIT_CARD' | 'PIX' | 'UNDEFINED';
+  confirmedDate?: string | null;
+  pixTransaction?: string | null;
+  pixQrCodeId?: string | null;
+  status: string;
+  dueDate: string;
+  originalDueDate?: string;
+  paymentDate?: string | null;
+  clientPaymentDate?: string | null;
+  installmentNumber?: number | null;
+  invoiceUrl?: string;
+  invoiceNumber?: string;
+  externalReference?: string; // Mapeia para o ID interno da Invoice ou Aluno
+  deleted?: boolean;
+  anticipated?: boolean;
+  creditDate?: string;
+  estimatedCreditDate?: string;
+}
+
+export interface AsaasWebhookPayload {
+  event: AsaasEventType | string;
+  id?: string; // ID do evento Asaas (ex: evt_001...)
+  payment?: AsaasPaymentPayload;
+  dateCreated?: string;
+}
+
+export interface FinancialAuditLog {
+  id: string;
+  tenantId: string;
+  userId?: string;
+  action: 
+    | 'WEBHOOK_RECEIVED'
+    | 'WEBHOOK_QUEUED'
+    | 'WEBHOOK_PROCESSED'
+    | 'WEBHOOK_DUPLICATE_IGNORED'
+    | 'PAYMENT_CONFIRMED'
+    | 'PAYMENT_RECEIVED'
+    | 'CHARGE_OVERDUE'
+    | 'PAYMENT_REFUNDED'
+    | 'PAYMENT_CANCELED'
+    | 'MANUAL_PAYMENT_APPLIED'
+    | 'INTEREST_CALCULATED'
+    | 'EXPENSE_CREATED'
+    | 'EXPENSE_PAID'
+    | 'PLAN_CHANGED'
+    | 'SPLIT_PROCESSED'
+    | 'SANSAO_QUERY_EXECUTED';
+  entity: 'invoice' | 'webhook' | 'expense' | 'student' | 'split' | 'financial_metric';
+  entityId: string;
+  timestamp: string;
+  origin: 'asaas_webhook' | 'financial_worker' | 'manager_ui' | 'system_cron' | 'sansao_ai';
+  result: 'success' | 'failed' | 'ignored_duplicate';
+  details?: Record<string, any>;
+}
+
+export type PayableExpenseCategory =
+  | 'aluguel'
+  | 'energia'
+  | 'agua'
+  | 'internet'
+  | 'fornecedores'
+  | 'professores'
+  | 'funcionarios'
+  | 'materiais'
+  | 'outras_despesas';
+
+export interface PayableExpense {
+  id: string;
+  tenantId: string;
+  category: PayableExpenseCategory;
+  description: string;
+  amount: number;
+  dueDate: string;
+  status: 'pending' | 'paid' | 'overdue';
+  paidDate?: string;
+  recipientName: string;
+  paymentMethod?: 'pix' | 'ted' | 'boleto' | 'cash';
+  pixKey?: string;
+  notes?: string;
+  receiptUrl?: string;
+  createdAt: string;
+}
+
+export interface CashFlowSummary {
+  tenantId: string;
+  period: string; // ex: '09/2026'
+  initialBalance: number;
+  totalInflowsRealized: number; // Total recebido
+  totalInflowsForecast: number; // Total previsto a receber
+  totalOutflowsRealized: number; // Total despesas pagas
+  totalOutflowsForecast: number; // Total despesas a pagar
+  finalRealizedBalance: number; // Saldo real em caixa (Recebido - Pago)
+  finalProjectedBalance: number; // Saldo projetado (Recebido + Previsto - Pago - A Pagar)
+  overdueReceivables: number; // Mensalidades em atraso
+  overduePayables: number; // Contas a pagar em atraso
+  lastCalculatedAt: string;
+}
+
+export interface FinancialQueueStatus {
+  queueName: string;
+  redisConnected: boolean;
+  queuedCount: number;
+  processingCount: number;
+  completedCount: number;
+  failedCount: number;
+  deadLetterCount: number;
+  activeWorkers: number;
+  lastJobProcessedAt?: string;
+}
+
+export interface SansaoFinancialQueryResult {
+  query: string;
+  answer: string;
+  metrics: Record<string, any>;
+  timestamp: string;
+  readOnlyGuaranteed: true;
 }
 
 export interface Announcement {

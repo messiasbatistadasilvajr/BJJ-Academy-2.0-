@@ -58,7 +58,7 @@ service cloud.firestore {
         && request.resource.data.title is string
         && request.resource.data.amount is number
         && request.resource.data.amount >= 0
-        && request.resource.data.status in ['paid', 'pending', 'overdue'];
+        && request.resource.data.status in ['paid', 'pending', 'overdue', 'refunded', 'canceled'];
       allow delete: if isValidId(invoiceId);
     }
 
@@ -97,6 +97,25 @@ service cloud.firestore {
         && request.resource.data.name is string
         && request.resource.data.name.size() > 0;
       allow delete: if isValidId(gmId);
+    }
+
+    // 9. Financial Audits Collection (Immutable Audit Trail)
+    match /financial_audits/{auditId} {
+      allow read: if true;
+      allow create, update: if isValidId(auditId)
+        && request.resource.data.tenantId is string
+        && request.resource.data.action is string;
+      allow delete: if false; // Audit records are immutable and cannot be deleted
+    }
+
+    // 10. Accounts Payable (Contas a Pagar)
+    match /payable_expenses/{expenseId} {
+      allow read: if true;
+      allow create, update: if isValidId(expenseId)
+        && request.resource.data.tenantId is string
+        && request.resource.data.category is string
+        && request.resource.data.amount is number;
+      allow delete: if isValidId(expenseId);
     }
   }
 }

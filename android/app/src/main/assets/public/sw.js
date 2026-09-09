@@ -1,10 +1,14 @@
 // BJJ Academy Mobile 2.0 Service Worker
-const CACHE_NAME = 'bjj-academy-v2-cache';
+const CACHE_NAME = 'bjj-academy-v2-cache-v4';
 const STATIC_ASSETS = [
   '/',
   '/index.html',
   '/manifest.json',
-  '/icon.svg'
+  '/icon.svg',
+  '/icon-192.png',
+  '/icon-512.png',
+  '/icon-maskable-512.png',
+  '/apple-touch-icon.png'
 ];
 
 self.addEventListener('install', (event) => {

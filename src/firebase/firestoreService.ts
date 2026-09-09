@@ -17,7 +17,9 @@ import {
   BirthdayPerson,
   CRMLead,
   RetentionAlertItem,
-  PlatformGeneralManager
+  PlatformGeneralManager,
+  FinancialAuditLog,
+  PayableExpense
 } from '../types';
 
 // Helper to remove undefined values since Firestore rejects undefined fields
@@ -293,6 +295,94 @@ export async function saveGeneralManagerToFirestore(gm: PlatformGeneralManager):
     await setDoc(docRef, sanitizeForFirestore(gm), { merge: true });
   } catch (error) {
     handleFirestoreError(error, OperationType.WRITE, `${colPath}/${gm.id}`);
+  }
+}
+
+// -------------------------------------------------------------
+// FINANCIAL AUDITS (Trilha de Auditoria Imutável Multi-Tenant)
+// -------------------------------------------------------------
+export function subscribeToFinancialAudits(
+  onUpdate: (audits: FinancialAuditLog[]) => void,
+  onError?: (err: unknown) => void
+) {
+  const colPath = 'financial_audits';
+  return onSnapshot(
+    collection(db, colPath),
+    (snapshot) => {
+      if (!snapshot.empty) {
+        const list: FinancialAuditLog[] = [];
+        snapshot.forEach((docSnap) => {
+          list.push(docSnap.data() as FinancialAuditLog);
+        });
+        // Sort descending by timestamp
+        list.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
+        onUpdate(list);
+      } else {
+        onUpdate([]);
+      }
+    },
+    (error) => {
+      if (onError) onError(error);
+      handleFirestoreError(error, OperationType.GET, colPath);
+    }
+  );
+}
+
+export async function saveFinancialAuditToFirestore(audit: FinancialAuditLog): Promise<void> {
+  const colPath = 'financial_audits';
+  try {
+    const docRef = doc(db, colPath, audit.id);
+    await setDoc(docRef, sanitizeForFirestore(audit), { merge: true });
+  } catch (error) {
+    handleFirestoreError(error, OperationType.WRITE, `${colPath}/${audit.id}`);
+  }
+}
+
+// -------------------------------------------------------------
+// PAYABLE EXPENSES (Contas a Pagar Operacionais das Academias)
+// -------------------------------------------------------------
+export function subscribeToPayableExpenses(
+  onUpdate: (expenses: PayableExpense[]) => void,
+  onError?: (err: unknown) => void
+) {
+  const colPath = 'payable_expenses';
+  return onSnapshot(
+    collection(db, colPath),
+    (snapshot) => {
+      if (!snapshot.empty) {
+        const list: PayableExpense[] = [];
+        snapshot.forEach((docSnap) => {
+          list.push(docSnap.data() as PayableExpense);
+        });
+        onUpdate(list);
+      } else {
+        onUpdate([]);
+      }
+    },
+    (error) => {
+      if (onError) onError(error);
+      handleFirestoreError(error, OperationType.GET, colPath);
+    }
+  );
+}
+
+export async function savePayableExpenseToFirestore(expense: PayableExpense): Promise<void> {
+  const colPath = 'payable_expenses';
+  try {
+    const docRef = doc(db, colPath, expense.id);
+    await setDoc(docRef, sanitizeForFirestore(expense), { merge: true });
+  } catch (error) {
+    handleFirestoreError(error, OperationType.WRITE, `${colPath}/${expense.id}`);
+  }
+}
+
+export async function deletePayableExpenseFromFirestore(expenseId: string): Promise<void> {
+  const colPath = 'payable_expenses';
+  try {
+    const docRef = doc(db, colPath, expenseId);
+    await deleteDoc(docRef);
+  } catch (error) {
+    handleFirestoreError(error, OperationType.WRITE, `${colPath}/${expenseId}`);
   }
 }
 

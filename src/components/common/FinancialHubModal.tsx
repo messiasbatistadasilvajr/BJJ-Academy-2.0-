@@ -14,6 +14,7 @@ import {
 import { defaultPlatformGeneralManager, mockPlatformAcademyPayments } from '../../data/mockData';
 import { calculateLateFeeAndInterest, formatBRL } from '../../utils/financialCalculations';
 import { safeLocalStorageGet, safeLocalStorageSet } from '../../utils/safeStorage';
+import { FinancialMotorTab } from './FinancialMotorTab';
 
 interface FinancialHubModalProps {
   isOpen: boolean;
@@ -67,8 +68,8 @@ export const FinancialHubModal: React.FC<FinancialHubModalProps> = ({
     }
   }, [isGeneralManager, activeAcademy.id, academies]);
   
-  // Sub-tabs: 'overview' | 'invoices' | 'calculator' | 'plans' | 'repasses' | 'new_charge' | 'accounting'
-  const [activeTab, setActiveTab] = useState<'overview' | 'invoices' | 'calculator' | 'plans' | 'repasses' | 'new_charge' | 'accounting'>('overview');
+  // Sub-tabs: 'overview' | 'invoices' | 'calculator' | 'plans' | 'repasses' | 'new_charge' | 'accounting' | 'motor'
+  const [activeTab, setActiveTab] = useState<'overview' | 'invoices' | 'calculator' | 'plans' | 'repasses' | 'new_charge' | 'accounting' | 'motor'>('overview');
   
   // State for Fechamento Contábil (Item 4)
   const [accountingMonth, setAccountingMonth] = useState<string>('09/2026');
@@ -609,6 +610,19 @@ export const FinancialHubModal: React.FC<FinancialHubModalProps> = ({
           >
             <FileSpreadsheet size={14} className={activeTab === 'accounting' ? 'text-slate-950' : 'text-amber-400'} />
             <span>Fechamento Contábil</span>
+          </button>
+
+          {/* TAB 8: MOTOR FINANCEIRO & ASAAS */}
+          <button
+            onClick={() => setActiveTab('motor')}
+            className={`px-3 py-1.5 rounded-xl font-bold flex items-center gap-1.5 whitespace-nowrap transition ${
+              activeTab === 'motor'
+                ? 'bg-teal-500 text-slate-950 shadow-md font-black'
+                : 'text-teal-400/90 hover:text-teal-300 hover:bg-teal-950/40 border border-teal-500/30'
+            }`}
+          >
+            <Zap size={14} className={activeTab === 'motor' ? 'text-slate-950 fill-slate-950' : 'text-teal-400'} />
+            <span>Motor Financeiro & Asaas</span>
           </button>
         </div>
 
@@ -1749,6 +1763,26 @@ Status da Conciliação: Conciliado 100% com Extratos e Chave PIX.`;
                 );
               })()}
             </div>
+          )}
+
+          {/* TAB 8: MOTOR FINANCEIRO & ASAAS */}
+          {activeTab === 'motor' && (
+            <FinancialMotorTab
+              invoices={invoices}
+              academies={academies}
+              activeAcademy={activeAcademy}
+              selectedAcademyFilter={selectedAcademyFilter}
+              accessProfile={accessProfile}
+              assignedUnitId={assignedUnitId}
+              onUpdateInvoiceStatus={(invId, status, amount) => {
+                const updated = invoices.map(i => i.id === invId ? { ...i, status } : i);
+                setInvoices(updated);
+                if (onUpdateInvoices) onUpdateInvoices(updated);
+              }}
+              triggerPushNotification={(title, body, type) => {
+                if (onOpenVoiceNotice) onOpenVoiceNotice(title, body);
+              }}
+            />
           )}
 
         </div>

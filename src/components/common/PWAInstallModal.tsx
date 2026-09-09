@@ -2,7 +2,8 @@ import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { 
   Download, Share2, PlusSquare, X, CheckCircle, Smartphone, 
-  RotateCcw, Copy, Check, ExternalLink, HelpCircle, AlertCircle, Sparkles
+  RotateCcw, Copy, Check, ExternalLink, HelpCircle, AlertCircle, 
+  Sparkles, MoreVertical, ArrowUpRight, Trash2, RefreshCw
 } from 'lucide-react';
 import { usePWAInstall } from '../../hooks/usePWAInstall';
 import { triggerNativeHaptic } from '../../utils/nativeApp';
@@ -16,64 +17,106 @@ export const PWAInstallModal: React.FC<PWAInstallModalProps> = ({
   isOpen,
   onClose,
 }) => {
-  const { isInstallable, isInstalled, isIOS, isAndroid, install, forceReinstall } = usePWAInstall();
+  const { 
+    isInstallable, 
+    isInstalled, 
+    isIOS, 
+    isAndroid, 
+    isIframe, 
+    install, 
+    forceReinstall,
+    openInNativeChrome,
+    clearCacheAndReload
+  } = usePWAInstall();
+
   const [activePlatform, setActivePlatform] = useState<'android' | 'ios'>(() => isIOS ? 'ios' : 'android');
   const [copiedLink, setCopiedLink] = useState(false);
-  const [reinstallMessage, setReinstallMessage] = useState<string | null>(null);
+  const [statusFeedback, setStatusFeedback] = useState<string | null>(null);
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [showChromeVisualGuide, setShowChromeVisualGuide] = useState(false);
 
   if (!isOpen) return null;
 
   const handleInstallClick = async () => {
     triggerNativeHaptic('medium');
+    setIsProcessing(true);
+    
+    if (isIframe) {
+      triggerNativeHaptic('warning');
+      setStatusFeedback('Você está visualizando o app em modo de prévia. Abrindo diretamente no navegador do celular para liberar a instalação...');
+      setTimeout(() => {
+        openInNativeChrome();
+        setIsProcessing(false);
+      }, 700);
+      return;
+    }
+
     const success = await install();
+    setIsProcessing(false);
     if (success) {
       triggerNativeHaptic('success');
       onClose();
     } else {
       triggerNativeHaptic('warning');
-      setReinstallMessage('Para concluir no Android, toque no menu de 3 pontinhos (⋮) no topo do Chrome e selecione "Instalar aplicativo".');
+      setShowChromeVisualGuide(true);
+      setStatusFeedback('O Android solicitou a instalação pelo menu do Google Chrome. Veja o passo a passo ilustrado abaixo:');
     }
   };
 
   const handleForceReinstall = async () => {
     triggerNativeHaptic('medium');
+    setIsProcessing(true);
     forceReinstall();
-    setReinstallMessage('Modo de reinstalação ativado! Tentando acionar instalador nativo...');
-    
-    // Attempt prompt if possible
+
+    // If inside an iframe (like preview mode), browser never allows PWA install inside the frame
+    if (isIframe) {
+      triggerNativeHaptic('warning');
+      setStatusFeedback('Abrindo o aplicativo diretamente no Google Chrome do seu celular para permitir a instalação fora do frame...');
+      setTimeout(() => {
+        openInNativeChrome();
+        setIsProcessing(false);
+      }, 700);
+      return;
+    }
+
+    // Try triggering prompt if browser holds it
     const success = await install();
+    setIsProcessing(false);
+
     if (success) {
       triggerNativeHaptic('success');
-      onClose();
+      setStatusFeedback('Instalação autorizada com sucesso!');
+      setTimeout(() => onClose(), 1200);
     } else {
-      setReinstallMessage('Siga os 2 passos rápidos abaixo para reinstalar pelo menu do Google Chrome:');
+      triggerNativeHaptic('warning');
+      setShowChromeVisualGuide(true);
+      setStatusFeedback('O Android detectou uma versão anterior ou bloqueou a janela automática. Siga o passo a passo abaixo para concluir em 2 cliques:');
     }
+  };
+
+  const handleOpenChrome = () => {
+    triggerNativeHaptic('light');
+    openInNativeChrome();
   };
 
   const handleCopyLink = () => {
     triggerNativeHaptic('light');
-    navigator.clipboard.writeText(window.location.href);
-    setCopiedLink(true);
-    setTimeout(() => setCopiedLink(false), 3000);
+    try {
+      navigator.clipboard.writeText(window.location.href);
+      setCopiedLink(true);
+      setTimeout(() => setCopiedLink(false), 3000);
+    } catch {
+      // Fallback
+      setCopiedLink(true);
+      setTimeout(() => setCopiedLink(false), 3000);
+    }
   };
 
-  const handleClearCacheAndReload = async () => {
+  const handleClearCache = async () => {
     triggerNativeHaptic('warning');
-    try {
-      if ('caches' in window) {
-        const cacheNames = await caches.keys();
-        await Promise.all(cacheNames.map((name) => caches.delete(name)));
-      }
-      if ('serviceWorker' in navigator) {
-        const registrations = await navigator.serviceWorker.getRegistrations();
-        for (const registration of registrations) {
-          await registration.unregister();
-        }
-      }
-      window.location.reload();
-    } catch {
-      window.location.reload();
-    }
+    setIsProcessing(true);
+    setStatusFeedback('Limpando dados em cache e service worker...');
+    await clearCacheAndReload();
   };
 
   return (
@@ -86,7 +129,7 @@ export const PWAInstallModal: React.FC<PWAInstallModalProps> = ({
           initial={{ scale: 0.95, opacity: 0, y: 10 }}
           animate={{ scale: 1, opacity: 1, y: 0 }}
           exit={{ scale: 0.95, opacity: 0, y: 10 }}
-          className="relative w-full max-w-md rounded-3xl bg-slate-900 border border-slate-700/80 p-5 text-slate-100 shadow-2xl my-auto"
+          className="relative w-full max-w-md rounded-3xl bg-slate-900 border border-slate-700/80 p-5 text-slate-100 shadow-2xl my-auto max-h-[92vh] overflow-y-auto"
         >
           {/* Close Button */}
           <button
@@ -107,12 +150,12 @@ export const PWAInstallModal: React.FC<PWAInstallModalProps> = ({
           <h3 className="text-base font-black text-center text-white">
             Instalar ou Reinstalar no Celular
           </h3>
-          <p className="text-xs text-center text-slate-400 mb-4">
+          <p className="text-xs text-center text-slate-400 mb-3">
             BJJ Academy 2.0 • Acesso em tela cheia, offline e com alta performance
           </p>
 
           {/* Platform Switcher */}
-          <div className="flex p-1 rounded-2xl bg-slate-950 border border-slate-800 mb-4">
+          <div className="flex p-1 rounded-2xl bg-slate-950 border border-slate-800 mb-3.5">
             <button
               type="button"
               onClick={() => {
@@ -145,108 +188,156 @@ export const PWAInstallModal: React.FC<PWAInstallModalProps> = ({
 
           {/* Android Section */}
           {activePlatform === 'android' && (
-            <div className="space-y-3.5">
-              {/* If browser flagged as already installed */}
-              {isInstalled && (
-                <div className="p-3.5 rounded-2xl bg-amber-500/10 border border-amber-500/30 text-left space-y-1.5">
-                  <div className="flex items-center gap-2 text-amber-300 text-xs font-bold">
-                    <AlertCircle className="w-4 h-4 shrink-0 text-amber-400" />
-                    <span>O sistema informou que o app já está no aparelho</span>
+            <div className="space-y-3">
+              {/* If preview mode / iframe detected */}
+              {isIframe && (
+                <div className="p-3 rounded-2xl bg-blue-500/10 border border-blue-500/30 text-left space-y-1">
+                  <div className="flex items-center gap-2 text-blue-300 text-xs font-bold">
+                    <AlertCircle className="w-4 h-4 shrink-0 text-blue-400" />
+                    <span>Visualização Prévia Detectada</span>
                   </div>
                   <p className="text-[11px] text-slate-300 leading-relaxed">
-                    Se você desinstalou o atalho ou deseja <strong>reinstalar do zero</strong>, clique no botão abaixo para forçar uma nova instalação ou siga os passos pelo menu do Chrome.
+                    O Android impede a instalação de aplicativos quando executados dentro de uma janela de prévia. Toque no botão vermelho abaixo para abrir diretamente no Google Chrome e instalar!
                   </p>
                 </div>
               )}
 
-              {/* Status Message if user triggered reinstall */}
-              {reinstallMessage && (
-                <div className="p-2.5 rounded-xl bg-slate-950 border border-slate-800 text-[11px] text-amber-300 flex items-start gap-2">
-                  <Sparkles className="w-3.5 h-3.5 shrink-0 mt-0.5 text-amber-400" />
-                  <span>{reinstallMessage}</span>
+              {/* Already installed alert */}
+              {isInstalled && !isIframe && (
+                <div className="p-3 rounded-2xl bg-amber-500/10 border border-amber-500/30 text-left space-y-1">
+                  <div className="flex items-center gap-2 text-amber-300 text-xs font-bold">
+                    <AlertCircle className="w-4 h-4 shrink-0 text-amber-400" />
+                    <span>O Android acusa que o app já está cadastrado</span>
+                  </div>
+                  <p className="text-[11px] text-slate-300 leading-relaxed">
+                    Mesmo falando que já está instalado, você pode forçar a reinstalação ou recriar o ícone tocando no botão vermelho abaixo.
+                  </p>
                 </div>
               )}
 
-              {/* Action Buttons */}
+              {/* Status or feedback message */}
+              {statusFeedback && (
+                <div className="p-3 rounded-xl bg-slate-950 border border-slate-800 text-[11px] text-amber-300 flex items-start gap-2">
+                  <Sparkles className="w-3.5 h-3.5 shrink-0 mt-0.5 text-amber-400 animate-pulse" />
+                  <span className="leading-relaxed">{statusFeedback}</span>
+                </div>
+              )}
+
+              {/* Primary Action Button: Reinstall */}
               <div className="space-y-2">
                 <button
                   type="button"
                   onClick={handleForceReinstall}
-                  className="w-full py-3 px-4 rounded-xl bg-gradient-to-r from-red-600 to-red-700 hover:from-red-500 hover:to-red-600 text-white text-xs font-bold transition flex items-center justify-center gap-2 shadow-lg shadow-red-950/50 cursor-pointer"
+                  disabled={isProcessing}
+                  className="w-full py-3 px-4 rounded-xl bg-gradient-to-r from-red-600 to-red-700 hover:from-red-500 hover:to-red-600 text-white text-xs font-black transition flex items-center justify-center gap-2 shadow-lg shadow-red-950/50 cursor-pointer disabled:opacity-50"
                 >
-                  <RotateCcw className="w-4 h-4" />
-                  <span>Reinstalar Aplicativo no Android Agora</span>
+                  <RotateCcw className={`w-4 h-4 ${isProcessing ? 'animate-spin' : ''}`} />
+                  <span>{isProcessing ? 'Processando Reinstalação...' : 'Reinstalar Aplicativo no Android Agora'}</span>
                 </button>
 
-                {isInstallable && (
-                  <button
-                    type="button"
-                    onClick={handleInstallClick}
-                    className="w-full py-2.5 px-3 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-bold transition flex items-center justify-center gap-2 border border-slate-700 cursor-pointer"
-                  >
-                    <Download className="w-3.5 h-3.5 text-red-400" />
-                    <span>Abrir Janela Padrão de Instalação</span>
-                  </button>
-                )}
+                {/* Secondary Button: Direct Open in Chrome */}
+                <button
+                  type="button"
+                  onClick={handleOpenChrome}
+                  className="w-full py-2.5 px-3 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-bold transition flex items-center justify-center gap-2 border border-slate-700 cursor-pointer"
+                >
+                  <ArrowUpRight className="w-3.5 h-3.5 text-emerald-400" />
+                  <span>Abrir Diretamente no Google Chrome</span>
+                </button>
               </div>
 
-              {/* Step-by-step Guide for Android Reinstallation */}
-              <div className="p-4 rounded-2xl bg-slate-950/90 border border-slate-800 text-left space-y-2.5">
-                <div className="text-xs font-bold text-slate-200 flex items-center gap-1.5">
-                  <Smartphone className="w-3.5 h-3.5 text-red-400" />
-                  <span>Passo a passo no Google Chrome do Android:</span>
+              {/* Visual Illustrated Guide for Google Chrome on Android */}
+              <div className="p-3.5 rounded-2xl bg-slate-950 border border-slate-800 text-left space-y-3">
+                <div className="text-xs font-bold text-slate-200 flex items-center justify-between">
+                  <span className="flex items-center gap-1.5">
+                    <Smartphone className="w-3.5 h-3.5 text-red-500" />
+                    Como Reinstalar pelo Menu do Chrome:
+                  </span>
+                  <span className="text-[10px] text-emerald-400 font-mono font-bold">100% Garantido</span>
                 </div>
 
-                <div className="space-y-2 text-xs text-slate-300">
-                  <div className="flex items-start gap-2">
+                {/* Illustrated Chrome Top Bar Mockup */}
+                <div className="rounded-xl bg-slate-900 border border-slate-700 p-2.5 space-y-2">
+                  <div className="flex items-center justify-between px-2 py-1.5 rounded-lg bg-slate-950 border border-slate-800 text-[11px] font-mono text-slate-400">
+                    <span className="truncate">bjj-academy...run.app</span>
+                    <div className="flex items-center gap-2 text-white">
+                      <span className="px-1.5 py-0.5 rounded bg-red-600 text-[10px] font-sans font-bold text-white animate-pulse">
+                        Passo 1 ➔
+                      </span>
+                      <div className="p-1 rounded bg-slate-800 text-amber-400 border border-amber-500/40">
+                        <MoreVertical className="w-4 h-4" />
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="p-2 rounded-lg bg-slate-850 text-[11px] text-slate-300 space-y-1.5 border border-slate-800">
+                    <div className="flex items-center justify-between text-slate-400 text-[10px]">
+                      <span>Menu suspenso do Google Chrome:</span>
+                    </div>
+                    <div className="p-2 rounded-lg bg-red-600/20 border border-red-500/50 text-white font-bold flex items-center justify-between text-xs">
+                      <div className="flex items-center gap-2">
+                        <Download className="w-4 h-4 text-red-400" />
+                        <span>Instalar aplicativo (ou Adicionar à tela)</span>
+                      </div>
+                      <span className="text-[10px] bg-red-600 px-1.5 py-0.5 rounded text-white font-bold">
+                        Passo 2
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Steps Text */}
+                <ol className="space-y-2 text-xs text-slate-300">
+                  <li className="flex items-start gap-2">
                     <span className="w-5 h-5 rounded-full bg-slate-800 text-slate-300 text-[11px] font-bold flex items-center justify-center shrink-0 mt-0.5">
                       1
                     </span>
                     <span>
-                      No Chrome, toque no menu de <strong>3 pontinhos verticais (⋮)</strong> no canto superior direito.
+                      Toque nos <strong>3 pontinhos verticais (⋮)</strong> no canto superior direito do Chrome.
                     </span>
-                  </div>
+                  </li>
 
-                  <div className="flex items-start gap-2">
+                  <li className="flex items-start gap-2">
                     <span className="w-5 h-5 rounded-full bg-slate-800 text-slate-300 text-[11px] font-bold flex items-center justify-center shrink-0 mt-0.5">
                       2
                     </span>
                     <span>
-                      Toque na opção <strong className="text-white">"Instalar aplicativo"</strong> ou <strong className="text-white">"Adicionar à tela inicial"</strong>.
+                      Selecione <strong className="text-white">"Instalar aplicativo"</strong> ou <strong className="text-white">"Adicionar à tela inicial"</strong>.
                     </span>
-                  </div>
+                  </li>
 
-                  <div className="flex items-start gap-2">
+                  <li className="flex items-start gap-2">
                     <span className="w-5 h-5 rounded-full bg-slate-800 text-slate-300 text-[11px] font-bold flex items-center justify-center shrink-0 mt-0.5">
                       3
                     </span>
-                    <span className="text-[11px] text-slate-400">
-                      <strong>Caso o Android continue dizendo que já existe:</strong> segure o ícone antigo na tela inicial do celular e escolha <em>"Desinstalar"</em>, ou vá em <em>Configurações do Android &gt; Aplicativos &gt; BJJ Academy &gt; Desinstalar</em>. Em seguida, toque em Instalar aqui!
+                    <span className="text-slate-400 text-[11px]">
+                      <strong className="text-amber-400">Dica se o celular não criar o ícone novo:</strong> Vá na tela inicial do celular, segure o ícone antigo do <em>BJJ Academy</em> e toque em <strong>Desinstalar</strong>. Depois retorne aqui e toque em instalar.
                     </span>
-                  </div>
-                </div>
+                  </li>
+                </ol>
               </div>
 
-              {/* Utility Tools: Copy link & Clear Cache */}
+              {/* Utility Tools */}
               <div className="grid grid-cols-2 gap-2 pt-1">
                 <button
                   type="button"
                   onClick={handleCopyLink}
-                  className="py-2 px-2.5 rounded-xl bg-slate-800/80 hover:bg-slate-700 text-slate-300 text-[11px] font-semibold flex items-center justify-center gap-1.5 transition border border-slate-700 cursor-pointer"
-                  title="Copiar link para abrir diretamente no Google Chrome"
+                  className="py-2 px-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-[11px] font-semibold flex items-center justify-center gap-1.5 transition border border-slate-700 cursor-pointer"
+                  title="Copiar link para colar na barra de endereços do Chrome"
                 >
                   {copiedLink ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
-                  <span>{copiedLink ? 'Link Copiado!' : 'Copiar Link Direto'}</span>
+                  <span>{copiedLink ? 'Link Copiado!' : 'Copiar Link'}</span>
                 </button>
 
                 <button
                   type="button"
-                  onClick={handleClearCacheAndReload}
-                  className="py-2 px-2.5 rounded-xl bg-slate-800/80 hover:bg-slate-700 text-slate-300 text-[11px] font-semibold flex items-center justify-center gap-1.5 transition border border-slate-700 cursor-pointer"
+                  onClick={handleClearCache}
+                  disabled={isProcessing}
+                  className="py-2 px-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-[11px] font-semibold flex items-center justify-center gap-1.5 transition border border-slate-700 cursor-pointer disabled:opacity-50"
                   title="Limpar Service Worker e Cache e Recarregar"
                 >
-                  <RotateCcw className="w-3.5 h-3.5 text-amber-400" />
-                  <span>Limpar Cache e Recarregar</span>
+                  <RefreshCw className={`w-3.5 h-3.5 text-amber-400 ${isProcessing ? 'animate-spin' : ''}`} />
+                  <span>Limpar Cache</span>
                 </button>
               </div>
             </div>
@@ -274,7 +365,7 @@ export const PWAInstallModal: React.FC<PWAInstallModalProps> = ({
           )}
 
           {/* Footer */}
-          <div className="mt-4 pt-3 border-t border-slate-800 flex justify-end">
+          <div className="mt-3.5 pt-3 border-t border-slate-800 flex justify-end">
             <button
               onClick={onClose}
               className="w-full py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-bold transition cursor-pointer"

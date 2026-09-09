@@ -72,12 +72,49 @@
         "studentName": { "type": "string", "maxLength": 150 },
         "title": { "type": "string", "maxLength": 150 },
         "amount": { "type": "number" },
+        "originalAmount": { "type": "number" },
         "dueDate": { "type": "string", "maxLength": 50 },
-        "status": { "type": "string", "enum": ["paid", "pending", "overdue"] },
+        "status": { "type": "string", "enum": ["paid", "pending", "overdue", "refunded", "canceled"] },
         "invoiceNumber": { "type": "string", "maxLength": 50 },
-        "academyId": { "type": "string", "maxLength": 128 }
+        "academyId": { "type": "string", "maxLength": 128 },
+        "tenantId": { "type": "string", "maxLength": 128 },
+        "financialCategory": { "type": "string", "maxLength": 50 },
+        "asaasPaymentId": { "type": "string", "maxLength": 128 }
       },
       "required": ["id", "studentId", "title", "amount", "status"]
+    },
+    "FinancialAudit": {
+      "title": "FinancialAudit",
+      "description": "Immutable multi-tenant audit trail for all financial mutations and webhooks",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "maxLength": 128 },
+        "tenantId": { "type": "string", "maxLength": 128 },
+        "userId": { "type": "string", "maxLength": 128 },
+        "action": { "type": "string", "maxLength": 100 },
+        "entity": { "type": "string", "maxLength": 50 },
+        "entityId": { "type": "string", "maxLength": 128 },
+        "timestamp": { "type": "string", "maxLength": 50 },
+        "origin": { "type": "string", "maxLength": 50 },
+        "result": { "type": "string", "maxLength": 50 }
+      },
+      "required": ["id", "tenantId", "action", "entity", "entityId", "timestamp"]
+    },
+    "PayableExpense": {
+      "title": "PayableExpense",
+      "description": "Accounts payable for academy operations and facilities",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "maxLength": 128 },
+        "tenantId": { "type": "string", "maxLength": 128 },
+        "category": { "type": "string", "maxLength": 50 },
+        "description": { "type": "string", "maxLength": 200 },
+        "amount": { "type": "number" },
+        "dueDate": { "type": "string", "maxLength": 50 },
+        "status": { "type": "string", "enum": ["pending", "paid", "overdue"] },
+        "recipientName": { "type": "string", "maxLength": 150 }
+      },
+      "required": ["id", "tenantId", "category", "amount", "dueDate", "status"]
     },
     "SparringSession": {
       "title": "SparringSession",
@@ -163,6 +200,14 @@
     "/crm_leads/{leadId}": {
       "schema": { "$ref": "#/entities/CRMLead" },
       "description": "Commercial leads and student acquisition"
+    },
+    "/financial_audits/{auditId}": {
+      "schema": { "$ref": "#/entities/FinancialAudit" },
+      "description": "Audit trail logs for all financial mutations and webhooks"
+    },
+    "/payable_expenses/{expenseId}": {
+      "schema": { "$ref": "#/entities/PayableExpense" },
+      "description": "Academy operational expenses and accounts payable"
     }
   }
 }
