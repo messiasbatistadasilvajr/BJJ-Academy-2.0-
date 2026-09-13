@@ -420,6 +420,14 @@ export interface Announcement {
   read: boolean;
   priority: 'normal' | 'urgent';
   image?: string;
+  academyId?: string;
+  tournamentId?: string;
+  tournamentData?: {
+    location?: string;
+    registrationDeadline?: string;
+    federation?: string;
+    categories?: string[];
+  };
 }
 
 export interface ChatMessage {
@@ -549,13 +557,48 @@ export interface ContractWaiver {
 export interface TournamentItem {
   id: string;
   name: string;
-  federation: 'CBJJ' | 'IBJJF' | 'FPJJ' | 'Local Open';
+  federation: 'CBJJ' | 'IBJJF' | 'FPJJ' | 'Local Open' | 'AJP Tour';
   date: string;
   location: string;
+  city?: string;
+  state?: string;
   registrationDeadline: string;
   registrationOpen: boolean;
+  registrationFee?: number;
   enrolledAcademyCount: number;
   categories: string[];
+  description?: string;
+  bannerImage?: string;
+  broadcastCount?: number;
+  lastBroadcastAt?: string;
+}
+
+export interface AcademyTournamentBroadcast {
+  id: string;
+  tournamentId: string;
+  tournamentName: string;
+  federation: string;
+  academyId: string;
+  academyName: string;
+  sentAt: string;
+  status: 'delivered' | 'read';
+  messageTitle: string;
+  messageBody: string;
+  registrationDeadline: string;
+  location: string;
+  broadcastBy: string;
+  categories: string[];
+}
+
+export interface TournamentBroadcastLog {
+  id: string;
+  tournamentId: string;
+  tournamentName: string;
+  timestamp: string;
+  totalAcademies: number;
+  targetAcademyNames: string[];
+  status: 'success' | 'partial' | 'failed';
+  logSummary: string;
 }
 
 export interface TeamMedal {

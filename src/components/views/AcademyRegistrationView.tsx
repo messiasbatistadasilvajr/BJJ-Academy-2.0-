@@ -418,36 +418,36 @@ export const AcademyRegistrationView: React.FC<AcademyRegistrationViewProps> = (
     setFormErrorMessage(null);
   };
 
-  // Carregar dados oficiais e brasão da Loyalty Jiu-Jitsu MM XXIII
+  // Carregar dados oficiais e brasão da Loyalty Jiu-Jitsu Matriz Oficial CE
   const handleFillLoyaltyJiuJitsu = () => {
     setName('Loyalty Jiu-Jitsu');
     setShortName('Loyalty BJJ');
-    setBranch('Matriz Oficial • MM XXIII');
+    setBranch('Matriz Oficial • CE');
     setCnpj('58.087.630/0001-78');
     setSelectedLogoPreset('loyalty_official');
     setCustomLogoUrl('/loyalty_logo.jpg');
-    setCep('01415-000');
-    setAddress('Rua Bela Cintra, 1280');
-    setNeighborhood('Consolação');
-    setCity('São Paulo');
-    setState('SP');
-    setPhone('(11) 98765-4321');
+    setCep('60165-121');
+    setAddress('Av. Beira Mar, 2800');
+    setNeighborhood('Meireles');
+    setCity('Fortaleza');
+    setState('CE');
+    setPhone('(85) 98765-4321');
     setEmail('contato@loyaltyjiujitsu.com.br');
     setHeadInstructor('Messias Batista da Silva Junior (• Mestre Fundador)');
-    setCrefNumber('019844-G/SP');
+    setCrefNumber('019844-G/CE');
     setStudentCapacity(350);
     setTatamiAreaM2(220);
 
     setLegalRepresentativeName('Messias Batista da Silva Junior');
     setLegalRepresentativeCpf('580.876.303-78');
     setLegalRepresentativeRole('Sócio Fundador & Mestre Responsável');
-    setLegalRepresentativePhone('(11) 98765-4321');
+    setLegalRepresentativePhone('(85) 98765-4321');
     setBillingDueDay(10);
     setFinancialContactEmail('financeiro@loyaltyjiujitsu.com.br');
-    setFinancialContactPhone('(11) 98765-4321');
+    setFinancialContactPhone('(85) 98765-4321');
 
     setFederationAffiliation('CBJJ / IBJJF');
-    setFederationRegisterNumber('CBJJ-SP-10928');
+    setFederationRegisterNumber('CBJJ-CE-10928');
     setFireDepartmentPermit('AVCB nº 2024-918293');
     setOperatingLicense('Alvará Municipal nº 2024/0912');
     setHasFirstAidKit(true);

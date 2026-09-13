@@ -207,7 +207,7 @@ export default function App() {
   // Registered Academies State (Persisted in localStorage & Firestore)
   const [academies, setAcademies] = useState<RegisteredAcademy[]>(() => {
     const cached = safeLocalStorageGet<RegisteredAcademy[]>('bjj_academies', mockRegisteredAcademies);
-    // Ensure Loyalty Jiu-Jitsu is included with the official photo.jpg / loyalty_logo
+    // Ensure Loyalty Jiu-Jitsu is updated to Matriz Oficial CE with official photo.jpg / loyalty_logo
     const loyaltyMock = mockRegisteredAcademies.find(a => a.id === 'acad_loyalty_jiujitsu');
     if (loyaltyMock) {
       const existingLoyaltyIndex = cached.findIndex(a => a.id === 'acad_loyalty_jiujitsu' || a.name.toLowerCase().includes('loyalty'));
@@ -216,6 +216,9 @@ export default function App() {
       } else {
         cached[existingLoyaltyIndex] = {
           ...cached[existingLoyaltyIndex],
+          branch: 'Matriz Oficial • CE',
+          city: 'Fortaleza - CE',
+          state: 'CE',
           logo: '/loyalty_logo.jpg',
           logoPresetId: 'loyalty_official'
         };
@@ -987,6 +990,10 @@ export default function App() {
       <TournamentsModal
         isOpen={isTournamentsOpen}
         onClose={() => setIsTournamentsOpen(false)}
+        academies={academies}
+        activeAcademy={activeAcademy}
+        onAnnouncementsUpdated={(newAnnouncements) => setAnnouncements(newAnnouncements)}
+        onSendPushBroadcast={handleSendPushBroadcast}
       />
 
       {/* Academy Voice Notification Modal (Mercado Livre Style) */}
