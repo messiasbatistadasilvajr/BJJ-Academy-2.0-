@@ -753,7 +753,7 @@ export const AcademyRegistrationView: React.FC<AcademyRegistrationViewProps> = (
   const currentLogoPreset = PRESET_LOGOS.find(l => l.id === selectedLogoPreset) || PRESET_LOGOS[0];
 
   return (
-    <div className="w-full h-full overflow-y-auto p-3 sm:p-6 space-y-4 pb-20 no-scrollbar animate-in fade-in">
+    <div className="w-full h-full overflow-y-auto p-3 sm:p-6 space-y-4 pb-20 no-scrollbar animate-in fade-in bg-slate-950/60 backdrop-blur-[0.5px]">
       
       {/* TOP HERO BANNER */}
       <div className="p-4 sm:p-6 rounded-3xl bg-gradient-to-br from-slate-900 via-slate-900/95 to-slate-950 border border-slate-800 shadow-2xl relative overflow-hidden">

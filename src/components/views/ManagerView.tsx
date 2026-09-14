@@ -358,9 +358,9 @@ export const ManagerView: React.FC<ManagerViewProps> = ({
   const defaultRate = 4.2;
 
   return (
-    <div className="flex flex-col h-full bg-slate-950 text-slate-100 overflow-y-auto pb-20 no-scrollbar">
+    <div className="flex flex-col h-full bg-slate-950/65 backdrop-blur-[0.5px] text-slate-100 overflow-y-auto pb-20 no-scrollbar">
       {/* Manager Top Bar */}
-      <div className="px-5 pt-4 pb-4 bg-gradient-to-b from-slate-900 via-slate-900 to-slate-950 border-b border-slate-800">
+      <div className="px-5 pt-4 pb-4 bg-gradient-to-b from-slate-900/90 via-slate-900/80 to-slate-950/75 border-b border-slate-800">
         {/* CEO Exclusive Executive Welcome & Global RBAC Priority Header */}
         {isCEO && (
           <div className="mb-3.5 p-3 rounded-2xl bg-gradient-to-r from-amber-500/25 via-amber-600/15 to-red-600/20 border-2 border-amber-400/60 shadow-xl shadow-amber-950/40 animate-fadeIn backdrop-blur-sm">

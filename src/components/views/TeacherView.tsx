@@ -322,9 +322,9 @@ export const TeacherView: React.FC<TeacherViewProps> = ({
   };
 
   return (
-    <div className="flex flex-col h-full bg-slate-950 text-slate-100 overflow-y-auto pb-20 no-scrollbar">
+    <div className="flex flex-col h-full bg-slate-950/65 backdrop-blur-[0.5px] text-slate-100 overflow-y-auto pb-20 no-scrollbar">
       {/* Teacher Operational Top Header */}
-      <div className="px-5 pt-4 pb-3 bg-gradient-to-b from-red-950/40 via-slate-900 to-slate-950 border-b border-slate-800 space-y-3">
+      <div className="px-5 pt-4 pb-3 bg-gradient-to-b from-red-950/40 via-slate-900/85 to-slate-950/75 border-b border-slate-800 space-y-3">
         {/* Blindagem Pedagógica Banner */}
         <div className="p-2.5 rounded-2xl bg-emerald-950/50 border border-emerald-500/40 flex items-center justify-between gap-2 shadow-sm">
           <div className="flex items-center gap-2">

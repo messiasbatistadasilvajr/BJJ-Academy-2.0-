@@ -7,6 +7,7 @@ import {
 } from 'lucide-react';
 import { UserRole, isCeoRole, isSuperAdminOrCeoRole } from '../../types';
 import { NativeStatusBar } from './NativeStatusBar';
+import { BJJFixedBackground } from './BJJFixedBackground';
 
 interface DeviceFrameProps {
   children: React.ReactNode;
@@ -82,9 +83,12 @@ export const DeviceFrame: React.FC<DeviceFrameProps> = ({
   ];
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col items-center justify-start py-2 sm:py-4 px-2 sm:px-4 font-sans selection:bg-red-600 selection:text-white">
+    <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col items-center justify-start py-2 sm:py-4 px-2 sm:px-4 font-sans selection:bg-red-600 selection:text-white relative overflow-x-hidden">
+      {/* Imagem Fixa Global de Fundo: Dois Lutadores de Jiu-Jitsu */}
+      <BJJFixedBackground opacity={0.25} className="fixed" />
+
       {/* Top Global Control Toolbar */}
-      <header className="w-full max-w-5xl mb-3 p-3 rounded-2xl bg-slate-900/90 border border-slate-800 backdrop-blur-md shadow-xl flex flex-wrap items-center justify-between gap-3">
+      <header className="w-full max-w-5xl mb-3 p-3 rounded-2xl bg-slate-900/90 border border-slate-800 backdrop-blur-md shadow-xl flex flex-wrap items-center justify-between gap-3 relative z-20">
         {/* Brand & Badge */}
         <div className="flex items-center gap-2.5">
           <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-red-600 to-red-800 p-0.5 shadow-md flex items-center justify-center font-black text-xs text-white">
@@ -349,8 +353,8 @@ export const DeviceFrame: React.FC<DeviceFrameProps> = ({
       <main className="w-full flex justify-center items-center flex-1">
         {isDesktopView ? (
           // Expanded Desktop Layout (for Managers / Front Desk / Fullscreen)
-          <div className="w-full max-w-5xl h-[84vh] bg-slate-900 border border-slate-800 rounded-3xl overflow-hidden shadow-2xl flex flex-col">
-            <div className="h-10 px-5 bg-slate-950 border-b border-slate-800 flex items-center justify-between text-xs text-slate-400">
+          <div className="w-full max-w-5xl h-[84vh] bg-slate-900/90 border border-slate-800 rounded-3xl overflow-hidden shadow-2xl flex flex-col relative">
+            <div className="h-10 px-5 bg-slate-950/90 backdrop-blur-md border-b border-slate-800 flex items-center justify-between text-xs text-slate-400 relative z-20">
               <div className="flex items-center gap-2">
                 <span className="w-3 h-3 rounded-full bg-red-500/80 inline-block" />
                 <span className="w-3 h-3 rounded-full bg-amber-500/80 inline-block" />
@@ -363,8 +367,13 @@ export const DeviceFrame: React.FC<DeviceFrameProps> = ({
                 Visualização Computador • Gestão Integral
               </span>
             </div>
-            <div className="flex-1 overflow-hidden relative">
-              {children}
+            <div className="flex-1 overflow-hidden relative flex flex-col">
+              {/* Imagem Fixa de Fundo: Dois Lutadores de Jiu-Jitsu no Tatame */}
+              <BJJFixedBackground opacity={0.36} />
+              
+              <div className="relative z-10 flex-1 h-full overflow-hidden flex flex-col">
+                {children}
+              </div>
             </div>
           </div>
         ) : (
@@ -380,13 +389,18 @@ export const DeviceFrame: React.FC<DeviceFrameProps> = ({
                 {/* Native OS Status Bar */}
                 <NativeStatusBar os={os} dynamicIslandContent={dynamicIslandNotice} />
 
-                {/* Inner View Content */}
+                {/* Inner View Content with Fixed BJJ Fighters Background */}
                 <div className="flex-1 overflow-hidden relative flex flex-col">
-                  {children}
+                  {/* Imagem Fixa de Fundo: Dois Lutadores de Jiu-Jitsu no Tatame */}
+                  <BJJFixedBackground opacity={0.36} />
+
+                  <div className="relative z-10 flex-1 h-full overflow-hidden flex flex-col">
+                    {children}
+                  </div>
                 </div>
 
                 {/* iPhone Home Indicator Bar / Android nav line */}
-                <div className="w-full h-5 bg-slate-950 flex items-center justify-center shrink-0">
+                <div className="w-full h-5 bg-slate-950/90 backdrop-blur-sm flex items-center justify-center shrink-0 relative z-20">
                   <div className="w-32 h-1 rounded-full bg-slate-600/60" />
                 </div>
               </div>

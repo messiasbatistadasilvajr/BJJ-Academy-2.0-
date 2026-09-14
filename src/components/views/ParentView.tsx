@@ -58,9 +58,9 @@ export const ParentView: React.FC<ParentViewProps> = ({
   };
 
   return (
-    <div className="flex flex-col h-full bg-slate-950 text-slate-100 overflow-y-auto pb-20 no-scrollbar">
+    <div className="flex flex-col h-full bg-slate-950/65 backdrop-blur-[0.5px] text-slate-100 overflow-y-auto pb-20 no-scrollbar">
       {/* Portal do Responsável Top Header */}
-      <div className="px-5 pt-4 pb-4 bg-gradient-to-b from-blue-950/40 via-slate-900 to-slate-950 border-b border-slate-800">
+      <div className="px-5 pt-4 pb-4 bg-gradient-to-b from-blue-950/40 via-slate-900/85 to-slate-950/75 border-b border-slate-800">
         <div className="flex items-center justify-between mb-3">
           <div className="flex items-center gap-2">
             <div className="w-8 h-8 rounded-xl bg-blue-600/20 border border-blue-500/40 flex items-center justify-center text-blue-400">
