@@ -630,6 +630,13 @@ export interface AcademyPricingPlan {
 
 export type FinancialAccessProfile = 'general_manager' | 'unit_manager';
 
+export interface AcademyOperatingDay {
+  dayOfWeek: 'segunda' | 'terca' | 'quarta' | 'quinta' | 'sexta' | 'sabado' | 'domingo';
+  dayLabel: string; // 'segunda-feira', etc.
+  isOpen: boolean;
+  slots: string[]; // e.g. ['07:00–08:00', '12:00–13:00', '16:00–21:30']
+}
+
 export interface RegisteredAcademy {
   id: string;
   name: string;
@@ -699,6 +706,7 @@ export interface RegisteredAcademy {
     chimeType: ChimeType;
     customWelcomeMessage?: string;
   };
+  operatingHours?: AcademyOperatingDay[];
   createdAt?: string;
 }
 

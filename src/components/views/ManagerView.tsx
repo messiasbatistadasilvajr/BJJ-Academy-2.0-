@@ -8,7 +8,7 @@ import {
   Tablet, ShoppingBag, Award, FileText, Trophy, Volume2,
   Lock, Unlock, Calculator, Building2, ShieldAlert, Copy, Check,
   QrCode, CheckCheck, Edit3, Sparkles, Download, AlertCircle, MessageCircle, Cake,
-  Database, Cloud, Crown
+  Database, Cloud, Crown, Clock
 } from 'lucide-react';
 import { 
   ClassSession, Invoice, Announcement, PushNotification, 
@@ -20,6 +20,7 @@ import { calculateLateFeeAndInterest, formatBRL, calculateSaasLicenseFee, SAAS_F
 import { exportFinancialInvoicesCSV, exportAcademiesListCSV } from '../../utils/csvExport';
 import { sendReceiptViaWhatsApp, sendReminderViaWhatsApp } from '../../utils/whatsappHelper';
 import { DueAlertsDrawer } from '../common/DueAlertsDrawer';
+import { AcademyOperatingHoursModal } from '../common/AcademyOperatingHoursModal';
 import { safeLocalStorageGet, safeLocalStorageSet } from '../../utils/safeStorage';
 
 interface ManagerViewProps {
@@ -223,6 +224,7 @@ export const ManagerView: React.FC<ManagerViewProps> = ({
 
   // Smart Due Alerts Drawer State
   const [isDueAlertsOpen, setIsDueAlertsOpen] = useState(false);
+  const [isOperatingHoursModalOpen, setIsOperatingHoursModalOpen] = useState(false);
   const overdueInvoicesCount = invoices.filter(inv => inv.status === 'overdue').length;
 
   const handleExportInvoicesCSV = () => {
@@ -903,6 +905,19 @@ export const ManagerView: React.FC<ManagerViewProps> = ({
                   <span className="text-[10px] text-purple-300/80">Planos de aula & drills</span>
                 </button>
               </div>
+
+              <button
+                onClick={() => setIsOperatingHoursModalOpen(true)}
+                className="w-full py-2.5 px-3 rounded-xl bg-gradient-to-r from-amber-600/20 via-slate-900 to-amber-600/20 hover:from-amber-600/30 hover:to-amber-600/30 border border-amber-500/40 text-xs font-bold text-amber-300 flex items-center justify-between transition shadow-sm"
+              >
+                <div className="flex items-center gap-2">
+                  <Clock className="w-4 h-4 text-amber-400 animate-pulse" />
+                  <span>Horários de Funcionamento & Grade de Treinos</span>
+                </div>
+                <span className="text-[10px] bg-amber-400/20 text-amber-300 border border-amber-500/30 px-2 py-0.5 rounded-full font-bold">
+                  {activeAcademyName || 'Loyalty Jiu-Jitsu'}
+                </span>
+              </button>
 
               <button
                 onClick={onOpenTournaments}
@@ -2149,6 +2164,39 @@ export const ManagerView: React.FC<ManagerViewProps> = ({
         invoices={invoices}
         activeAcademyName={activeAcademyName}
       />
+
+      {/* Modal de Horários de Funcionamento da Academia Ativa */}
+      {isOperatingHoursModalOpen && (
+        <AcademyOperatingHoursModal
+          isOpen={isOperatingHoursModalOpen}
+          onClose={() => setIsOperatingHoursModalOpen(false)}
+          academy={
+            (academies && academies.find(a => a.id === activeAcademyId)) ||
+            (academies && academies[0]) || {
+              id: 'acad_loyalty_jiujitsu',
+              name: activeAcademyName || 'Loyalty Jiu-Jitsu',
+              shortName: 'Loyalty BJJ',
+              branch: 'Matriz Oficial • CE',
+              cnpj: '58.087.630/0001-78',
+              phone: '(85) 98765-4321',
+              city: 'Fortaleza',
+              state: 'CE',
+              address: 'Av. Beira Mar, 2800',
+              neighborhood: 'Meireles',
+              cep: '60165-121',
+              headInstructor: 'Messias Batista da Silva Junior (• Mestre Fundador)',
+              crefNumber: '019844-G/CE',
+              activeStudentsCount: 350,
+              studentCapacity: 350,
+              tatamiAreaM2: 220,
+              pixKey: '58087630378',
+              pixKeyType: 'cpf',
+              operatingHours: undefined,
+              createdAt: new Date().toISOString()
+            } as RegisteredAcademy
+          }
+        />
+      )}
     </div>
   );
 };

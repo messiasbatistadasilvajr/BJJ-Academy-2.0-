@@ -3,7 +3,7 @@ import {
   ChatMessage, PushNotification, RankingMember, TechniqueItem, 
   GraduationEligibility, ShopProduct, ContractWaiver, TournamentItem, TeamMedal,
   RegisteredAcademy, PlatformGeneralManager, PlatformAcademyPayment,
-  RetentionAlertItem, SparringSession, BirthdayPerson
+  RetentionAlertItem, SparringSession, BirthdayPerson, AcademyOperatingDay
 } from '../types';
 
 export const mockStudent: StudentProfile = {
@@ -1116,6 +1116,51 @@ export const mockTeamMedals: TeamMedal[] = [
   }
 ];
 
+export const loyaltyOfficialOperatingHours: AcademyOperatingDay[] = [
+  {
+    dayOfWeek: 'segunda',
+    dayLabel: 'segunda-feira',
+    isOpen: true,
+    slots: ['07:00–08:00', '12:00–13:00', '16:00–21:30']
+  },
+  {
+    dayOfWeek: 'terca',
+    dayLabel: 'terça-feira',
+    isOpen: true,
+    slots: ['12:00–13:00', '18:00–21:30']
+  },
+  {
+    dayOfWeek: 'quarta',
+    dayLabel: 'quarta-feira',
+    isOpen: true,
+    slots: ['07:00–08:00', '12:00–13:00', '16:00–21:30']
+  },
+  {
+    dayOfWeek: 'quinta',
+    dayLabel: 'quinta-feira',
+    isOpen: true,
+    slots: ['12:00–13:00', '18:00–21:30']
+  },
+  {
+    dayOfWeek: 'sexta',
+    dayLabel: 'sexta-feira',
+    isOpen: true,
+    slots: ['07:00–08:00', '12:00–13:00', '16:00–21:30']
+  },
+  {
+    dayOfWeek: 'sabado',
+    dayLabel: 'sábado',
+    isOpen: false,
+    slots: []
+  },
+  {
+    dayOfWeek: 'domingo',
+    dayLabel: 'domingo',
+    isOpen: false,
+    slots: []
+  }
+];
+
 export const mockRegisteredAcademies: RegisteredAcademy[] = [
   {
     id: 'acad_loyalty_jiujitsu',
@@ -1175,7 +1220,8 @@ export const mockRegisteredAcademies: RegisteredAcademy[] = [
       { id: 'plan_loyalty_trimestral', name: 'Trimestral Loyalty Prime', periodMonths: 3, price: 780.00, monthlyEquivalent: 260.00, description: 'Condição especial para treino contínuo no tatame.' },
       { id: 'plan_loyalty_anual', name: 'Anual Loyalty Champion', periodMonths: 12, price: 2880.00, monthlyEquivalent: 240.00, description: 'Plano anual com rashguard e kimono oficial Loyalty inclusos.' },
       { id: 'plan_loyalty_kids', name: 'Loyalty Kids & Teens', periodMonths: 1, price: 220.00, monthlyEquivalent: 220.00, description: 'Valores, respeito e defesa pessoal para a juventude.' }
-    ]
+    ],
+    operatingHours: loyaltyOfficialOperatingHours
   },
   {
     id: 'acad_bjj_jardins',

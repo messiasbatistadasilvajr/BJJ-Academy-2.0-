@@ -220,7 +220,8 @@ export default function App() {
           city: 'Fortaleza - CE',
           state: 'CE',
           logo: '/loyalty_logo.jpg',
-          logoPresetId: 'loyalty_official'
+          logoPresetId: 'loyalty_official',
+          operatingHours: cached[existingLoyaltyIndex].operatingHours || loyaltyMock.operatingHours
         };
         return cached;
       }
@@ -733,6 +734,7 @@ export default function App() {
           onOpenSparringJournal={() => setIsSparringJournalOpen(true)}
           onOpenBeltGuide={() => setIsBeltGuideOpen(true)}
           academyName={activeAcademy.name}
+          activeAcademy={activeAcademy}
         />
       )}
 

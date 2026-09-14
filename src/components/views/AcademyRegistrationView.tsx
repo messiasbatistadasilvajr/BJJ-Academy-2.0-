@@ -5,14 +5,16 @@ import {
   Trash2, Edit3, Volume2, Play, QrCode, Copy, ArrowRight, ExternalLink,
   Percent, Award, Users, Compass, Eye, Filter, Sliders, RefreshCw,
   Download, ArrowLeft, CheckCheck, Shield, Lock, Scale, FileText, 
-  FileCheck2, Loader2, HelpCircle, Info, FileSpreadsheet
+  FileCheck2, Loader2, HelpCircle, Info, FileSpreadsheet, Clock, XCircle
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { 
   RegisteredAcademy, AcademyVoiceStyle, NotificationFormat, 
-  ChimeType, PlatformGeneralManager, AcademyPricingPlan 
+  ChimeType, PlatformGeneralManager, AcademyPricingPlan,
+  AcademyOperatingDay
 } from '../../types';
-import { defaultPlatformGeneralManager } from '../../data/mockData';
+import { defaultPlatformGeneralManager, loyaltyOfficialOperatingHours } from '../../data/mockData';
+import { AcademyOperatingHoursModal } from '../common/AcademyOperatingHoursModal';
 import { academyVoiceEngine } from '../../utils/voiceNotification';
 import { formatBRL } from '../../utils/financialCalculations';
 import { exportAcademiesListCSV } from '../../utils/csvExport';
@@ -123,6 +125,11 @@ export const AcademyRegistrationView: React.FC<AcademyRegistrationViewProps> = (
   const [voiceVolume, setVoiceVolume] = useState<number>(1.0);
   const [chimeType, setChimeType] = useState<ChimeType>('gong');
   const [customWelcomeMessage, setCustomWelcomeMessage] = useState('Atenção Tatame! Bem-vindo aos treinos da BJJ Academy.');
+
+  // Form State: Horários de Funcionamento (Grade Oficial de Treinos)
+  const [operatingHours, setOperatingHours] = useState<AcademyOperatingDay[]>(loyaltyOfficialOperatingHours);
+  const [isHoursModalOpen, setIsHoursModalOpen] = useState(false);
+  const [viewingHoursAcademy, setViewingHoursAcademy] = useState<RegisteredAcademy | null>(null);
 
   // Form State: 7. Planos de Mensalidade
   const [pricingPlans, setPricingPlans] = useState<AcademyPricingPlan[]>([
@@ -361,6 +368,12 @@ export const AcademyRegistrationView: React.FC<AcademyRegistrationViewProps> = (
       setPricingPlans(academy.pricingPlans);
     }
 
+    if (academy.operatingHours && academy.operatingHours.length > 0) {
+      setOperatingHours(academy.operatingHours);
+    } else {
+      setOperatingHours(loyaltyOfficialOperatingHours);
+    }
+
     setActiveTab('form');
     setFormSuccessMessage(null);
     setFormErrorMessage(null);
@@ -414,6 +427,7 @@ export const AcademyRegistrationView: React.FC<AcademyRegistrationViewProps> = (
     setMonthlyRevenueTarget(50000);
     setPlatformPlan('pro');
     setCustomWelcomeMessage('Atenção Tatame! Bem-vindo aos treinos da BJJ Academy.');
+    setOperatingHours(loyaltyOfficialOperatingHours);
     setFormSuccessMessage(null);
     setFormErrorMessage(null);
   };
@@ -464,6 +478,7 @@ export const AcademyRegistrationView: React.FC<AcademyRegistrationViewProps> = (
     setDefaultMonthlyInterestPercent(1.0);
     setMonthlyRevenueTarget(95000);
     setPlatformPlan('enterprise');
+    setOperatingHours(loyaltyOfficialOperatingHours);
     setCustomWelcomeMessage('Atenção Tatame Loyalty Jiu-Jitsu! Honra, Lealdade e OSS!');
     setFormSuccessMessage('🥋 Brasão Oficial e Dados da Loyalty Jiu-Jitsu com Blindagem Jurídica carregados com sucesso!');
     setTimeout(() => setFormSuccessMessage(null), 3500);
@@ -683,6 +698,7 @@ export const AcademyRegistrationView: React.FC<AcademyRegistrationViewProps> = (
         customWelcomeMessage: customWelcomeMessage.trim()
       },
       pricingPlans,
+      operatingHours,
       createdAt: editingAcademyId 
         ? (academies.find(a => a.id === editingAcademyId)?.createdAt || new Date().toISOString())
         : new Date().toISOString()
@@ -1819,13 +1835,131 @@ export const AcademyRegistrationView: React.FC<AcademyRegistrationViewProps> = (
                 </div>
               </div>
 
+              {/* Box 7.1: Horários de Funcionamento (Grade Oficial da Academia) */}
+              <div className="p-5 rounded-3xl bg-slate-900/90 border border-slate-800 shadow-xl space-y-4">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-800 pb-3">
+                  <div className="flex items-center gap-2">
+                    <Clock className="w-5 h-5 text-amber-400" />
+                    <div>
+                      <h3 className="text-sm font-black text-white uppercase tracking-wider">
+                        8. Horários de Funcionamento (Grade Semanal)
+                      </h3>
+                      <p className="text-[11px] text-slate-400">
+                        Configuração dos horários e turmas nos tatames (Segunda a Domingo).
+                      </p>
+                    </div>
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setOperatingHours(loyaltyOfficialOperatingHours);
+                      setFormSuccessMessage('Horários oficiais padrão da Matriz carregados!');
+                      setTimeout(() => setFormSuccessMessage(null), 2500);
+                    }}
+                    className="px-2.5 py-1 rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-700 text-amber-300 text-xs font-bold flex items-center gap-1 transition self-start sm:self-auto"
+                  >
+                    <Sparkles size={12} className="text-amber-400" />
+                    <span>Carregar Grade Matriz</span>
+                  </button>
+                </div>
+
+                <div className="space-y-2.5">
+                  {operatingHours.map((dayItem, dIdx) => (
+                    <div
+                      key={dayItem.dayOfWeek}
+                      className={`p-3 rounded-2xl border transition flex flex-col md:flex-row md:items-center justify-between gap-3 text-xs ${
+                        dayItem.isOpen ? 'bg-slate-950/80 border-slate-800' : 'bg-slate-950/40 border-slate-800/50 opacity-75'
+                      }`}
+                    >
+                      <div className="flex items-center gap-3 min-w-[170px]">
+                        <label className="flex items-center gap-2 cursor-pointer font-bold select-none">
+                          <input
+                            type="checkbox"
+                            checked={dayItem.isOpen}
+                            onChange={(e) => {
+                              const updated = [...operatingHours];
+                              updated[dIdx] = {
+                                ...updated[dIdx],
+                                isOpen: e.target.checked,
+                                slots: e.target.checked && updated[dIdx].slots.length === 0
+                                  ? ['07:00–08:00', '12:00–13:00', '18:00–21:30']
+                                  : updated[dIdx].slots
+                              };
+                              setOperatingHours(updated);
+                            }}
+                            className="w-4 h-4 rounded border-slate-700 text-amber-500 focus:ring-0"
+                          />
+                          <span className={`capitalize text-xs font-black ${dayItem.isOpen ? 'text-white' : 'text-slate-500'}`}>
+                            {dayItem.dayLabel}
+                          </span>
+                        </label>
+                        <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded ${
+                          dayItem.isOpen ? 'bg-emerald-950/80 text-emerald-400 border border-emerald-900' : 'bg-slate-900 text-slate-500'
+                        }`}>
+                          {dayItem.isOpen ? 'Aberto' : 'Fechado'}
+                        </span>
+                      </div>
+
+                      {/* Horários / Slots */}
+                      <div className="flex-1 flex flex-wrap items-center gap-1.5">
+                        {dayItem.isOpen ? (
+                          <>
+                            {dayItem.slots.map((slot, sIdx) => (
+                              <div
+                                key={sIdx}
+                                className="flex items-center gap-1 px-2.5 py-1 rounded-xl bg-slate-900 border border-slate-750 text-white font-mono text-xs font-bold"
+                              >
+                                <span>{slot}</span>
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    const updated = [...operatingHours];
+                                    updated[dIdx].slots = updated[dIdx].slots.filter((_, i) => i !== sIdx);
+                                    setOperatingHours(updated);
+                                  }}
+                                  className="text-slate-400 hover:text-red-400 ml-1 transition"
+                                  title="Remover horário"
+                                >
+                                  ×
+                                </button>
+                              </div>
+                            ))}
+
+                            <button
+                              type="button"
+                              onClick={() => {
+                                const newSlot = prompt('Digite o novo horário da turma (ex: 19:00–20:30):', '19:00–20:30');
+                                if (newSlot && newSlot.trim()) {
+                                  const updated = [...operatingHours];
+                                  updated[dIdx].slots = [...updated[dIdx].slots, newSlot.trim()];
+                                  setOperatingHours(updated);
+                                }
+                              }}
+                              className="px-2 py-1 rounded-xl bg-slate-800 hover:bg-slate-750 text-amber-400 text-[11px] font-bold border border-slate-700 flex items-center gap-1 transition"
+                            >
+                              <Plus size={11} />
+                              <span>Horário</span>
+                            </button>
+                          </>
+                        ) : (
+                          <span className="text-slate-500 italic text-[11px]">
+                            Tatame sem atividades programadas neste dia
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
               {/* Box 8: Voz do Tatame 2.0 */}
               <div className="p-5 rounded-3xl bg-slate-900/90 border border-slate-800 shadow-xl space-y-4">
                 <div className="flex items-center justify-between border-b border-slate-800 pb-3">
                   <div className="flex items-center gap-2">
                     <span className="text-xl">🔊</span>
                     <h3 className="text-sm font-black text-white uppercase tracking-wider">
-                      8. Voz do Tatame (Anúncios Sonoros na Recepção)
+                      9. Voz do Tatame (Anúncios Sonoros na Recepção)
                     </h3>
                   </div>
                   <button
@@ -2294,17 +2428,31 @@ export const AcademyRegistrationView: React.FC<AcademyRegistrationViewProps> = (
                     </div>
                   </div>
 
-                  {/* Card Actions */}
-                  <div className="pt-2 border-t border-slate-800/80 flex items-center justify-between gap-2">
-                    <button
-                      type="button"
-                      onClick={() => handleEditAcademy(acad)}
-                      className="p-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white text-xs font-bold flex items-center gap-1 transition"
-                      title="Editar academia"
-                    >
-                      <Edit3 size={13} />
-                      <span>Editar</span>
-                    </button>
+                    <div className="pt-2 border-t border-slate-800/80 flex flex-wrap items-center justify-between gap-2">
+                    <div className="flex items-center gap-1.5">
+                      <button
+                        type="button"
+                        onClick={() => handleEditAcademy(acad)}
+                        className="p-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white text-xs font-bold flex items-center gap-1 transition"
+                        title="Editar academia"
+                      >
+                        <Edit3 size={13} />
+                        <span>Editar</span>
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setViewingHoursAcademy(acad);
+                          setIsHoursModalOpen(true);
+                        }}
+                        className="p-2 rounded-xl bg-amber-500/15 hover:bg-amber-500/25 text-amber-300 border border-amber-500/30 text-xs font-bold flex items-center gap-1 transition"
+                        title="Ver Horários de Treino da Academia"
+                      >
+                        <Clock size={13} className="text-amber-400" />
+                        <span>Horários</span>
+                      </button>
+                    </div>
 
                     {!isActive ? (
                       <button
@@ -2429,6 +2577,18 @@ export const AcademyRegistrationView: React.FC<AcademyRegistrationViewProps> = (
             setFormSuccessMessage(`✅ Termos de Licenciamento SaaS aceitos e assinados digitalmente com sucesso! Protocolo: ${currentContractProtocol}`);
             setTimeout(() => setFormSuccessMessage(null), 4000);
           }}
+        />
+      )}
+
+      {/* Modal de Horários de Treino da Academia */}
+      {isHoursModalOpen && (viewingHoursAcademy || academies[0]) && (
+        <AcademyOperatingHoursModal
+          isOpen={isHoursModalOpen}
+          onClose={() => {
+            setIsHoursModalOpen(false);
+            setViewingHoursAcademy(null);
+          }}
+          academy={viewingHoursAcademy || academies[0]}
         />
       )}
 

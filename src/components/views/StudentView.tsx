@@ -7,9 +7,10 @@ import {
   Timer, BookOpen, ShoppingBag, Trophy, FileText, Play,
   AlertTriangle, Calculator, Building2, Cake
 } from 'lucide-react';
-import { StudentProfile, ClassSession, Invoice, Announcement, ChatMessage, RankingMember } from '../../types';
+import { StudentProfile, ClassSession, Invoice, Announcement, ChatMessage, RankingMember, RegisteredAcademy } from '../../types';
 import { BeltBadge } from '../common/BeltBadge';
 import { calculateLateFeeAndInterest, formatBRL } from '../../utils/financialCalculations';
+import { AcademyOperatingHoursModal } from '../common/AcademyOperatingHoursModal';
 
 interface StudentViewProps {
   student: StudentProfile;
@@ -34,6 +35,7 @@ interface StudentViewProps {
   onOpenSparringJournal?: () => void;
   onOpenBeltGuide?: () => void;
   academyName?: string;
+  activeAcademy?: RegisteredAcademy;
 }
 
 export const StudentView: React.FC<StudentViewProps> = ({
@@ -59,9 +61,11 @@ export const StudentView: React.FC<StudentViewProps> = ({
   onOpenSparringJournal,
   onOpenBeltGuide,
   academyName,
+  activeAcademy,
 }) => {
   const [activeTab, setActiveTab] = useState<'treinos' | 'graduacao' | 'frequencia' | 'financeiro' | 'comunicados'>('treinos');
   const [chatInput, setChatInput] = useState('');
+  const [isHoursModalOpen, setIsHoursModalOpen] = useState(false);
 
   const pendingInvoice = invoices.find(i => i.status === 'pending' || i.status === 'overdue');
   const nextDegreeProgress = Math.round((student.currentAttendanceCount / student.classesForNextDegree) * 100);
@@ -297,9 +301,20 @@ export const StudentView: React.FC<StudentViewProps> = ({
               <h3 className="text-xs font-bold uppercase tracking-wider text-slate-400">
                 Grade de Treinos de Hoje (Quinta-feira)
               </h3>
-              <span className="text-[10px] text-emerald-400 font-semibold bg-emerald-950/60 px-2 py-0.5 rounded-full border border-emerald-800/40">
-                Tatames Abertos
-              </span>
+              <div className="flex items-center gap-1.5">
+                <button
+                  type="button"
+                  onClick={() => setIsHoursModalOpen(true)}
+                  className="text-[10px] text-amber-300 font-bold bg-amber-500/15 hover:bg-amber-500/25 px-2.5 py-0.5 rounded-full border border-amber-500/30 flex items-center gap-1 transition"
+                  title="Ver todos os horários e dias de funcionamento da academia"
+                >
+                  <Clock className="w-3 h-3 text-amber-400" />
+                  <span>Horários Gerais</span>
+                </button>
+                <span className="text-[10px] text-emerald-400 font-semibold bg-emerald-950/60 px-2 py-0.5 rounded-full border border-emerald-800/40">
+                  Tatames Abertos
+                </span>
+              </div>
             </div>
 
             {classes.map((cls) => {
@@ -748,6 +763,37 @@ export const StudentView: React.FC<StudentViewProps> = ({
           </div>
         )}
       </div>
+
+      {/* Modal de Horários Gerais da Academia */}
+      {isHoursModalOpen && (
+        <AcademyOperatingHoursModal
+          isOpen={isHoursModalOpen}
+          onClose={() => setIsHoursModalOpen(false)}
+          academy={
+            activeAcademy || {
+              id: 'acad_loyalty_jiujitsu',
+              name: academyName || 'Loyalty Jiu-Jitsu',
+              shortName: 'Loyalty BJJ',
+              branch: 'Matriz Oficial • CE',
+              cnpj: '58.087.630/0001-78',
+              phone: '(85) 98765-4321',
+              city: 'Fortaleza',
+              state: 'CE',
+              address: 'Av. Beira Mar, 2800',
+              neighborhood: 'Meireles',
+              cep: '60165-121',
+              headInstructor: 'Messias Batista da Silva Junior (• Mestre Fundador)',
+              crefNumber: '019844-G/CE',
+              activeStudentsCount: 350,
+              studentCapacity: 350,
+              tatamiAreaM2: 220,
+              pixKey: '58087630378',
+              pixKeyType: 'cpf',
+              createdAt: new Date().toISOString()
+            } as RegisteredAcademy
+          }
+        />
+      )}
     </div>
   );
 };
