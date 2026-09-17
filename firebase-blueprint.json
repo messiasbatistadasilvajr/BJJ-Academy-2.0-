@@ -21,13 +21,15 @@
         "category": { "type": "string", "maxLength": 50 },
         "weightKg": { "type": "number" },
         "streakWeeks": { "type": "number" },
-        "academyId": { "type": "string", "maxLength": 128 }
+        "academyId": { "type": "string", "maxLength": 128 },
+        "tenantId": { "type": "string", "maxLength": 128 },
+        "status": { "type": "string", "enum": ["ATIVO", "INATIVO"] }
       },
       "required": ["id", "name", "belt", "stripes"]
     },
     "Academy": {
       "title": "Academy",
-      "description": "Affiliated or headquarters BJJ Academy unit",
+      "description": "Affiliated or headquarters BJJ Academy unit (Tenant)",
       "type": "object",
       "properties": {
         "id": { "type": "string", "maxLength": 128 },
@@ -39,7 +41,15 @@
         "voiceEnabled": { "type": "boolean" },
         "voiceStyle": { "type": "string", "maxLength": 50 },
         "pixKey": { "type": "string", "maxLength": 100 },
-        "activeStudentsCount": { "type": "number" }
+        "activeStudentsCount": { "type": "number" },
+        "plano_tipo": { "type": "string", "enum": ["BRONZE", "PRATA", "OURO"] },
+        "limite_alunos": { "type": "number" },
+        "status": { "type": "string", "enum": ["ATIVO", "INATIVO", "BLOQUEADO"] },
+        "asaas_api_key": { "type": "string", "maxLength": 255 },
+        "asaas_wallet_id": { "type": "string", "maxLength": 100 },
+        "asaas_customer_id": { "type": "string", "maxLength": 100 },
+        "asaas_subscription_id": { "type": "string", "maxLength": 100 },
+        "overdue_since": { "type": "string", "maxLength": 50 }
       },
       "required": ["id", "name", "shortName", "city"]
     },

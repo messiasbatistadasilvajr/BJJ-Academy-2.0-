@@ -99,6 +99,8 @@ export interface StudentProfile {
   weightKg: number;
   promotions: PromotionRecord[];
   streakWeeks: number;
+  status?: 'ATIVO' | 'INATIVO'; // Validação rigorosa de teto SaaS por academia
+  tenantId?: string; // Multi-tenant academy identifier
 
   // Identificação Civil & Dados Pessoais
   birthDate?: string;
@@ -303,7 +305,9 @@ export interface AsaasPaymentPayload {
   clientPaymentDate?: string | null;
   installmentNumber?: number | null;
   invoiceUrl?: string;
+  bankSlipUrl?: string;
   invoiceNumber?: string;
+  subscription?: string;
   externalReference?: string; // Mapeia para o ID interno da Invoice ou Aluno
   deleted?: boolean;
   anticipated?: boolean;
@@ -338,12 +342,16 @@ export interface FinancialAuditLog {
     | 'EXPENSE_PAID'
     | 'PLAN_CHANGED'
     | 'SPLIT_PROCESSED'
-    | 'SANSAO_QUERY_EXECUTED';
-  entity: 'invoice' | 'webhook' | 'expense' | 'student' | 'split' | 'financial_metric';
+    | 'SANSAO_QUERY_EXECUTED'
+    | 'STUDENT_ENROLLMENT_INACTIVE_BYPASS'
+    | 'STUDENT_ENROLLMENT_BLOCKED_LIMIT_REACHED'
+    | 'STUDENT_ENROLLMENT_APPROVED'
+    | 'TENANT_PLAN_UPGRADED';
+  entity: 'invoice' | 'webhook' | 'expense' | 'student' | 'split' | 'financial_metric' | 'tenant_subscription';
   entityId: string;
   timestamp: string;
-  origin: 'asaas_webhook' | 'financial_worker' | 'manager_ui' | 'system_cron' | 'sansao_ai';
-  result: 'success' | 'failed' | 'ignored_duplicate';
+  origin: 'asaas_webhook' | 'financial_worker' | 'manager_ui' | 'system_cron' | 'sansao_ai' | 'database_tier_rule' | 'saas_billing';
+  result: 'success' | 'failed' | 'ignored_duplicate' | 'blocked';
   details?: Record<string, any>;
 }
 
@@ -617,6 +625,57 @@ export type AcademyVoiceStyle = 'mercado_livre' | 'tatame_master' | 'energetic' 
 export type NotificationFormat = 'name_and_title' | 'name_only' | 'full_message';
 export type ChimeType = 'mercado_livre' | 'tatame_bell' | 'chime_bright' | 'gong';
 
+// -------------------------------------------------------------
+// MODELAGEM SAAS MULTI-TENANT & TRAVA DE PLANOS NO BANCO
+// -------------------------------------------------------------
+export type SaasPlanTier = 'BRONZE' | 'PRATA' | 'OURO';
+
+export const SAAS_PLAN_LIMITS: Record<SaasPlanTier, number> = {
+  BRONZE: 40,
+  PRATA: 150,
+  OURO: 999999
+};
+
+export interface SaasPlanInfo {
+  tier: SaasPlanTier;
+  label: string;
+  limit: number;
+  monthlyBRL: number;
+  description: string;
+  badgeColor: string;
+  features: string[];
+}
+
+export const SAAS_PLAN_DETAILS: Record<SaasPlanTier, SaasPlanInfo> = {
+  BRONZE: {
+    tier: 'BRONZE',
+    label: 'Plano Bronze',
+    limit: 40,
+    monthlyBRL: 69.90,
+    description: 'Limite estrito de até 40 alunos ativos. Cobranças manuais no Asaas.',
+    badgeColor: 'from-amber-700 to-amber-900 border-amber-600/80 text-amber-200',
+    features: ['Até 40 alunos ativos', 'Cobranças manuais no Asaas', 'Subconta Asaas dedicada', 'Grade de Turmas & Check-in']
+  },
+  PRATA: {
+    tier: 'PRATA',
+    label: 'Plano Prata',
+    limit: 150,
+    monthlyBRL: 129.90,
+    description: 'Limite estrito de até 150 alunos ativos. Automação de recorrência + Chamada por Foto Gemini AI.',
+    badgeColor: 'from-slate-400 to-slate-600 border-slate-300/80 text-slate-100',
+    features: ['Até 150 alunos ativos', 'Automação de recorrência Asaas', 'Chamada por Foto Gemini AI', 'Radar de Retenção & Churn']
+  },
+  OURO: {
+    tier: 'OURO',
+    label: 'Plano Ouro (Enterprise)',
+    limit: 999999,
+    monthlyBRL: 249.90,
+    description: 'Alunos ilimitados. Automação completa + Split de pagamentos para professores + AI Coach.',
+    badgeColor: 'from-yellow-400 via-amber-500 to-amber-600 border-yellow-300 text-slate-950 font-bold',
+    features: ['Alunos Ilimitados (Sem Teto)', 'Split de pagamentos para professores & Master', 'AI Coach & Sansão IA', 'Automação completa']
+  }
+};
+
 export interface AcademyPricingPlan {
   id: string;
   name: string; // e.g. 'Mensal Ilimitado', 'Trimestral VIP', 'Anual Master', 'Kids Tatame'
@@ -674,6 +733,8 @@ export interface RegisteredAcademy {
   bankAccount?: string;
   monthlyRevenueTarget?: number;
   status?: 'active' | 'pending_approval' | 'suspended';
+  saasPlanTier?: SaasPlanTier; // 'BRONZE' (40), 'PRATA' (150), 'OURO' (999999)
+  maxActiveStudentsLimit?: number; // Teto de alunos ativos permitido
   platformPlan?: 'basic' | 'pro' | 'enterprise';
   monthlyPlatformFeeBRL?: number;
   platformFeeStatus?: 'paid' | 'pending' | 'overdue';

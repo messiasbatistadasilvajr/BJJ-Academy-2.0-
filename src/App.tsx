@@ -391,6 +391,21 @@ export default function App() {
     }, 5000);
   };
 
+  // Handle SaaS Plan Upgrade & Academy Settings
+  const handleUpdateAcademy = (updatedAcademy: RegisteredAcademy) => {
+    setAcademies((prev) =>
+      prev.map((a) => (a.id === updatedAcademy.id ? updatedAcademy : a))
+    );
+    saveAcademyToFirestore(updatedAcademy).catch((err) => {
+      console.warn('Sync academy to Firestore error:', err);
+    });
+    triggerPushNotification(
+      '🚀 Plano da Academia Atualizado!',
+      `O plano da ${updatedAcademy.name} agora é ${updatedAcademy.saasPlanTier}. Limite alterado para ${updatedAcademy.maxActiveStudentsLimit === 999999 ? 'Ilimitado' : updatedAcademy.maxActiveStudentsLimit} alunos ativos.`,
+      'announcement'
+    );
+  };
+
   // Student Check-in
   const handleToggleCheckIn = (classId: string) => {
     setClasses((prev) =>
@@ -1258,6 +1273,8 @@ export default function App() {
           );
         }}
         academyName={activeAcademy.name}
+        activeAcademy={activeAcademy}
+        onUpdateAcademy={handleUpdateAcademy}
       />
 
       {/* ☁️ Cloud Database Architecture & Real-Time Sync Status Modal */}

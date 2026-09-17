@@ -7,6 +7,9 @@ import { financialQueueService } from './server/services/queueService';
 import { financialAuditService } from './server/services/financialAuditService';
 import { financialWorker } from './server/services/financialWorker';
 import { SansaoFinancialQueryService } from './server/services/sansaoFinancialQueryService';
+import { tenantValidationService } from './server/services/tenantValidationService';
+import { asaasSubaccountService } from './server/services/asaasSubaccountService';
+import { whatsappService } from './server/services/whatsappService';
 
 const PORT = 3000;
 
@@ -187,6 +190,10 @@ async function startServer() {
         externalReference: targetId,
         invoiceNumber: `BJJ-SIM-${Math.floor(Math.random() * 9000 + 1000)}`,
         customer: tenantId,
+        customerName: studentName || 'Aluno Tatame',
+        studentName: studentName || 'Aluno Tatame',
+        phone: '85998765432',
+        invoiceUrl: `https://sandbox.asaas.com/i/pay_${Date.now()}`,
         description: `Mensalidade BJJ Academy - ${studentName || 'Aluno Tatame'}`
       }
     };
@@ -235,7 +242,321 @@ async function startServer() {
   });
 
   // -----------------------------------------------------------------
-  // 6. VITE MIDDLEWARE & STATIC ASSETS
+  // 6. DATABASE TIER SAAS PLAN VALIDATION & ACTIVE STUDENTS LOCK
+  // Regra inviolável no Backend / Database Tier para validação de teto de alunos
+  // -----------------------------------------------------------------
+  
+  // Endpoint de Validação Pré-Insert de Aluno
+  app.post('/api/students/validate-and-enroll', (req, res) => {
+    const { tenantId, student, clientCountOverride } = req.body;
+
+    if (!tenantId || !student) {
+      return res.status(400).json({
+        success: false,
+        error: 'BAD_REQUEST',
+        message: 'Parâmetros tenantId e dados do aluno são obrigatórios.'
+      });
+    }
+
+    const validation = tenantValidationService.validateStudentEnrollment({
+      tenantId,
+      student,
+      clientCountOverride
+    });
+
+    if (!validation.allowed) {
+      return res.status(403).json({
+        success: false,
+        error: validation.code,
+        message: validation.message,
+        tenantId: validation.tenantId,
+        tenantName: validation.tenantName,
+        planTier: validation.planTier,
+        limit: validation.limit,
+        currentActive: validation.currentActive,
+        remainingSlots: validation.remainingSlots,
+        suggestedUpgradeTier: validation.suggestedUpgradeTier
+      });
+    }
+
+    return res.status(200).json({
+      success: true,
+      status: 'APPROVED',
+      message: validation.message,
+      tenantId: validation.tenantId,
+      tenantName: validation.tenantName,
+      planTier: validation.planTier,
+      limit: validation.limit,
+      currentActive: validation.currentActive,
+      remainingSlots: validation.remainingSlots
+    });
+  });
+
+  // Endpoint para Consultar Status do Plano do Tenant
+  app.get('/api/tenants/:tenantId/plan-status', (req, res) => {
+    const { tenantId } = req.params;
+    const clientCountOverride = req.query.activeCount ? parseInt(req.query.activeCount as string, 10) : undefined;
+    const status = tenantValidationService.getPlanStatus(tenantId, clientCountOverride);
+    res.json(status);
+  });
+
+  // Endpoint de Upgrade de Plano SaaS (Liberando vagas instantaneamente)
+  app.post('/api/tenants/:tenantId/upgrade-plan', (req, res) => {
+    const { tenantId } = req.params;
+    const { newPlanTier } = req.body;
+
+    if (!newPlanTier || !['BRONZE', 'PRATA', 'OURO'].includes(newPlanTier)) {
+      return res.status(400).json({
+        error: 'INVALID_PLAN_TIER',
+        message: 'Plano inválido. Selecione BRONZE, PRATA ou OURO.'
+      });
+    }
+
+    const upgradeResult = tenantValidationService.upgradePlan(tenantId, newPlanTier);
+    res.json(upgradeResult);
+  });
+
+  // Endpoint de Sincronia de Contagem de Ativos
+  app.post('/api/tenants/:tenantId/sync-count', (req, res) => {
+    const { tenantId } = req.params;
+    const { count } = req.body;
+
+    if (typeof count === 'number') {
+      tenantValidationService.updateActiveCount(tenantId, count);
+    }
+    const status = tenantValidationService.getPlanStatus(tenantId);
+    res.json(status);
+  });
+
+  // -----------------------------------------------------------------
+  // 7. ASAAS SUBCONTAS, SPLIT DE PAGAMENTO E ASSINATURAS DO SOFTWARE
+  // Arquitetura Financeira Multi-Tenant (BJJACADEMY)
+  // -----------------------------------------------------------------
+
+  // 7.1 Cadastrar Aluno com Validação Estrita no Backend (cadastrarAluno)
+  app.post('/api/tenants/:tenantId/students/enroll', async (req, res) => {
+    const { tenantId } = req.params;
+    const dadosAluno = req.body;
+
+    try {
+      const novoAluno = await asaasSubaccountService.cadastrarAluno(tenantId, dadosAluno);
+      return res.status(201).json({
+        success: true,
+        message: `Aluno ${novoAluno.nome} matriculado com sucesso no sistema!`,
+        student: novoAluno
+      });
+    } catch (err: any) {
+      console.warn(`[Student Enrollment Blocked] Tenant ${tenantId}:`, err.message);
+      const isLimit = err.code === 'LIMIT_REACHED';
+      const isBlocked = err.message?.includes('ACADEMY_BLOCKED');
+
+      return res.status(isLimit || isBlocked ? 403 : 400).json({
+        success: false,
+        error: isLimit ? 'LIMIT_REACHED' : isBlocked ? 'ACADEMY_BLOCKED' : 'VALIDATION_ERROR',
+        message: err.message,
+        tenantId,
+        currentActive: err.currentActive,
+        limit: err.limit,
+        suggestedTier: err.suggestedTier
+      });
+    }
+  });
+
+  // 7.2 Assinatura Mensal da Academia para a BJJACADEMY Master (POST /v3/subscriptions)
+  app.post('/api/tenants/:tenantId/asaas/subscription', async (req, res) => {
+    const { tenantId } = req.params;
+    const { customerId, planTier, cardToken } = req.body;
+
+    if (!customerId || !planTier) {
+      return res.status(400).json({
+        error: 'BAD_REQUEST',
+        message: 'Campos customerId e planTier (BRONZE, PRATA, OURO) são obrigatórios.'
+      });
+    }
+
+    try {
+      const subscription = await asaasSubaccountService.createTenantSoftwareSubscription(
+        tenantId,
+        customerId,
+        planTier,
+        cardToken
+      );
+
+      // Também sincroniza a regra de teto no serviço de validação
+      tenantValidationService.upgradePlan(tenantId, planTier);
+
+      return res.status(200).json({
+        success: true,
+        message: `Assinatura recorrente do plano ${planTier} criada com sucesso no Asaas.`,
+        subscription
+      });
+    } catch (err: any) {
+      console.error('[Asaas Subscription Error]:', err.message);
+      return res.status(500).json({
+        error: 'SUBSCRIPTION_CREATION_FAILED',
+        message: err.message
+      });
+    }
+  });
+
+  // 7.3 Webhook Asaas para Mensalidades das Academias (Tenants)
+  // Trata PAYMENT_RECEIVED (ativação imediata) e PAYMENT_OVERDUE (carência de 3 dias)
+  app.post('/api/webhooks/asaas/tenants', async (req, res) => {
+    const tokenHeader = (req.headers['asaas-access-token'] || req.headers['authorization']) as string | undefined;
+    const authResult = validateWebhookAuth(tokenHeader);
+
+    if (!authResult.isAuthorized) {
+      return res.status(401).json({
+        error: 'UNAUTHORIZED',
+        message: 'Token de webhook inválido.'
+      });
+    }
+
+    const { event, payment } = req.body;
+    if (!event || !payment) {
+      return res.status(400).json({ error: 'Payload incompleto.' });
+    }
+
+    try {
+      const result = asaasSubaccountService.handleTenantSubscriptionWebhook(event, payment);
+      return res.status(200).json({
+        success: true,
+        event,
+        ...result
+      });
+    } catch (err: any) {
+      console.error('[Tenant Webhook Error]:', err);
+      return res.status(500).json({ error: 'INTERNAL_ERROR', message: err.message });
+    }
+  });
+
+  // 7.4 Criação da Subconta Asaas da Academia (POST /v3/accounts)
+  // Onboarding onde o dinheiro dos alunos cairá direto
+  app.post('/api/tenants/:tenantId/asaas/subaccount', async (req, res) => {
+    const { tenantId } = req.params;
+    const subaccountData = req.body;
+
+    if (!subaccountData.email || !subaccountData.cpfCnpj) {
+      return res.status(400).json({
+        error: 'BAD_REQUEST',
+        message: 'Campos email e cpfCnpj são obrigatórios para abertura de subconta Asaas.'
+      });
+    }
+
+    try {
+      const subaccount = await asaasSubaccountService.createTenantSubaccount(tenantId, subaccountData);
+      return res.status(201).json({
+        success: true,
+        message: 'Subconta Asaas criada com sucesso. Chave de API e Carteira vinculadas ao Tenant.',
+        subaccount
+      });
+    } catch (err: any) {
+      console.error('[Asaas Subaccount Error]:', err.message);
+      return res.status(500).json({
+        error: 'SUBACCOUNT_CREATION_FAILED',
+        message: err.message
+      });
+    }
+  });
+
+  // 7.5 Cobrança de Aluno com Split para a Carteira Master (POST /v3/payments)
+  // Cai direto na subconta da academia retendo a taxa fixa da BJJACADEMY Master
+  app.post('/api/tenants/:tenantId/students/charge-with-split', async (req, res) => {
+    const { tenantId } = req.params;
+    const paymentData = req.body;
+
+    if (!paymentData.studentId || !paymentData.value || !paymentData.dueDate) {
+      return res.status(400).json({
+        error: 'BAD_REQUEST',
+        message: 'Campos studentId, value e dueDate são obrigatórios para emitir cobrança com split.'
+      });
+    }
+
+    try {
+      const payment = await asaasSubaccountService.createStudentPaymentWithSplit(tenantId, paymentData);
+      return res.status(201).json({
+        success: true,
+        message: 'Cobrança do aluno gerada com Split automático para a BJJACADEMY Master.',
+        payment
+      });
+    } catch (err: any) {
+      console.error('[Student Split Payment Error]:', err.message);
+      return res.status(400).json({
+        error: 'PAYMENT_GENERATION_FAILED',
+        message: err.message
+      });
+    }
+  });
+
+  // 7.6 Consulta de Configuração Financeira do Tenant & Split
+  app.get('/api/tenants/:tenantId/asaas/config', (req, res) => {
+    const { tenantId } = req.params;
+    const tenant = asaasSubaccountService.getTenant(tenantId);
+
+    if (!tenant) {
+      return res.status(404).json({ error: 'TENANT_NOT_FOUND', message: 'Academia não encontrada.' });
+    }
+
+    return res.json({
+      tenantId: tenant.id,
+      nome: tenant.nome,
+      plano_tipo: tenant.plano_tipo,
+      limite_alunos: tenant.limite_alunos,
+      status: tenant.status,
+      hasSubaccount: !!tenant.asaas_wallet_id,
+      asaas_wallet_id: tenant.asaas_wallet_id,
+      asaas_account_number: tenant.asaas_account_number,
+      asaas_subscription_id: tenant.asaas_subscription_id,
+      overdue_since: tenant.overdue_since,
+      blocked_at: tenant.blocked_at,
+      masterWalletId: asaasSubaccountService.getMasterWalletId(),
+      defaultSplitFixedFee: asaasSubaccountService.getDefaultSplitFee()
+    });
+  });
+
+  // 7.7 Alertas de Vencimento via WhatsApp (Evolution API / Z-API)
+  app.post('/api/whatsapp/send-overdue-alert', async (req, res) => {
+    const { alunoNome, alunoTelefone, academiaNome, linkPagamento, valor, dataVencimento, tenantId, alunoId } = req.body;
+
+    if (!alunoNome || !alunoTelefone) {
+      return res.status(400).json({
+        error: 'BAD_REQUEST',
+        message: 'Campos alunoNome e alunoTelefone são obrigatórios.'
+      });
+    }
+
+    try {
+      const result = await whatsappService.enviarAlertaVencimentoAluno({
+        alunoId,
+        alunoNome,
+        alunoTelefone,
+        academiaNome: academiaNome || 'Loyalty Jiu-Jitsu',
+        linkPagamento: linkPagamento || 'https://sandbox.asaas.com/i/pay_exemplo_123',
+        valor,
+        dataVencimento,
+        tenantId: tenantId || 'acad_loyalty_jiujitsu'
+      });
+
+      return res.status(200).json({
+        success: true,
+        message: `Alerta amigável de WhatsApp disparado para ${alunoNome}.`,
+        result
+      });
+    } catch (err: any) {
+      console.error('[WhatsApp Route Error]:', err);
+      return res.status(500).json({ error: 'WHATSAPP_DISPATCH_FAILED', message: err.message });
+    }
+  });
+
+  app.get('/api/whatsapp/logs', (req, res) => {
+    return res.json({
+      success: true,
+      logs: whatsappService.getRecentLogs()
+    });
+  });
+
+  // -----------------------------------------------------------------
+  // 8. VITE MIDDLEWARE & STATIC ASSETS
   // -----------------------------------------------------------------
   if (process.env.NODE_ENV !== 'production') {
     const vite = await createViteServer({

@@ -2,6 +2,8 @@ import { financialQueueService, FinancialQueueJob } from './queueService';
 import { idempotencyService } from './idempotencyService';
 import { FinancialStateMachine, InternalInvoiceStatus } from './stateMachine';
 import { financialAuditService } from './financialAuditService';
+import { whatsappService } from './whatsappService';
+import { asaasSubaccountService } from './asaasSubaccountService';
 import { AsaasWebhookPayload } from '../../src/types';
 
 export interface ProcessedWebhookNotification {
@@ -148,6 +150,37 @@ class FinancialWorker {
         auditAction = 'PAYMENT_REFUNDED';
         notifTitle = '↩️ Estorno Processado (Asaas)';
         notifBody = `Estorno de R$ ${(payment?.value || 0).toFixed(2)} efetuado com sucesso.`;
+      }
+
+      // 4.1 Processa Assinatura de Software do Tenant (se for evento de plano SaaS)
+      if (payment?.subscription) {
+        asaasSubaccountService.handleTenantSubscriptionWebhook(eventType, payment);
+      }
+
+      // 4.2 Disparo Automatizado de Alerta via WhatsApp para Alunos (PAYMENT_OVERDUE)
+      if (eventType === 'PAYMENT_OVERDUE' && !payment?.subscription) {
+        const studentName = (payment as any)?.studentName ||
+          payment?.description?.split('-')?.[1]?.trim() ||
+          (payment as any)?.customerName ||
+          'Atleta Loyalty BJJ';
+        const studentPhone = (payment as any)?.mobilePhone || (payment as any)?.phone || '85998765432';
+        const academyName = (payment as any)?.academyName || 'Loyalty Jiu-Jitsu';
+        const linkPagamento = payment?.invoiceUrl || payment?.bankSlipUrl || `https://sandbox.asaas.com/i/${paymentId}`;
+
+        try {
+          await whatsappService.enviarAlertaVencimentoAluno({
+            alunoNome: studentName,
+            alunoTelefone: studentPhone,
+            academiaNome: academyName,
+            linkPagamento,
+            valor: payment?.value,
+            dataVencimento: payment?.dueDate,
+            tenantId
+          });
+          console.log(`[Worker] Alerta de WhatsApp de vencimento disparado para ${studentName} (${studentPhone})`);
+        } catch (wppErr: any) {
+          console.warn('[Worker] Falha ao disparar alerta WhatsApp (não bloqueia job):', wppErr.message);
+        }
       }
 
       financialAuditService.record({

@@ -1,0 +1,168 @@
+// =================================================================
+// BJJACADEMY - SCHEMA DE BANCO DE DADOS MULTI-TENANT (PRISMA ORM)
+// Modelagem robusta para isolamento de inquilinos, cotas e split Asaas
+// =================================================================
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+// -------------------------------------------------------------
+// ENUMS DE SISTEMA
+// -------------------------------------------------------------
+
+enum SaasPlanTipo {
+  BRONZE // R$ 69,90/mês - Até 40 alunos ativos - Cobranças manuais no Asaas
+  PRATA  // R$ 129,90/mês - Até 150 alunos ativos - Recorrência + Gemini AI Check-in
+  OURO   // R$ 249,90/mês - Alunos ilimitados (999.999) - Split + AI Coach
+}
+
+enum TenantStatus {
+  ATIVO
+  INATIVO
+  BLOQUEADO
+}
+
+enum StudentStatus {
+  ATIVO
+  INATIVO
+}
+
+enum BillingCycle {
+  MONTHLY
+  QUARTERLY
+  SEMIANNUALLY
+  YEARLY
+}
+
+enum PaymentStatus {
+  PENDING
+  RECEIVED
+  CONFIRMED
+  OVERDUE
+  REFUNDED
+  RECEIVED_IN_CASH
+}
+
+// -------------------------------------------------------------
+// TABELA TENANTS (ACADEMIAS INQUILINAS)
+// -------------------------------------------------------------
+model Tenant {
+  id                     String        @id @default(uuid()) @db.Uuid
+  nome                   String        @db.VarChar(150)
+  plano_tipo             SaasPlanTipo  @default(BRONZE)
+  limite_alunos          Int           @default(40) // 40 (Bronze), 150 (Prata), 999999 (Ouro)
+  status                 TenantStatus  @default(ATIVO)
+  
+  // Asaas Subcontas & Integração Financeira
+  asaas_api_key          String?       @db.VarChar(255) // API Key individual da subconta
+  asaas_wallet_id        String?       @db.VarChar(100) // Wallet ID da subconta
+  asaas_account_number   String?       @db.VarChar(50)
+  asaas_customer_id      String?       @db.VarChar(100) // ID do cliente na conta master para cobrança do SaaS
+  asaas_subscription_id  String?       @db.VarChar(100) // ID da assinatura do software
+  
+  // Regra de Carência e Inadimplência
+  overdue_since          DateTime?     // Data em que entrou em atraso (carência de 3 dias)
+  blocked_at             DateTime?     // Data do bloqueio de acesso ao software
+  
+  // Relacionamentos
+  students               Student[]
+  subscriptions          TenantSubscription[]
+  payments               StudentPayment[]
+
+  createdAt              DateTime      @default(now()) @map("created_at")
+  updatedAt              DateTime      @updatedAt @map("updated_at")
+
+  @@index([plano_tipo])
+  @@index([status])
+  @@map("tenants")
+}
+
+// -------------------------------------------------------------
+// TABELA STUDENTS (ALUNOS / ATLETAS DO TATAME)
+// -------------------------------------------------------------
+model Student {
+  id                     String        @id @default(uuid()) @db.Uuid
+  tenant_id              String        @db.Uuid
+  tenant                 Tenant        @relation(fields: [tenant_id], references: [id], onDelete: Cascade)
+  
+  nome                   String        @db.VarChar(150)
+  email                  String?       @db.VarChar(150)
+  phone                  String?       @db.VarChar(30)
+  status                 StudentStatus @default(ATIVO)
+  
+  // Dados de Tatame
+  faixa                  String        @default("white") @db.VarChar(30)
+  graus                  Int           @default(0)
+  categoria              String?       @db.VarChar(50)
+  peso_kg                Decimal?      @db.Decimal(5, 2)
+  
+  // Asaas Cliente
+  asaas_customer_id      String?       @db.VarChar(100)
+  
+  payments               StudentPayment[]
+
+  createdAt              DateTime      @default(now()) @map("created_at")
+  updatedAt              DateTime      @updatedAt @map("updated_at")
+
+  @@index([tenant_id, status])
+  @@map("students")
+}
+
+// -------------------------------------------------------------
+// TABELA TENANT_SUBSCRIPTIONS (MENSALIDADE DO SOFTWARE BJJACADEMY)
+// Cobrança recorrente da academia em favor da conta Master
+// -------------------------------------------------------------
+model TenantSubscription {
+  id                     String        @id @default(uuid()) @db.Uuid
+  tenant_id              String        @db.Uuid
+  tenant                 Tenant        @relation(fields: [tenant_id], references: [id], onDelete: Cascade)
+  
+  asaas_subscription_id  String        @unique @db.VarChar(100)
+  plano_tipo             SaasPlanTipo
+  valor_mensal           Decimal       @db.Decimal(10, 2) // 69.90, 129.90, 249.90
+  status                 String        @default("ACTIVE") @db.VarChar(50)
+  proxima_cobranca       DateTime?
+  
+  createdAt              DateTime      @default(now()) @map("created_at")
+  updatedAt              DateTime      @updatedAt @map("updated_at")
+
+  @@map("tenant_subscriptions")
+}
+
+// -------------------------------------------------------------
+// TABELA STUDENT_PAYMENTS (MENSALIDADES DOS ALUNOS COM SPLIT)
+// Emitidas na subconta do Tenant com split para a Master
+// -------------------------------------------------------------
+model StudentPayment {
+  id                     String        @id @default(uuid()) @db.Uuid
+  tenant_id              String        @db.Uuid
+  tenant                 Tenant        @relation(fields: [tenant_id], references: [id], onDelete: Cascade)
+  
+  student_id             String        @db.Uuid
+  student                Student       @relation(fields: [student_id], references: [id], onDelete: Cascade)
+  
+  asaas_payment_id       String        @unique @db.VarChar(100)
+  valor_bruto            Decimal       @db.Decimal(10, 2)
+  status                 PaymentStatus @default(PENDING)
+  
+  // Split de Pagamento
+  split_master_wallet_id String?       @db.VarChar(100)
+  split_fixed_fee        Decimal?      @db.Decimal(10, 2) // ex: R$ 2.00 retido para a BJJACADEMY
+  valor_liquido_academia Decimal       @db.Decimal(10, 2) // Valor que cai direto na conta da academia
+  
+  vencimento             DateTime
+  data_pagamento         DateTime?
+  
+  createdAt              DateTime      @default(now()) @map("created_at")
+  updatedAt              DateTime      @updatedAt @map("updated_at")
+
+  @@index([tenant_id, status])
+  @@index([asaas_payment_id])
+  @@map("student_payments")
+}

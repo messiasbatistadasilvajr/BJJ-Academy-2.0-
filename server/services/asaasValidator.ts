@@ -37,16 +37,25 @@ const KNOWN_ASAAS_EVENTS = new Set([
 
 /**
  * Validates Asaas Webhook Authenticity via asaas-access-token header
+ * Verifies against ASAAS_WEBHOOK_SECRET or ASAAS_WEBHOOK_ACCESS_TOKEN
  */
 export function validateWebhookAuth(tokenHeader: string | undefined): { isAuthorized: boolean; reason?: string } {
-  const expectedToken = process.env.ASAAS_WEBHOOK_ACCESS_TOKEN;
+  const expectedToken = process.env.ASAAS_WEBHOOK_SECRET || process.env.ASAAS_WEBHOOK_ACCESS_TOKEN;
 
-  // If ASAAS_WEBHOOK_ACCESS_TOKEN is configured in the environment, enforce strict match
+  // If ASAAS_WEBHOOK_SECRET or ASAAS_WEBHOOK_ACCESS_TOKEN is configured, enforce strict match
   if (expectedToken && expectedToken.trim().length > 0) {
-    if (!tokenHeader || tokenHeader.trim() !== expectedToken.trim()) {
+    if (!tokenHeader) {
       return {
         isAuthorized: false,
         reason: 'Invalid or missing asaas-access-token header'
+      };
+    }
+
+    const cleanToken = tokenHeader.startsWith('Bearer ') ? tokenHeader.slice(7).trim() : tokenHeader.trim();
+    if (cleanToken !== expectedToken.trim()) {
+      return {
+        isAuthorized: false,
+        reason: 'Invalid or mismatched asaas-access-token header'
       };
     }
   }
