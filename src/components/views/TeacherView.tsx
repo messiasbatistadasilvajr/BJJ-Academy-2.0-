@@ -108,8 +108,12 @@ export const TeacherView: React.FC<TeacherViewProps> = ({
   const [tournNotes, setTournNotes] = useState('Atenção ao peso no dia anterior! Treinos de gás e ritmo às terças e quintas.');
 
   const currentClass = classes.find(c => c.id === selectedClassId) || classes[0];
+  const registeredStudents = currentClass?.registeredStudents || [];
+  const presentCount = registeredStudents.filter(s => s.status === 'present').length;
+  const presentStudents = registeredStudents.filter(s => s.status === 'present');
 
   const handleExportAttendanceCSV = () => {
+    if (!currentClass) return;
     exportAttendanceReportCSV(currentClass);
   };
 
@@ -159,7 +163,7 @@ export const TeacherView: React.FC<TeacherViewProps> = ({
       id: `class_${Date.now()}`,
       name: newClassName.trim(),
       instructor: newClassInstructor.trim() || 'Mestre Rodrigo "Cavalo"',
-      instructorAvatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150',
+      instructorAvatar: '/bjj_media/bjj_professor_mestre.jpg',
       time: newClassTime.trim() || '19:00 - 20:15',
       duration: newClassDuration.trim() || '1h 15m',
       type: newClassType,
@@ -172,7 +176,7 @@ export const TeacherView: React.FC<TeacherViewProps> = ({
           id: 'student_1',
           name: 'Lucas Silva (Você)',
           belt: 'blue',
-          avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150',
+          avatar: '/bjj_media/bjj_student_male.jpg',
           status: 'pending',
           note: 'Regular no treino'
         },
@@ -180,7 +184,7 @@ export const TeacherView: React.FC<TeacherViewProps> = ({
           id: 'stu_matheus',
           name: 'Matheus Oliveira',
           belt: 'purple',
-          avatar: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=150',
+          avatar: '/bjj_media/bjj_student_male.jpg',
           status: 'pending',
           note: 'Treino de competição'
         },
@@ -188,7 +192,7 @@ export const TeacherView: React.FC<TeacherViewProps> = ({
           id: 'stu_gabriel',
           name: 'Gabriel Costa',
           belt: 'white',
-          avatar: 'https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?w=150',
+          avatar: '/bjj_media/bjj_student_male.jpg',
           status: 'pending'
         }
       ]
@@ -269,14 +273,11 @@ export const TeacherView: React.FC<TeacherViewProps> = ({
   const [isSparringRoundsOpen, setIsSparringRoundsOpen] = useState<boolean>(false);
   const [activeRoundTab, setActiveRoundTab] = useState<'A' | 'B'>('A');
 
-  const presentCount = currentClass.registeredStudents.filter(s => s.status === 'present').length;
-  const presentStudents = currentClass.registeredStudents.filter(s => s.status === 'present');
-
   // Item 3: Densidade e Capacidade do Tatame (Cálculo Físico-Marcial)
-  const matArea = currentClass.tatameAreaM2 || (currentClass.tatame.includes('2') ? 50 : 80);
+  const matArea = currentClass?.tatameAreaM2 || (currentClass?.tatame?.includes('2') ? 50 : 80);
   const sparringPairs = Math.floor(presentCount / 2);
   const m2PerPair = sparringPairs > 0 ? (matArea / sparringPairs).toFixed(1) : matArea.toFixed(1);
-  const maxSafePairs = currentClass.maxSafeSparringPairs || Math.floor(matArea / 8);
+  const maxSafePairs = currentClass?.maxSafeSparringPairs || Math.floor(matArea / 8);
 
   const densityStatus: 'safe' | 'moderate' | 'full' = 
     sparringPairs <= maxSafePairs * 0.7 ? 'safe' :

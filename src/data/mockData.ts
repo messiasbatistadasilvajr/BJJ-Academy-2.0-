@@ -11,7 +11,7 @@ export const mockStudent: StudentProfile = {
   name: 'Lucas Gracie Mendes',
   email: 'lucas.mendes@bjjacademy.com',
   phone: '(11) 98452-1920',
-  avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=200&auto=format&fit=crop&q=80',
+  avatar: '/bjj_media/bjj_student_male.jpg',
   belt: 'blue',
   stripes: 3,
   degreesNeededForNext: 4,
@@ -75,7 +75,7 @@ export const mockDependents: DependentStudent[] = [
     name: 'Pedro Henrique Mendes',
     email: 'marcelo.pai@gmail.com',
     phone: '(11) 99123-4567',
-    avatar: 'https://images.unsplash.com/photo-1543610892-0b1f7e6d8ac1?w=200&auto=format&fit=crop&q=80',
+    avatar: '/bjj_media/bjj_kid_student.jpg',
     belt: 'grey_white',
     stripes: 2,
     degreesNeededForNext: 4,
@@ -115,7 +115,7 @@ export const mockDependents: DependentStudent[] = [
     name: 'Sofia Mendes',
     email: 'marcelo.pai@gmail.com',
     phone: '(11) 99123-4567',
-    avatar: 'https://images.unsplash.com/photo-1517841905240-472988babdf9?w=200&auto=format&fit=crop&q=80',
+    avatar: '/bjj_media/bjj_kid_student.jpg',
     belt: 'white',
     stripes: 3,
     degreesNeededForNext: 4,
@@ -151,7 +151,7 @@ export const mockInitialStudents: StudentProfile[] = [
     name: 'Rafael "Pitbull" Costa',
     email: 'rafael.pitbull@bjjacademy.com',
     phone: '(11) 98765-4321',
-    avatar: 'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=200&auto=format&fit=crop&q=80',
+    avatar: '/bjj_media/bjj_student_male.jpg',
     belt: 'purple',
     stripes: 2,
     degreesNeededForNext: 4,
@@ -170,7 +170,7 @@ export const mockInitialStudents: StudentProfile[] = [
     name: 'Bruno Guimarães',
     email: 'bruno.guimaraes@bjjacademy.com',
     phone: '(11) 97654-3210',
-    avatar: 'https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?w=200&auto=format&fit=crop&q=80',
+    avatar: '/bjj_media/bjj_student_male.jpg',
     belt: 'brown',
     stripes: 1,
     degreesNeededForNext: 4,
@@ -189,7 +189,7 @@ export const mockInitialStudents: StudentProfile[] = [
     name: 'Mariana Duarte',
     email: 'mariana.duarte@bjjacademy.com',
     phone: '(11) 99887-6655',
-    avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=200&auto=format&fit=crop&q=80',
+    avatar: '/bjj_media/bjj_student_female.jpg',
     belt: 'blue',
     stripes: 2,
     degreesNeededForNext: 4,
@@ -208,7 +208,7 @@ export const mockInitialStudents: StudentProfile[] = [
     name: 'Marcos Vinicius Ribeiro',
     email: 'marcos.vinicius@gmail.com',
     phone: '(11) 98111-2233',
-    avatar: 'https://images.unsplash.com/photo-1522075469751-3a6694fb2f61?w=200&auto=format&fit=crop&q=80',
+    avatar: '/bjj_media/bjj_student_male.jpg',
     belt: 'blue',
     stripes: 1,
     degreesNeededForNext: 4,
@@ -227,7 +227,7 @@ export const mockInitialStudents: StudentProfile[] = [
     name: 'Camila Guimarães Barros',
     email: 'camila.barros@gmail.com',
     phone: '(11) 99444-5566',
-    avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=200&auto=format&fit=crop&q=80',
+    avatar: '/bjj_media/bjj_student_female.jpg',
     belt: 'white',
     stripes: 2,
     degreesNeededForNext: 4,
@@ -248,7 +248,7 @@ export const mockClasses: ClassSession[] = [
     id: 'class_01',
     name: 'Jiu-Jitsu Kids (6 a 11 anos)',
     instructor: 'Profª Beatriz Lima - Faixa Marrom',
-    instructorAvatar: 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=120&auto=format&fit=crop&q=80',
+    instructorAvatar: '/bjj_media/bjj_student_female.jpg',
     time: '17:30',
     duration: '50 min',
     type: 'Kids',
@@ -259,18 +259,18 @@ export const mockClasses: ClassSession[] = [
     tatameAreaM2: 50,
     maxSafeSparringPairs: 7,
     registeredStudents: [
-      { id: 'dep_pedro_01', name: 'Pedro Henrique Mendes', belt: 'grey', avatar: 'https://images.unsplash.com/photo-1543610892-0b1f7e6d8ac1?w=120&auto=format&fit=crop&q=80', status: 'present', note: 'Excelente foco no aquecimento' },
-      { id: 'dep_sofia_02', name: 'Sofia Mendes', belt: 'white', avatar: 'https://images.unsplash.com/photo-1517841905240-472988babdf9?w=120&auto=format&fit=crop&q=80', status: 'present', note: 'Ajudou os colegas na guarda' },
-      { id: 'kid_3', name: 'Enzo Gabriel Santos', belt: 'grey', avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=120&auto=format&fit=crop&q=80', status: 'present' },
-      { id: 'kid_4', name: 'Valentina Rossi', belt: 'white', avatar: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=120&auto=format&fit=crop&q=80', status: 'absent' },
-      { id: 'kid_5', name: 'Matheus Costa', belt: 'yellow', avatar: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=120&auto=format&fit=crop&q=80', status: 'present' }
+      { id: 'dep_pedro_01', name: 'Pedro Henrique Mendes', belt: 'grey', avatar: '/bjj_media/bjj_kid_student.jpg', status: 'present', note: 'Excelente foco no aquecimento' },
+      { id: 'dep_sofia_02', name: 'Sofia Mendes', belt: 'white', avatar: '/bjj_media/bjj_kid_student.jpg', status: 'present', note: 'Ajudou os colegas na guarda' },
+      { id: 'kid_3', name: 'Enzo Gabriel Santos', belt: 'grey', avatar: '/bjj_media/bjj_kid_student.jpg', status: 'present' },
+      { id: 'kid_4', name: 'Valentina Rossi', belt: 'white', avatar: '/bjj_media/bjj_kid_student.jpg', status: 'absent' },
+      { id: 'kid_5', name: 'Matheus Costa', belt: 'yellow', avatar: '/bjj_media/bjj_kid_student.jpg', status: 'present' }
     ]
   },
   {
     id: 'class_02',
     name: 'Jiu-Jitsu Fundamentos (Adulto)',
     instructor: 'Mestre Rodrigo "Cavalo" - 3º Grau',
-    instructorAvatar: 'https://images.unsplash.com/photo-1560250097-0b93528c311a?w=120&auto=format&fit=crop&q=80',
+    instructorAvatar: '/bjj_media/bjj_professor_mestre.jpg',
     time: '18:30',
     duration: '60 min',
     type: 'Fundamentos',
@@ -281,25 +281,25 @@ export const mockClasses: ClassSession[] = [
     tatameAreaM2: 80,
     maxSafeSparringPairs: 10,
     registeredStudents: [
-      { id: 'stu_lucas_01', name: 'Lucas Gracie Mendes', belt: 'blue', avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=120&auto=format&fit=crop&q=80', status: 'present' },
-      { id: 'stu_2', name: 'Gabriel Alencar', belt: 'white', avatar: 'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=120&auto=format&fit=crop&q=80', status: 'present' },
+      { id: 'stu_lucas_01', name: 'Lucas Gracie Mendes', belt: 'blue', avatar: '/bjj_media/bjj_student_male.jpg', status: 'present' },
+      { id: 'stu_2', name: 'Gabriel Alencar', belt: 'white', avatar: '/bjj_media/bjj_student_male.jpg', status: 'present' },
       { 
         id: 'stu_3', 
         name: 'Renato Silveira', 
         belt: 'blue', 
-        avatar: 'https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?w=120&auto=format&fit=crop&q=80', 
+        avatar: '/bjj_media/bjj_student_male.jpg', 
         status: 'present',
         hasInjuryWarning: true,
         injuryNote: 'Ombro direito em reabilitação (evitar projeções e chaves de ombro)',
         injurySeverity: 'moderate'
       },
-      { id: 'stu_4', name: 'Camila Guimarães', belt: 'white', avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=120&auto=format&fit=crop&q=80', status: 'pending' },
-      { id: 'stu_5', name: 'Felipe Duarte', belt: 'purple', avatar: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=120&auto=format&fit=crop&q=80', status: 'present' },
+      { id: 'stu_4', name: 'Camila Guimarães', belt: 'white', avatar: '/bjj_media/bjj_student_female.jpg', status: 'pending' },
+      { id: 'stu_5', name: 'Felipe Duarte', belt: 'purple', avatar: '/bjj_media/bjj_student_male.jpg', status: 'present' },
       { 
         id: 'stu_6', 
         name: 'Marcos Vinicius', 
         belt: 'blue', 
-        avatar: 'https://images.unsplash.com/photo-1522075469751-3a6694fb2f61?w=120&auto=format&fit=crop&q=80', 
+        avatar: '/bjj_media/bjj_student_male.jpg', 
         status: 'present',
         hasInjuryWarning: true,
         injuryNote: 'Entorse leve de tornozelo — apenas rola posicional sem chaves de pé',
@@ -311,7 +311,7 @@ export const mockClasses: ClassSession[] = [
     id: 'class_03',
     name: 'Submission / No-Gi (Sem Kimono)',
     instructor: 'Prof. Alexandre Peçanha - Faixa Preta',
-    instructorAvatar: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=120&auto=format&fit=crop&q=80',
+    instructorAvatar: '/bjj_media/bjj_professor_mestre.jpg',
     time: '20:00',
     duration: '75 min',
     type: 'No-Gi',
@@ -322,9 +322,9 @@ export const mockClasses: ClassSession[] = [
     tatameAreaM2: 80,
     maxSafeSparringPairs: 10,
     registeredStudents: [
-      { id: 'stu_lucas_01', name: 'Lucas Gracie Mendes', belt: 'blue', avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=120&auto=format&fit=crop&q=80', status: 'pending' },
-      { id: 'stu_7', name: 'Thiago Tavares', belt: 'brown', avatar: 'https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?w=120&auto=format&fit=crop&q=80', status: 'present' },
-      { id: 'stu_8', name: 'Leonardo Salles', belt: 'purple', avatar: 'https://images.unsplash.com/photo-1492562080023-ab3db95bfbce?w=120&auto=format&fit=crop&q=80', status: 'present' }
+      { id: 'stu_lucas_01', name: 'Lucas Gracie Mendes', belt: 'blue', avatar: '/bjj_media/bjj_student_male.jpg', status: 'pending' },
+      { id: 'stu_7', name: 'Thiago Tavares', belt: 'brown', avatar: '/bjj_media/bjj_student_male.jpg', status: 'present' },
+      { id: 'stu_8', name: 'Leonardo Salles', belt: 'purple', avatar: '/bjj_media/bjj_student_male.jpg', status: 'present' }
     ]
   }
 ];
@@ -335,258 +335,252 @@ export const mockInvoices: Invoice[] = [
     id: 'inv_current',
     studentId: 'stu_lucas_01',
     studentName: 'Lucas Gracie Mendes',
-    studentAvatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=120&auto=format&fit=crop&q=80',
+    studentAvatar: '/bjj_media/bjj_student_male.jpg',
     title: 'Mensalidade Plano Ilimitado - Setembro/2026',
     amount: 260.00,
     dueDate: '10/09/2026',
     status: 'pending',
-    academyId: 'acad_bjj_jardins',
-    academyName: 'BJJ Academy Jardins',
-    planName: 'Mensal Ilimitado',
-    pixCode: '00020126580014br.gov.bcb.pix0136bjjacademy-asaas-pix-982142105204000053039865406260.005802BR5918BJJ ACADEMY LTDA6009SAO PAULO62070503***6304E8A2',
-    invoiceNumber: 'BJJ-2026-09-0842'
+    academyId: 'acad_loyalty_jiujitsu',
+    academyName: 'Loyalty Jiu-Jitsu',
+    planName: 'Mensal Loyalty Black',
+    pixCode: '00020126580014br.gov.bcb.pix0136loyalty-bjj-pix-982142105204000053039865406260.005802BR5918LOYALTY JIU JITSU6009FORTALEZA62070503***6304E8A2',
+    invoiceNumber: 'LOY-2026-09-0842'
   },
   {
     id: 'inv_parent_pedro',
     studentId: 'dep_pedro_01',
     studentName: 'Pedro Henrique Mendes (Kids)',
-    studentAvatar: 'https://images.unsplash.com/photo-1543610892-0b1f7e6d8ac1?w=120&auto=format&fit=crop&q=80',
+    studentAvatar: '/bjj_media/bjj_kid_student.jpg',
     title: 'Mensalidade Kids - Setembro/2026',
-    amount: 210.00,
+    amount: 220.00,
     dueDate: '15/09/2026',
     status: 'pending',
-    academyId: 'acad_bjj_jardins',
-    academyName: 'BJJ Academy Jardins',
-    planName: 'Plano Kids Tatame',
-    pixCode: '00020126580014br.gov.bcb.pix0136bjjacademy-asaas-pix-pedro-2105204000053039865406210.005802BR5918BJJ ACADEMY LTDA6009SAO PAULO62070503***6304C921',
-    invoiceNumber: 'BJJ-KIDS-2026-09-12'
+    academyId: 'acad_loyalty_jiujitsu',
+    academyName: 'Loyalty Jiu-Jitsu',
+    planName: 'Loyalty Kids & Teens',
+    pixCode: '00020126580014br.gov.bcb.pix0136loyalty-bjj-pix-pedro-2205204000053039865406220.005802BR5918LOYALTY JIU JITSU6009FORTALEZA62070503***6304C921',
+    invoiceNumber: 'LOY-KIDS-2026-09-12'
   },
   {
     id: 'inv_parent_sofia',
     studentId: 'dep_sofia_02',
     studentName: 'Sofia Mendes (Baby Kids)',
-    studentAvatar: 'https://images.unsplash.com/photo-1517841905240-472988babdf9?w=120&auto=format&fit=crop&q=80',
+    studentAvatar: '/bjj_media/bjj_kid_student.jpg',
     title: 'Mensalidade Kids - Setembro/2026',
-    amount: 210.00,
+    amount: 220.00,
     dueDate: '15/09/2026',
     status: 'pending',
-    academyId: 'acad_bjj_jardins',
-    academyName: 'BJJ Academy Jardins',
-    planName: 'Plano Kids Tatame',
-    pixCode: '00020126580014br.gov.bcb.pix0136bjjacademy-asaas-pix-sofia-2105204000053039865406210.005802BR5918BJJ ACADEMY LTDA6009SAO PAULO62070503***6304B104',
-    invoiceNumber: 'BJJ-KIDS-2026-09-13'
+    academyId: 'acad_loyalty_jiujitsu',
+    academyName: 'Loyalty Jiu-Jitsu',
+    planName: 'Loyalty Kids & Teens',
+    pixCode: '00020126580014br.gov.bcb.pix0136loyalty-bjj-pix-sofia-2205204000053039865406220.005802BR5918LOYALTY JIU JITSU6009FORTALEZA62070503***6304B104',
+    invoiceNumber: 'LOY-KIDS-2026-09-13'
   },
   {
     id: 'inv_overdue_jardins_01',
     studentId: 'stu_marcos_01',
     studentName: 'Marcos Vinicius Ribeiro',
-    studentAvatar: 'https://images.unsplash.com/photo-1522075469751-3a6694fb2f61?w=120&auto=format&fit=crop&q=80',
-    title: 'Mensalidade Plano Ilimitado - Agosto/2026',
-    amount: 260.00,
+    studentAvatar: '/bjj_media/bjj_student_male.jpg',
+    title: 'Mensalidade Loyalty Black - Agosto/2026',
+    amount: 290.00,
     dueDate: '10/08/2026',
     status: 'overdue',
-    academyId: 'acad_bjj_jardins',
-    academyName: 'BJJ Academy Jardins',
-    planName: 'Mensal Ilimitado',
+    academyId: 'acad_loyalty_jiujitsu',
+    academyName: 'Loyalty Jiu-Jitsu',
+    planName: 'Mensal Loyalty Black',
     lateFeePercent: 2.0,
     dailyInterestPercent: 0.0333,
     daysOverdue: 23,
-    calculatedFine: 5.20,
-    calculatedInterest: 1.99,
-    totalUpdatedAmount: 267.19,
-    pixCode: '00020126580014br.gov.bcb.pix0136bjjacademy-asaas-pix-marcos-2675204000053039865406267.195802BR5918BJJ ACADEMY LTDA6009SAO PAULO62070503***6304F221',
-    invoiceNumber: 'BJJ-2026-08-0199'
+    calculatedFine: 5.80,
+    calculatedInterest: 2.22,
+    totalUpdatedAmount: 298.02,
+    pixCode: '00020126580014br.gov.bcb.pix0136loyalty-bjj-pix-marcos-2985204000053039865406298.025802BR5918LOYALTY JIU JITSU6009FORTALEZA62070503***6304F221',
+    invoiceNumber: 'LOY-2026-08-0199'
   },
   {
     id: 'inv_prev_aug',
     studentId: 'stu_lucas_01',
     studentName: 'Lucas Gracie Mendes',
-    title: 'Mensalidade Plano Ilimitado - Agosto/2026',
-    amount: 260.00,
+    title: 'Mensalidade Loyalty Black - Agosto/2026',
+    amount: 290.00,
     dueDate: '10/08/2026',
     status: 'paid',
     paidDate: '08/08/2026 às 14:22',
-    academyId: 'acad_bjj_jardins',
-    academyName: 'BJJ Academy Jardins',
-    planName: 'Mensal Ilimitado',
+    academyId: 'acad_loyalty_jiujitsu',
+    academyName: 'Loyalty Jiu-Jitsu',
+    planName: 'Mensal Loyalty Black',
     paymentMethod: 'pix',
-    invoiceNumber: 'BJJ-2026-08-0711'
+    invoiceNumber: 'LOY-2026-08-0711'
   },
 
-  // GRACIE BARRA CENTRO (Mensalidade R$ 195,00)
+  // Loyalty Mensalidades Alunos
   {
     id: 'inv_gb_01',
     studentId: 'stu_gb_renato',
     studentName: 'Renato Silveira Costa',
-    studentAvatar: 'https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?w=120&auto=format&fit=crop&q=80',
-    title: 'Mensalidade Regular - Setembro/2026',
-    amount: 195.00,
+    studentAvatar: '/bjj_media/bjj_student_male.jpg',
+    title: 'Mensalidade Loyalty Black - Setembro/2026',
+    amount: 290.00,
     dueDate: '05/09/2026',
     status: 'pending',
-    academyId: 'acad_gracie_barra',
-    academyName: 'Gracie Barra Centro',
-    planName: 'Mensal GB Adulto',
-    pixCode: '00020126580014br.gov.bcb.pix0136gbcentro-pix-1955204000053039865406195.005802BR5920GRACIE BARRA CENTRO6009SAO PAULO62070503***6304A1B2',
-    invoiceNumber: 'GB-2026-09-0051'
+    academyId: 'acad_loyalty_jiujitsu',
+    academyName: 'Loyalty Jiu-Jitsu',
+    planName: 'Mensal Loyalty Black',
+    pixCode: '00020126580014br.gov.bcb.pix0136loyalty-bjj-pix-2905204000053039865406290.005802BR5918LOYALTY JIU JITSU6009FORTALEZA62070503***6304A1B2',
+    invoiceNumber: 'LOY-2026-09-0051'
   },
   {
     id: 'inv_gb_02_overdue',
     studentId: 'stu_gb_camila',
     studentName: 'Camila Guimarães Barros',
-    studentAvatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=120&auto=format&fit=crop&q=80',
-    title: 'Mensalidade Regular - Agosto/2026',
-    amount: 195.00,
+    studentAvatar: '/bjj_media/bjj_student_female.jpg',
+    title: 'Mensalidade Loyalty Black - Agosto/2026',
+    amount: 290.00,
     dueDate: '05/08/2026',
     status: 'overdue',
-    academyId: 'acad_gracie_barra',
-    academyName: 'Gracie Barra Centro',
-    planName: 'Mensal GB Adulto',
+    academyId: 'acad_loyalty_jiujitsu',
+    academyName: 'Loyalty Jiu-Jitsu',
+    planName: 'Mensal Loyalty Black',
     lateFeePercent: 2.0,
     dailyInterestPercent: 0.0333,
     daysOverdue: 28,
-    calculatedFine: 3.90,
-    calculatedInterest: 1.82,
-    totalUpdatedAmount: 200.72,
-    pixCode: '00020126580014br.gov.bcb.pix0136gbcentro-pix-camila-2005204000053039865406200.725802BR5920GRACIE BARRA CENTRO6009SAO PAULO62070503***6304D891',
-    invoiceNumber: 'GB-2026-08-0043'
+    calculatedFine: 5.80,
+    calculatedInterest: 2.70,
+    totalUpdatedAmount: 298.50,
+    pixCode: '00020126580014br.gov.bcb.pix0136loyalty-bjj-pix-camila-2985204000053039865406298.505802BR5918LOYALTY JIU JITSU6009FORTALEZA62070503***6304D891',
+    invoiceNumber: 'LOY-2026-08-0043'
   },
   {
     id: 'inv_gb_03_paid',
     studentId: 'stu_gb_thiago',
     studentName: 'Thiago Farias',
-    title: 'Trimestral GB Ouro - Jul/Ago/Set 2026',
-    amount: 540.00,
+    title: 'Trimestral Loyalty Prime - Jul/Ago/Set 2026',
+    amount: 780.00,
     dueDate: '01/07/2026',
     status: 'paid',
     paidDate: '01/07/2026 às 11:00',
-    academyId: 'acad_gracie_barra',
-    academyName: 'Gracie Barra Centro',
-    planName: 'Trimestral GB Ouro',
+    academyId: 'acad_loyalty_jiujitsu',
+    academyName: 'Loyalty Jiu-Jitsu',
+    planName: 'Trimestral Loyalty Prime',
     paymentMethod: 'credit_card',
-    invoiceNumber: 'GB-2026-07-0012'
+    invoiceNumber: 'LOY-2026-07-0012'
   },
-
-  // ALLIANCE MORUMBI (Mensalidade R$ 310,00)
   {
     id: 'inv_all_01',
     studentId: 'stu_all_felipe',
     studentName: 'Felipe Duarte Nogueira',
-    studentAvatar: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=120&auto=format&fit=crop&q=80',
-    title: 'Mensalidade Alliance VIP - Setembro/2026',
-    amount: 310.00,
+    studentAvatar: '/bjj_media/bjj_student_male.jpg',
+    title: 'Mensalidade Loyalty Black - Setembro/2026',
+    amount: 290.00,
     dueDate: '10/09/2026',
     status: 'pending',
-    academyId: 'acad_alliance_morumbi',
-    academyName: 'Alliance Jiu-Jitsu Morumbi',
-    planName: 'Alliance VIP Unlimited',
-    pixCode: '00020126580014br.gov.bcb.pix0136alliance-morumbi-pix-3105204000053039865406310.005802BR5916ALLIANCE MORUMBI6009SAO PAULO62070503***63047C10',
-    invoiceNumber: 'ALL-2026-09-0301'
+    academyId: 'acad_loyalty_jiujitsu',
+    academyName: 'Loyalty Jiu-Jitsu',
+    planName: 'Mensal Loyalty Black',
+    pixCode: '00020126580014br.gov.bcb.pix0136loyalty-bjj-pix-3105204000053039865406290.005802BR5918LOYALTY JIU JITSU6009FORTALEZA62070503***63047C10',
+    invoiceNumber: 'LOY-2026-09-0301'
   },
   {
     id: 'inv_all_02_overdue',
     studentId: 'stu_all_bruno',
     studentName: 'Bruno Henrique Castilho',
-    studentAvatar: 'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=120&auto=format&fit=crop&q=80',
-    title: 'Mensalidade Alliance VIP - Julho/2026',
-    amount: 310.00,
+    studentAvatar: '/bjj_media/bjj_student_male.jpg',
+    title: 'Mensalidade Loyalty Black - Julho/2026',
+    amount: 290.00,
     dueDate: '10/07/2026',
     status: 'overdue',
-    academyId: 'acad_alliance_morumbi',
-    academyName: 'Alliance Jiu-Jitsu Morumbi',
-    planName: 'Alliance VIP Unlimited',
+    academyId: 'acad_loyalty_jiujitsu',
+    academyName: 'Loyalty Jiu-Jitsu',
+    planName: 'Mensal Loyalty Black',
     lateFeePercent: 2.0,
     dailyInterestPercent: 0.0333,
     daysOverdue: 54,
-    calculatedFine: 6.20,
-    calculatedInterest: 5.57,
-    totalUpdatedAmount: 321.77,
-    pixCode: '00020126580014br.gov.bcb.pix0136alliance-morumbi-pix-bruno-3215204000053039865406321.775802BR5916ALLIANCE MORUMBI6009SAO PAULO62070503***6304E190',
-    invoiceNumber: 'ALL-2026-07-0240'
+    calculatedFine: 5.80,
+    calculatedInterest: 5.21,
+    totalUpdatedAmount: 301.01,
+    pixCode: '00020126580014br.gov.bcb.pix0136loyalty-bjj-pix-bruno-3015204000053039865406301.015802BR5918LOYALTY JIU JITSU6009FORTALEZA62070503***6304E190',
+    invoiceNumber: 'LOY-2026-07-0240'
   },
   {
     id: 'inv_all_03_paid',
     studentId: 'stu_all_mariana',
     studentName: 'Mariana Lima Prado',
-    title: 'Anual Alliance Black Belt Club',
-    amount: 3120.00,
+    title: 'Anual Loyalty Champion',
+    amount: 2880.00,
     dueDate: '15/01/2026',
     status: 'paid',
     paidDate: '15/01/2026 às 16:30',
-    academyId: 'acad_alliance_morumbi',
-    academyName: 'Alliance Jiu-Jitsu Morumbi',
-    planName: 'Anual Black Belt Club',
+    academyId: 'acad_loyalty_jiujitsu',
+    academyName: 'Loyalty Jiu-Jitsu',
+    planName: 'Anual Loyalty Champion',
     paymentMethod: 'credit_card',
-    invoiceNumber: 'ALL-2026-01-0003'
+    invoiceNumber: 'LOY-2026-01-0003'
   },
-
-  // CHECKMAT VILA MARIANA (Mensalidade R$ 220,00)
   {
     id: 'inv_chk_01',
     studentId: 'stu_chk_gabriel',
     studentName: 'Gabriel Alencar Santos',
-    studentAvatar: 'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=120&auto=format&fit=crop&q=80',
-    title: 'Mensalidade Checkmat Tatame - Setembro/2026',
-    amount: 220.00,
+    studentAvatar: '/bjj_media/bjj_student_male.jpg',
+    title: 'Mensalidade Loyalty Black - Setembro/2026',
+    amount: 290.00,
     dueDate: '12/09/2026',
     status: 'pending',
-    academyId: 'acad_checkmat_vm',
-    academyName: 'Checkmat Tatame Vila Mariana',
-    planName: 'Mensal Checkmat',
-    pixCode: '00020126580014br.gov.bcb.pix0136checkmat-vm-pix-2205204000053039865406220.005802BR5915CHECKMAT TATAME6009SAO PAULO62070503***63049F88',
-    invoiceNumber: 'CHK-2026-09-0115'
+    academyId: 'acad_loyalty_jiujitsu',
+    academyName: 'Loyalty Jiu-Jitsu',
+    planName: 'Mensal Loyalty Black',
+    pixCode: '00020126580014br.gov.bcb.pix0136loyalty-bjj-pix-2905204000053039865406290.005802BR5918LOYALTY JIU JITSU6009FORTALEZA62070503***63049F88',
+    invoiceNumber: 'LOY-2026-09-0115'
   },
   {
     id: 'inv_chk_02_paid',
     studentId: 'stu_chk_patricia',
     studentName: 'Patricia Valadares',
-    title: 'Mensalidade Checkmat Tatame - Agosto/2026',
-    amount: 220.00,
+    title: 'Mensalidade Loyalty Black - Agosto/2026',
+    amount: 290.00,
     dueDate: '12/08/2026',
     status: 'paid',
     paidDate: '11/08/2026 às 09:12',
-    academyId: 'acad_checkmat_vm',
-    academyName: 'Checkmat Tatame Vila Mariana',
-    planName: 'Mensal Checkmat',
+    academyId: 'acad_loyalty_jiujitsu',
+    academyName: 'Loyalty Jiu-Jitsu',
+    planName: 'Mensal Loyalty Black',
     paymentMethod: 'pix',
-    invoiceNumber: 'CHK-2026-08-0098'
+    invoiceNumber: 'LOY-2026-08-0098'
   },
-
-  // NOVA UNIÃO MOEMA (Mensalidade R$ 240,00)
   {
     id: 'inv_nu_01',
     studentId: 'stu_nu_rodrigo',
     studentName: 'Rodrigo Brandão',
-    studentAvatar: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=120&auto=format&fit=crop&q=80',
-    title: 'Mensalidade NU Tatame - Setembro/2026',
-    amount: 240.00,
+    studentAvatar: '/bjj_media/bjj_student_male.jpg',
+    title: 'Mensalidade Loyalty Black - Setembro/2026',
+    amount: 290.00,
     dueDate: '08/09/2026',
     status: 'pending',
-    academyId: 'acad_nova_uniao',
-    academyName: 'Nova União Moema',
-    planName: 'Mensal Nova União',
-    pixCode: '00020126580014br.gov.bcb.pix0136novauniao-moema-pix-2405204000053039865406240.005802BR5916NOVA UNIAO MOEMA6009SAO PAULO62070503***63043D22',
-    invoiceNumber: 'NU-2026-09-0082'
+    academyId: 'acad_loyalty_jiujitsu',
+    academyName: 'Loyalty Jiu-Jitsu',
+    planName: 'Mensal Loyalty Black',
+    pixCode: '00020126580014br.gov.bcb.pix0136loyalty-bjj-pix-2905204000053039865406290.005802BR5918LOYALTY JIU JITSU6009FORTALEZA62070503***63043D22',
+    invoiceNumber: 'LOY-2026-09-0082'
   },
   {
     id: 'inv_nu_02_overdue',
     studentId: 'stu_nu_gustavo',
     studentName: 'Gustavo Paiva Meirelles',
-    studentAvatar: 'https://images.unsplash.com/photo-1492562080023-ab3db95bfbce?w=120&auto=format&fit=crop&q=80',
-    title: 'Mensalidade NU Tatame - Agosto/2026',
-    amount: 240.00,
+    studentAvatar: '/bjj_media/bjj_student_male.jpg',
+    title: 'Mensalidade Loyalty Black - Agosto/2026',
+    amount: 290.00,
     dueDate: '08/08/2026',
     status: 'overdue',
-    academyId: 'acad_nova_uniao',
-    academyName: 'Nova União Moema',
-    planName: 'Mensal Nova União',
+    academyId: 'acad_loyalty_jiujitsu',
+    academyName: 'Loyalty Jiu-Jitsu',
+    planName: 'Mensal Loyalty Black',
     lateFeePercent: 2.0,
     dailyInterestPercent: 0.0333,
     daysOverdue: 25,
-    calculatedFine: 4.80,
-    calculatedInterest: 2.00,
-    totalUpdatedAmount: 246.80,
-    pixCode: '00020126580014br.gov.bcb.pix0136novauniao-moema-gustavo-2465204000053039865406246.805802BR5916NOVA UNIAO MOEMA6009SAO PAULO62070503***6304C771',
-    invoiceNumber: 'NU-2026-08-0074'
+    calculatedFine: 5.80,
+    calculatedInterest: 2.41,
+    totalUpdatedAmount: 298.21,
+    pixCode: '00020126580014br.gov.bcb.pix0136loyalty-bjj-pix-gustavo-2985204000053039865406298.215802BR5918LOYALTY JIU JITSU6009FORTALEZA62070503***6304C771',
+    invoiceNumber: 'LOY-2026-08-0074'
   }
 ];
 
@@ -684,12 +678,12 @@ export const mockPushNotifications: PushNotification[] = [
 ];
 
 export const mockRankings: RankingMember[] = [
-  { position: 1, id: 'rk_1', name: 'Rafael "Pitbull" Costa', avatar: 'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=100&auto=format&fit=crop&q=80', belt: 'purple', classesAttended: 24, points: 1950, streak: 8 },
-  { position: 2, id: 'rk_2', name: 'Bruno Guimarães', avatar: 'https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?w=100&auto=format&fit=crop&q=80', belt: 'brown', classesAttended: 22, points: 1820, streak: 7 },
-  { position: 3, id: 'rk_3', name: 'Mariana Duarte', avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&auto=format&fit=crop&q=80', belt: 'blue', classesAttended: 19, points: 1610, streak: 6 },
-  { position: 4, id: 'stu_lucas_01', name: 'Lucas Gracie (Você)', avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&auto=format&fit=crop&q=80', belt: 'blue', classesAttended: 16, points: 1420, streak: 5, isCurrentUser: true },
-  { position: 5, id: 'rk_5', name: 'Thiago Silveira', avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&auto=format&fit=crop&q=80', belt: 'white', classesAttended: 15, points: 1290, streak: 4 },
-  { position: 6, id: 'rk_6', name: 'Rodrigo Fontes', avatar: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=100&auto=format&fit=crop&q=80', belt: 'blue', classesAttended: 14, points: 1210, streak: 3 }
+  { position: 1, id: 'rk_1', name: 'Rafael "Pitbull" Costa', avatar: '/bjj_media/bjj_student_male.jpg', belt: 'purple', classesAttended: 24, points: 1950, streak: 8 },
+  { position: 2, id: 'rk_2', name: 'Bruno Guimarães', avatar: '/bjj_media/bjj_student_male.jpg', belt: 'brown', classesAttended: 22, points: 1820, streak: 7 },
+  { position: 3, id: 'rk_3', name: 'Mariana Duarte', avatar: '/bjj_media/bjj_student_female.jpg', belt: 'blue', classesAttended: 19, points: 1610, streak: 6 },
+  { position: 4, id: 'stu_lucas_01', name: 'Lucas Gracie (Você)', avatar: '/bjj_media/bjj_student_male.jpg', belt: 'blue', classesAttended: 16, points: 1420, streak: 5, isCurrentUser: true },
+  { position: 5, id: 'rk_5', name: 'Thiago Silveira', avatar: '/bjj_media/bjj_student_male.jpg', belt: 'white', classesAttended: 15, points: 1290, streak: 4 },
+  { position: 6, id: 'rk_6', name: 'Rodrigo Fontes', avatar: '/bjj_media/bjj_student_male.jpg', belt: 'blue', classesAttended: 14, points: 1210, streak: 3 }
 ];
 
 export const mockTechniques: TechniqueItem[] = [
@@ -700,7 +694,9 @@ export const mockTechniques: TechniqueItem[] = [
     category: 'Finalizações',
     minimumBelt: 'white',
     difficulty: 'Iniciante',
-    videoThumb: 'https://images.unsplash.com/photo-1517838277536-f5f99be501cd?w=400&auto=format&fit=crop&q=80',
+    videoThumb: '/bjj_media/bjj_triangle.jpg',
+    videoUrl: 'https://www.youtube-nocookie.com/embed/n3gZpI9334o',
+    videoDuration: '04:15',
     steps: [
       'Controle um dos braços do oponente com pegada no punho e abra a guarda projetando o quadril.',
       'Passe uma perna por cima do ombro e feche o joelho atrás do pescoço adversário.',
@@ -722,7 +718,9 @@ export const mockTechniques: TechniqueItem[] = [
     category: 'Raspagens',
     minimumBelt: 'white',
     difficulty: 'Iniciante',
-    videoThumb: 'https://images.unsplash.com/photo-1549060279-7e168fcee0c2?w=400&auto=format&fit=crop&q=80',
+    videoThumb: '/bjj_media/bjj_scissor_sweep.jpg',
+    videoUrl: 'https://www.youtube-nocookie.com/embed/bWl1Xo-W93o',
+    videoDuration: '03:40',
     steps: [
       'Faça pegada de gola cruzada e manga do mesmo lado na guarda fechada.',
       'Fugir de quadril para o lado da manga dominada e apoiar a canela no peito do oponente.',
@@ -743,7 +741,9 @@ export const mockTechniques: TechniqueItem[] = [
     category: 'Passagem de Guarda',
     minimumBelt: 'white',
     difficulty: 'Iniciante',
-    videoThumb: 'https://images.unsplash.com/photo-1517836357463-d25dfeac3438?w=400&auto=format&fit=crop&q=80',
+    videoThumb: '/bjj_media/bjj_guard_pass.jpg',
+    videoUrl: 'https://www.youtube-nocookie.com/embed/K8vUfCkg-c0',
+    videoDuration: '05:12',
     steps: [
       'Segure com pegada firme na altura dos joelhos ou bainha da calça do oponente.',
       'Empurre os joelhos dele para baixo e recue um passo para esticar a perna.',
@@ -764,7 +764,9 @@ export const mockTechniques: TechniqueItem[] = [
     category: 'Finalizações',
     minimumBelt: 'white',
     difficulty: 'Iniciante',
-    videoThumb: 'https://images.unsplash.com/photo-1517963879433-6ad2b056d712?w=400&auto=format&fit=crop&q=80',
+    videoThumb: '/bjj_media/bjj_armbar.jpg',
+    videoUrl: 'https://www.youtube-nocookie.com/embed/M0TfH894qUo',
+    videoDuration: '04:55',
     steps: [
       'Controle o braço do oponente abraçando acima do cotovelo e faça pegada na gola.',
       'Apoie o pé no quadril do mesmo lado do braço atacado e fuja o quadril.',
@@ -785,7 +787,9 @@ export const mockTechniques: TechniqueItem[] = [
     category: 'Raspagens',
     minimumBelt: 'blue',
     difficulty: 'Avançado',
-    videoThumb: 'https://images.unsplash.com/photo-1534438327276-14e5300c3a48?w=400&auto=format&fit=crop&q=80',
+    videoThumb: '/bjj_media/bjj_berimbolo.jpg',
+    videoUrl: 'https://www.youtube-nocookie.com/embed/e7zO3C82z-w',
+    videoDuration: '06:30',
     steps: [
       'Estabeleça o gancho De La Riva profundo com pegada no calcanhar e faixa.',
       'Empurre a perna oposta do oponente para sentá-lo no tatame.',
@@ -805,7 +809,9 @@ export const mockTechniques: TechniqueItem[] = [
     category: 'Quedas & Projeções',
     minimumBelt: 'white',
     difficulty: 'Iniciante',
-    videoThumb: 'https://images.unsplash.com/photo-1571019614242-c5c5dee9f50b?w=400&auto=format&fit=crop&q=80',
+    videoThumb: '/bjj_media/bjj_takedown.jpg',
+    videoUrl: 'https://www.youtube-nocookie.com/embed/v9qM4UoX8kM',
+    videoDuration: '03:20',
     steps: [
       'Pegada clássica: gola e manga.',
       'Dê um passo firme ao lado do pé do oponente, quebrando a postura dele para trás.',
@@ -824,7 +830,9 @@ export const mockTechniques: TechniqueItem[] = [
     category: 'Defesa Pessoal',
     minimumBelt: 'white',
     difficulty: 'Iniciante',
-    videoThumb: 'https://images.unsplash.com/photo-1518611012118-696072aa579a?w=400&auto=format&fit=crop&q=80',
+    videoThumb: '/bjj_media/bjj_self_defense.jpg',
+    videoUrl: 'https://www.youtube-nocookie.com/embed/Yv8H9JqN9-g',
+    videoDuration: '04:10',
     steps: [
       'Vire o queixo em direção ao corpo do agressor para proteger a traqueia.',
       'Abaixe a base e envolva as costas dele com um braço e segure o pulso dele com o outro.',
@@ -844,7 +852,9 @@ export const mockTechniques: TechniqueItem[] = [
     category: 'Finalizações',
     minimumBelt: 'white',
     difficulty: 'Intermediário',
-    videoThumb: 'https://images.unsplash.com/photo-1517838277536-f5f99be501cd?w=400&auto=format&fit=crop&q=80',
+    videoThumb: '/bjj_media/bjj_ezekiel.jpg',
+    videoUrl: 'https://www.youtube-nocookie.com/embed/d23nJ7yGg3g',
+    videoDuration: '03:45',
     steps: [
       'A partir da montada firme com ganchos baixos, passe um braço por trás da cabeça dele.',
       'Segure por dentro da própria manga do kimono com quatro dedos.',
@@ -856,6 +866,51 @@ export const mockTechniques: TechniqueItem[] = [
     ],
     masterTip: 'Use o peso do seu peito para colar o oponente no chão, impedindo o alívio da pressão.',
     learned: false
+  },
+  {
+    id: 'tec_9',
+    title: 'Mata-Leão das Costas (Rear Naked Choke)',
+    japaneseName: 'Hadaka-Jime',
+    category: 'Finalizações',
+    minimumBelt: 'white',
+    difficulty: 'Iniciante',
+    videoThumb: '/bjj_media/bjj_rear_naked.jpg',
+    videoUrl: 'https://www.youtube-nocookie.com/embed/Z0oYJ8V-1m4',
+    videoDuration: '04:05',
+    steps: [
+      'Com os ganchos estabilizados nas costas, passe o braço dominante ao redor do pescoço até o cotovelo alinhar com o queixo.',
+      'Segure o próprio bíceps do braço oposto e esconda a mão de apoio atrás da nuca do adversário.',
+      'Infle o peito, aperte as escápulas e faça a pressão sem afrouxar os ganchos.'
+    ],
+    keyDetails: [
+      'O cotovelo deve apontar diretamente para a linha central do peito do oponente.',
+      'Esconda a mão que apoia na nuca para evitar que o adversário puxe seus dedos.'
+    ],
+    masterTip: 'Finalização rainha do Jiu-Jitsu: sem força excessiva, apenas estrangulamento limpo das duas carótidas.',
+    learned: true
+  },
+  {
+    id: 'tec_10',
+    title: 'Chave Kimura da Guarda Fechada',
+    japaneseName: 'Gyaku Ude-Garami',
+    category: 'Finalizações',
+    minimumBelt: 'white',
+    difficulty: 'Iniciante',
+    videoThumb: '/bjj_media/bjj_kimura.jpg',
+    videoUrl: 'https://www.youtube-nocookie.com/embed/Wb9V2xX8jKc',
+    videoDuration: '05:00',
+    steps: [
+      'Quando o oponente apoiar a mão no tatame, domine o punho dele com pegada de macaco (sem polegar).',
+      'Abra a guarda, suba o tronco abraçando por cima do ombro dele.',
+      'Passe a mão por baixo do tríceps dele e segure no seu próprio punho (pegada em quatro).',
+      'Deite de lado cortando o ângulo e projete o punho dele em direção à nuca.'
+    ],
+    keyDetails: [
+      'Mantenha o cotovelo dele dobrado em exatos 90 graus para criar a alavanca máxima.',
+      'Nunca tente girar o braço com as costas retas no chão; deite de lado.'
+    ],
+    masterTip: 'A Kimura não é apenas finalização: é uma das maiores alavancas de controle posicional do Jiu-Jitsu.',
+    learned: false
   }
 ];
 
@@ -863,7 +918,7 @@ export const mockGraduationCandidates: GraduationEligibility[] = [
   {
     studentId: 'stu_lucas_01',
     studentName: 'Lucas Gracie Mendes',
-    avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&auto=format&fit=crop&q=80',
+    avatar: '/bjj_media/bjj_student_male.jpg',
     currentBelt: 'blue',
     currentStripes: 3,
     timeInCurrentBeltMonths: 21,
@@ -879,7 +934,7 @@ export const mockGraduationCandidates: GraduationEligibility[] = [
   {
     studentId: 'stu_cand_02',
     studentName: 'Mariana Duarte',
-    avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&auto=format&fit=crop&q=80',
+    avatar: '/bjj_media/bjj_student_female.jpg',
     currentBelt: 'blue',
     currentStripes: 4,
     timeInCurrentBeltMonths: 26,
@@ -895,7 +950,7 @@ export const mockGraduationCandidates: GraduationEligibility[] = [
   {
     studentId: 'stu_cand_03',
     studentName: 'Rafael "Pitbull" Costa',
-    avatar: 'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=100&auto=format&fit=crop&q=80',
+    avatar: '/bjj_media/bjj_student_male.jpg',
     currentBelt: 'purple',
     currentStripes: 4,
     timeInCurrentBeltMonths: 20,
@@ -911,7 +966,7 @@ export const mockGraduationCandidates: GraduationEligibility[] = [
   {
     studentId: 'stu_cand_04',
     studentName: 'Thiago Silveira',
-    avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&auto=format&fit=crop&q=80',
+    avatar: '/bjj_media/bjj_student_male.jpg',
     currentBelt: 'white',
     currentStripes: 4,
     timeInCurrentBeltMonths: 14,
@@ -927,7 +982,7 @@ export const mockGraduationCandidates: GraduationEligibility[] = [
   {
     studentId: 'stu_cand_pedro_kids',
     studentName: 'Pedro Henrique Mendes (Kids)',
-    avatar: 'https://images.unsplash.com/photo-1543610892-0b1f7e6d8ac1?w=100&auto=format&fit=crop&q=80',
+    avatar: '/bjj_media/bjj_kid_student.jpg',
     currentBelt: 'grey_white',
     currentStripes: 4,
     timeInCurrentBeltMonths: 12,
@@ -948,7 +1003,7 @@ export const mockShopProducts: ShopProduct[] = [
     name: 'Kimono Oficial BJJ Academy Gold Weave 450g',
     category: 'Kimonos',
     price: 489.90,
-    image: 'https://images.unsplash.com/photo-1517838277536-f5f99be501cd?w=400&auto=format&fit=crop&q=80',
+    image: '/bjj_media/bjj_gi_kimono.jpg',
     sizes: ['A1', 'A2', 'A3', 'A4'],
     colors: ['Branco Oficial', 'Azul Royal', 'Preto'],
     inStock: true,
@@ -960,7 +1015,7 @@ export const mockShopProducts: ShopProduct[] = [
     name: 'Rashguard Compressão No-Gi Black Armor',
     category: 'No-Gi / Rashguard',
     price: 189.00,
-    image: 'https://images.unsplash.com/photo-1517836357463-d25dfeac3438?w=400&auto=format&fit=crop&q=80',
+    image: '/bjj_media/bjj_rashguard.jpg',
     sizes: ['P', 'M', 'G', 'GG'],
     colors: ['Preto / Vermelho', 'Preto / Azul'],
     inStock: true,
@@ -972,7 +1027,7 @@ export const mockShopProducts: ShopProduct[] = [
     name: 'Faixa Grossa Premium Especial (12 Costuras)',
     category: 'Faixas',
     price: 98.00,
-    image: 'https://images.unsplash.com/photo-1549060279-7e168fcee0c2?w=400&auto=format&fit=crop&q=80',
+    image: '/bjj_media/bjj_belts_display.jpg',
     sizes: ['A1 (2.60m)', 'A2 (2.80m)', 'A3 (3.00m)', 'A4 (3.20m)'],
     colors: ['Branca', 'Azul', 'Roxa', 'Marrom', 'Preta'],
     inStock: true,
@@ -984,7 +1039,7 @@ export const mockShopProducts: ShopProduct[] = [
     name: 'Bermuda Fight Shorts Pro Comp No-Gi',
     category: 'No-Gi / Rashguard',
     price: 169.90,
-    image: 'https://images.unsplash.com/photo-1517963879433-6ad2b056d712?w=400&auto=format&fit=crop&q=80',
+    image: '/bjj_media/bjj_rashguard_1789765316754.jpg',
     sizes: ['38', '40', '42', '44'],
     colors: ['Preto / Chumbo'],
     inStock: true,
@@ -996,7 +1051,7 @@ export const mockShopProducts: ShopProduct[] = [
     name: 'Creatina Creapure 100% Pura 300g Tatame',
     category: 'Nutrição',
     price: 119.00,
-    image: 'https://images.unsplash.com/photo-1579722821273-0f6c7d44362f?w=400&auto=format&fit=crop&q=80',
+    image: '/bjj_media/bjj_fighters_bg_1789389198066.jpg',
     sizes: ['300g'],
     colors: ['Sem Sabor'],
     inStock: true,
@@ -1008,7 +1063,7 @@ export const mockShopProducts: ShopProduct[] = [
     name: 'Kit com 3 Patches Oficiais Bordados para Kimono',
     category: 'Acessórios & Patches',
     price: 65.00,
-    image: 'https://images.unsplash.com/photo-1517838277536-f5f99be501cd?w=400&auto=format&fit=crop&q=80',
+    image: '/bjj_media/bjj_patches.jpg',
     sizes: ['Padrão Oficial'],
     colors: ['Colorido'],
     inStock: true,
@@ -1069,7 +1124,7 @@ export const mockTeamMedals: TeamMedal[] = [
   {
     id: 'med_1',
     athleteName: 'Rafael "Pitbull" Costa',
-    athleteAvatar: 'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=100&auto=format&fit=crop&q=80',
+    athleteAvatar: '/bjj_media/bjj_student_male.jpg',
     belt: 'purple',
     tournamentName: 'Brasileiro CBJJ 2025',
     year: '2025',
@@ -1079,7 +1134,7 @@ export const mockTeamMedals: TeamMedal[] = [
   {
     id: 'med_2',
     athleteName: 'Lucas Gracie Mendes',
-    athleteAvatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&auto=format&fit=crop&q=80',
+    athleteAvatar: '/bjj_media/bjj_student_male.jpg',
     belt: 'blue',
     tournamentName: 'SP Open IBJJF 2024',
     year: '2024',
@@ -1089,7 +1144,7 @@ export const mockTeamMedals: TeamMedal[] = [
   {
     id: 'med_3',
     athleteName: 'Mariana Duarte',
-    athleteAvatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&auto=format&fit=crop&q=80',
+    athleteAvatar: '/bjj_media/bjj_student_female.jpg',
     belt: 'blue',
     tournamentName: 'Sul-Americano CBJJ 2025',
     year: '2025',
@@ -1099,7 +1154,7 @@ export const mockTeamMedals: TeamMedal[] = [
   {
     id: 'med_4',
     athleteName: 'Pedro Henrique Mendes (Kids)',
-    athleteAvatar: 'https://images.unsplash.com/photo-1543610892-0b1f7e6d8ac1?w=100&auto=format&fit=crop&q=80',
+    athleteAvatar: '/bjj_media/bjj_kid_student.jpg',
     belt: 'grey',
     tournamentName: 'Copa Kids Futuros Campeões',
     year: '2025',
@@ -1109,7 +1164,7 @@ export const mockTeamMedals: TeamMedal[] = [
   {
     id: 'med_5',
     athleteName: 'Bruno Guimarães',
-    athleteAvatar: 'https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?w=100&auto=format&fit=crop&q=80',
+    athleteAvatar: '/bjj_media/bjj_student_male.jpg',
     belt: 'brown',
     tournamentName: 'Floripa Open IBJJF',
     year: '2024',
@@ -1118,36 +1173,133 @@ export const mockTeamMedals: TeamMedal[] = [
   }
 ];
 
+export interface LoyaltyScheduleGroup {
+  groupName: string;
+  days: string;
+  classes: {
+    time: string;
+    title: string;
+    modality: string;
+    tag?: string;
+  }[];
+}
+
+export interface LoyaltyKidsSchedule {
+  turma: string;
+  dias: string;
+  horario: string;
+  faixaEtaria?: string;
+}
+
+export const loyaltyOfficialScheduleGroups: LoyaltyScheduleGroup[] = [
+  {
+    groupName: 'Segunda, Quarta e Sexta (Adulto & Kids)',
+    days: 'Segunda, Quarta e Sexta',
+    classes: [
+      { time: '07:00', title: 'Jiu-Jitsu Adulto', modality: 'No-Gi / Sem Kimono', tag: 'Manhã' },
+      { time: '08:00', title: 'Jiu-Jitsu Adulto', modality: 'Gi / Com Kimono', tag: 'Manhã' },
+      { time: '11:00', title: 'Jiu-Jitsu Adulto', modality: 'Gi / Com Kimono', tag: 'Manhã' },
+      { time: '12:00', title: 'Jiu-Jitsu Adulto', modality: 'No-Gi / Sem Kimono', tag: 'Horário de Almoço' },
+      { time: '16:00', title: 'Jiu-Jitsu Adulto', modality: 'No-Gi / Sem Kimono', tag: 'Tarde' },
+      { time: '18:00', title: 'Jiu-Jitsu Kids 1 (Seg/Qua) & Kids 2 (Sex)', modality: 'Kids / Infantil', tag: 'Infantil' },
+      { time: '19:00', title: 'Jiu-Jitsu Adulto', modality: 'Gi / Com Kimono', tag: 'Noite' },
+      { time: '20:00', title: 'Jiu-Jitsu Adulto', modality: 'Gi / Com Kimono', tag: 'Noite' }
+    ]
+  },
+  {
+    groupName: 'Terça e Quinta (Adulto & Kids)',
+    days: 'Terça e Quinta',
+    classes: [
+      { time: '07:00', title: 'Jiu-Jitsu Adulto', modality: 'No-Gi / Sem Kimono', tag: 'Manhã' },
+      { time: '11:00', title: 'Jiu-Jitsu Adulto', modality: 'Gi / Com Kimono', tag: 'Manhã' },
+      { time: '12:00', title: 'Jiu-Jitsu Adulto', modality: 'No-Gi / Sem Kimono', tag: 'Horário de Almoço' },
+      { time: '16:00', title: 'Jiu-Jitsu Adulto', modality: 'No-Gi / Sem Kimono', tag: 'Tarde' },
+      { time: '18:00', title: 'Jiu-Jitsu Kids 2', modality: 'Kids / Infantil', tag: 'Infantil' },
+      { time: '19:00', title: 'Jiu-Jitsu Kids 3', modality: 'Kids / Infantil', tag: 'Infantil' },
+      { time: '20:00', title: 'Jiu-Jitsu Adulto', modality: 'Gi / Com Kimono', tag: 'Noite' }
+    ]
+  }
+];
+
+export const loyaltyOfficialKidsSchedule: LoyaltyKidsSchedule[] = [
+  { turma: 'Kids 1', dias: 'Segunda e Quarta', horario: '18:00', faixaEtaria: 'Iniciantes / Infantil' },
+  { turma: 'Kids 2', dias: 'Terça, Quinta e Sexta', horario: '18:00', faixaEtaria: 'Intermediário / Infantil' },
+  { turma: 'Kids 3', dias: 'Terça e Quinta', horario: '19:00', faixaEtaria: 'Avançado / Juvenil' }
+];
+
 export const loyaltyOfficialOperatingHours: AcademyOperatingDay[] = [
   {
     dayOfWeek: 'segunda',
     dayLabel: 'segunda-feira',
     isOpen: true,
-    slots: ['07:00–08:00', '12:00–13:00', '16:00–21:30']
+    slots: [
+      '07:00 (No-Gi)',
+      '08:00 (Gi)',
+      '11:00 (Gi)',
+      '12:00 (No-Gi Almoço)',
+      '16:00 (No-Gi Tarde)',
+      '18:00 (Kids 1)',
+      '19:00 (Gi Noite)',
+      '20:00 (Gi Noite)'
+    ]
   },
   {
     dayOfWeek: 'terca',
     dayLabel: 'terça-feira',
     isOpen: true,
-    slots: ['12:00–13:00', '18:00–21:30']
+    slots: [
+      '07:00 (No-Gi)',
+      '11:00 (Gi)',
+      '12:00 (No-Gi Almoço)',
+      '16:00 (No-Gi Tarde)',
+      '18:00 (Kids 2)',
+      '19:00 (Kids 3)',
+      '20:00 (Gi Noite)'
+    ]
   },
   {
     dayOfWeek: 'quarta',
     dayLabel: 'quarta-feira',
     isOpen: true,
-    slots: ['07:00–08:00', '12:00–13:00', '16:00–21:30']
+    slots: [
+      '07:00 (No-Gi)',
+      '08:00 (Gi)',
+      '11:00 (Gi)',
+      '12:00 (No-Gi Almoço)',
+      '16:00 (No-Gi Tarde)',
+      '18:00 (Kids 1)',
+      '19:00 (Gi Noite)',
+      '20:00 (Gi Noite)'
+    ]
   },
   {
     dayOfWeek: 'quinta',
     dayLabel: 'quinta-feira',
     isOpen: true,
-    slots: ['12:00–13:00', '18:00–21:30']
+    slots: [
+      '07:00 (No-Gi)',
+      '11:00 (Gi)',
+      '12:00 (No-Gi Almoço)',
+      '16:00 (No-Gi Tarde)',
+      '18:00 (Kids 2)',
+      '19:00 (Kids 3)',
+      '20:00 (Gi Noite)'
+    ]
   },
   {
     dayOfWeek: 'sexta',
     dayLabel: 'sexta-feira',
     isOpen: true,
-    slots: ['07:00–08:00', '12:00–13:00', '16:00–21:30']
+    slots: [
+      '07:00 (No-Gi)',
+      '08:00 (Gi)',
+      '11:00 (Gi)',
+      '12:00 (No-Gi Almoço)',
+      '16:00 (No-Gi Tarde)',
+      '18:00 (Kids 2)',
+      '19:00 (Gi Noite)',
+      '20:00 (Gi Noite)'
+    ]
   },
   {
     dayOfWeek: 'sabado',
@@ -1226,148 +1378,6 @@ export const mockRegisteredAcademies: RegisteredAcademy[] = [
       { id: 'plan_loyalty_kids', name: 'Loyalty Kids & Teens', periodMonths: 1, price: 220.00, monthlyEquivalent: 220.00, description: 'Valores, respeito e defesa pessoal para a juventude.' }
     ],
     operatingHours: loyaltyOfficialOperatingHours
-  },
-  {
-    id: 'acad_bjj_jardins',
-    name: 'BJJ Academy Jardins',
-    shortName: 'BJJ Academy',
-    branch: 'Matriz Jardins - SP',
-    city: 'São Paulo - SP',
-    phone: '(11) 98452-1920',
-    saasPlanTier: 'PRATA',
-    maxActiveStudentsLimit: 150,
-    activeStudentsCount: 112,
-    voiceEnabled: true,
-    voiceStyle: 'mercado_livre',
-    notificationFormat: 'name_and_title',
-    chimeType: 'mercado_livre',
-    speechRate: 1.08,
-    speechPitch: 1.15,
-    customPhrasePrefix: 'BJJ Academy avisa',
-    defaultFinePercent: 2.0,
-    defaultMonthlyInterestPercent: 1.0,
-    pixKey: 'financeiro@bjjacademy.com.br',
-    bankAccount: 'Banco Itaú (341) Ag 0920 CC 44210-9',
-    monthlyRevenueTarget: 75000,
-    pricingPlans: [
-      { id: 'plan_jardins_mensal', name: 'Mensal Ilimitado', periodMonths: 1, price: 260.00, monthlyEquivalent: 260.00, description: 'Acesso livre a todas as aulas de Gi e No-Gi da Matriz.', isPopular: true },
-      { id: 'plan_jardins_trimestral', name: 'Trimestral Prime', periodMonths: 3, price: 720.00, monthlyEquivalent: 240.00, description: 'Economia de R$ 60,00 no trimestre com renovação automática.' },
-      { id: 'plan_jardins_anual', name: 'Anual Black Belt Club', periodMonths: 12, price: 2640.00, monthlyEquivalent: 220.00, description: 'O melhor custo-benefício. Ganha Kimono Oficial da Matriz.' },
-      { id: 'plan_jardins_kids', name: 'Plano Kids Tatame', periodMonths: 1, price: 210.00, monthlyEquivalent: 210.00, description: 'Aulas de desenvolvimento motor e jiu-jitsu infantil.' }
-    ]
-  },
-  {
-    id: 'acad_gracie_barra',
-    name: 'Gracie Barra Centro',
-    shortName: 'Gracie Barra',
-    branch: 'Unidade Centro Histórico',
-    city: 'São Paulo - SP',
-    phone: '(11) 3221-8800',
-    saasPlanTier: 'BRONZE',
-    maxActiveStudentsLimit: 40,
-    activeStudentsCount: 38,
-    voiceEnabled: true,
-    voiceStyle: 'mercado_livre',
-    notificationFormat: 'name_and_title',
-    chimeType: 'mercado_livre',
-    speechRate: 1.05,
-    speechPitch: 1.12,
-    customPhrasePrefix: 'Gracie Barra informa',
-    defaultFinePercent: 2.0,
-    defaultMonthlyInterestPercent: 1.0,
-    pixKey: 'pix@gbcentro.com.br',
-    bankAccount: 'Banco Bradesco (237) Ag 1432 CC 18820-3',
-    monthlyRevenueTarget: 48000,
-    pricingPlans: [
-      { id: 'plan_gb_mensal', name: 'Mensal GB Adulto', periodMonths: 1, price: 195.00, monthlyEquivalent: 195.00, description: 'Treinos diários no Centro de SP.', isPopular: true },
-      { id: 'plan_gb_trimestral', name: 'Trimestral GB Ouro', periodMonths: 3, price: 540.00, monthlyEquivalent: 180.00, description: 'Desconto exclusivo para mensalistas trimestrais.' },
-      { id: 'plan_gb_anual', name: 'Anual Red Shield', periodMonths: 12, price: 1980.00, monthlyEquivalent: 165.00, description: 'Plano anual com kimono e rashguard inclusos.' },
-      { id: 'plan_gb_kids', name: 'GB Kids & Teens', periodMonths: 1, price: 160.00, monthlyEquivalent: 160.00, description: 'Turmas de 4 a 15 anos divididas por faixa etária.' }
-    ]
-  },
-  {
-    id: 'acad_alliance_morumbi',
-    name: 'Alliance Jiu-Jitsu Morumbi',
-    shortName: 'Alliance Morumbi',
-    branch: 'Unidade Portal do Morumbi',
-    city: 'São Paulo - SP',
-    phone: '(11) 3744-1020',
-    saasPlanTier: 'PRATA',
-    maxActiveStudentsLimit: 150,
-    activeStudentsCount: 135,
-    voiceEnabled: true,
-    voiceStyle: 'tatame_master',
-    notificationFormat: 'name_and_title',
-    chimeType: 'tatame_bell',
-    speechRate: 0.98,
-    speechPitch: 0.88,
-    customPhrasePrefix: 'Mestre da Alliance avisa',
-    defaultFinePercent: 2.0,
-    defaultMonthlyInterestPercent: 1.0,
-    pixKey: 'financeiro@alliancemorumbi.com.br',
-    bankAccount: 'Banco Santander (033) Ag 2209 CC 83011-5',
-    monthlyRevenueTarget: 82000,
-    pricingPlans: [
-      { id: 'plan_all_mensal', name: 'Alliance VIP Unlimited', periodMonths: 1, price: 310.00, monthlyEquivalent: 310.00, description: 'Tatame climatizado, preparação física e toalhas inclusas.', isPopular: true },
-      { id: 'plan_all_trimestral', name: 'Trimestral Eagle Club', periodMonths: 3, price: 870.00, monthlyEquivalent: 290.00, description: 'Plano intermediário com flexibilidade de horário.' },
-      { id: 'plan_all_anual', name: 'Anual Black Belt Club', periodMonths: 12, price: 3120.00, monthlyEquivalent: 260.00, description: 'Plano elite com 2 kimonos Shoyoroll personalizados.' },
-      { id: 'plan_all_kids', name: 'Alliance Kids & Little Eagles', periodMonths: 1, price: 250.00, monthlyEquivalent: 250.00, description: 'Metodologia exclusiva de liderança e disciplina infantil.' }
-    ]
-  },
-  {
-    id: 'acad_checkmat_vm',
-    name: 'Checkmat Tatame Vila Mariana',
-    shortName: 'Checkmat',
-    branch: 'Unidade Vila Mariana',
-    city: 'São Paulo - SP',
-    phone: '(11) 5082-3344',
-    saasPlanTier: 'BRONZE',
-    maxActiveStudentsLimit: 40,
-    activeStudentsCount: 40,
-    voiceEnabled: true,
-    voiceStyle: 'energetic',
-    notificationFormat: 'name_only',
-    chimeType: 'mercado_livre',
-    speechRate: 1.15,
-    speechPitch: 1.20,
-    customPhrasePrefix: 'Checkmat!',
-    defaultFinePercent: 2.0,
-    defaultMonthlyInterestPercent: 1.0,
-    pixKey: 'contato@checkmatvm.com.br',
-    bankAccount: 'Banco do Brasil (001) Ag 3302 CC 55190-2',
-    monthlyRevenueTarget: 52000,
-    pricingPlans: [
-      { id: 'plan_chk_mensal', name: 'Mensal Checkmat', periodMonths: 1, price: 220.00, monthlyEquivalent: 220.00, description: 'Jiu-jitsu de alta performance para todos os níveis.', isPopular: true },
-      { id: 'plan_chk_trimestral', name: 'Trimestral Checkmat', periodMonths: 3, price: 600.00, monthlyEquivalent: 200.00, description: 'Excelente custo benefício na Vila Mariana.' },
-      { id: 'plan_chk_anual', name: 'Anual Cavalo de Aço', periodMonths: 12, price: 2160.00, monthlyEquivalent: 180.00, description: 'Treino ilimitado com acompanhamento nutricional.' },
-      { id: 'plan_chk_kids', name: 'Checkmat Kids', periodMonths: 1, price: 180.00, monthlyEquivalent: 180.00, description: 'Turmas infantis com foco em autoconfiança.' }
-    ]
-  },
-  {
-    id: 'acad_nova_uniao',
-    name: 'Nova União Moema',
-    shortName: 'Nova União',
-    branch: 'Unidade Moema Pássaros',
-    city: 'São Paulo - SP',
-    phone: '(11) 5051-7788',
-    voiceEnabled: true,
-    voiceStyle: 'gentle',
-    notificationFormat: 'full_message',
-    chimeType: 'chime_bright',
-    speechRate: 0.95,
-    speechPitch: 1.02,
-    customPhrasePrefix: 'Nova União Comunica',
-    defaultFinePercent: 2.0,
-    defaultMonthlyInterestPercent: 1.0,
-    pixKey: 'pix@novauniaomoema.com.br',
-    bankAccount: 'Banco Inter (077) Ag 0001 CC 991204-1',
-    monthlyRevenueTarget: 58000,
-    pricingPlans: [
-      { id: 'plan_nu_mensal', name: 'Mensal Nova União', periodMonths: 1, price: 240.00, monthlyEquivalent: 240.00, description: 'Tradição em Gi e No-Gi em Moema.', isPopular: true },
-      { id: 'plan_nu_trimestral', name: 'Trimestral Moema Prime', periodMonths: 3, price: 660.00, monthlyEquivalent: 220.00, description: 'Treine quando quiser com taxa de matrícula isenta.' },
-      { id: 'plan_nu_anual', name: 'Anual Campeões NU', periodMonths: 12, price: 2400.00, monthlyEquivalent: 200.00, description: 'Plano completo com direito a treinar em filiais.' },
-      { id: 'plan_nu_kids', name: 'Nova União Kids', periodMonths: 1, price: 190.00, monthlyEquivalent: 190.00, description: 'Disciplina e amizade no tatame para crianças.' }
-    ]
   }
 ];
 
@@ -1400,81 +1410,20 @@ export const defaultPlatformGeneralManager: PlatformGeneralManager = {
 
 export const mockPlatformAcademyPayments: PlatformAcademyPayment[] = [
   {
-    id: 'plat_pay_1',
-    academyId: 'acad_bjj_jardins',
-    academyName: 'BJJ Academy Jardins',
-    branch: 'Matriz Jardins - SP',
-    activeStudentsCount: 120,
+    id: 'plat_pay_loyalty',
+    academyId: 'acad_loyalty_jiujitsu',
+    academyName: 'Loyalty Jiu-Jitsu',
+    branch: 'Matriz Oficial • CE',
+    activeStudentsCount: 165,
     fixedAmount: 130.00,
-    variableAmount: 156.00, // 120 x 1.30
-    amount: 286.00, // 130 + 156
-    dueDate: '05/09/2026',
+    variableAmount: 214.50, // 165 x 1.30
+    amount: 344.50, // 130 + 214.50
+    dueDate: '10/09/2026',
     status: 'paid',
-    paidDate: '01/09/2026',
+    paidDate: '05/09/2026',
     referenceMonth: '09/2026',
     invoiceRef: 'FAT-PLAT-2026-001',
-    pixCode: '00020126580014br.gov.bcb.pix0111580876303785204000053039865406286.005802BR5925MESSIAS B SILVA JR6009SAO PAULO62170513BJJPLAT0016304D1A2'
-  },
-  {
-    id: 'plat_pay_2',
-    academyId: 'acad_gracie_barra',
-    academyName: 'Gracie Barra Centro',
-    branch: 'Unidade Centro Histórico',
-    activeStudentsCount: 85,
-    fixedAmount: 130.00,
-    variableAmount: 110.50, // 85 x 1.30
-    amount: 240.50, // 130 + 110.50
-    dueDate: '05/09/2026',
-    status: 'paid',
-    paidDate: '02/09/2026',
-    referenceMonth: '09/2026',
-    invoiceRef: 'FAT-PLAT-2026-002',
-    pixCode: '00020126580014br.gov.bcb.pix0111580876303785204000053039865406240.505802BR5925MESSIAS B SILVA JR6009SAO PAULO62170513BJJPLAT0026304F2B3'
-  },
-  {
-    id: 'plat_pay_3',
-    academyId: 'acad_alliance_morumbi',
-    academyName: 'Alliance Jiu-Jitsu Morumbi',
-    branch: 'Unidade Portal do Morumbi',
-    activeStudentsCount: 150,
-    fixedAmount: 130.00,
-    variableAmount: 195.00, // 150 x 1.30
-    amount: 325.00, // 130 + 195
-    dueDate: '05/09/2026',
-    status: 'pending',
-    referenceMonth: '09/2026',
-    invoiceRef: 'FAT-PLAT-2026-003',
-    pixCode: '00020126580014br.gov.bcb.pix0111580876303785204000053039865406325.005802BR5925MESSIAS B SILVA JR6009SAO PAULO62170513BJJPLAT0036304A3C4'
-  },
-  {
-    id: 'plat_pay_4',
-    academyId: 'acad_checkmat_vm',
-    academyName: 'Checkmat Tatame Vila Mariana',
-    branch: 'Unidade Vila Mariana',
-    activeStudentsCount: 90,
-    fixedAmount: 130.00,
-    variableAmount: 117.00, // 90 x 1.30
-    amount: 247.00, // 130 + 117
-    dueDate: '05/09/2026',
-    status: 'pending',
-    referenceMonth: '09/2026',
-    invoiceRef: 'FAT-PLAT-2026-004',
-    pixCode: '00020126580014br.gov.bcb.pix0111580876303785204000053039865406247.005802BR5925MESSIAS B SILVA JR6009SAO PAULO62170513BJJPLAT0046304B4D5'
-  },
-  {
-    id: 'plat_pay_5',
-    academyId: 'acad_nova_uniao',
-    academyName: 'Nova União Moema',
-    branch: 'Unidade Moema Pássaros',
-    activeStudentsCount: 75,
-    fixedAmount: 130.00,
-    variableAmount: 97.50, // 75 x 1.30
-    amount: 227.50, // 130 + 97.50
-    dueDate: '05/09/2026',
-    status: 'pending',
-    referenceMonth: '09/2026',
-    invoiceRef: 'FAT-PLAT-2026-005',
-    pixCode: '00020126580014br.gov.bcb.pix0111580876303785204000053039865406227.505802BR5925MESSIAS B SILVA JR6009SAO PAULO62170513BJJPLAT0056304C5E6'
+    pixCode: '00020126580014br.gov.bcb.pix0111580876303785204000053039865406344.505802BR5925MESSIAS B SILVA JR6009SAO PAULO62170513BJJPLAT0016304D1A2'
   }
 ];
 
@@ -1602,16 +1551,16 @@ export const mockRetentionAlerts: RetentionAlertItem[] = [
     studentId: 'stu_marcos_09',
     studentName: 'Marcos Vinicius Andrade',
     studentPhone: '(11) 98721-4321',
-    studentAvatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=200&auto=format&fit=crop&q=80',
+    studentAvatar: '/bjj_media/bjj_student_male.jpg',
     studentBelt: 'white',
-    academyId: 'acad_bjj_jardins',
-    academyName: 'BJJ Academy Jardins',
+    academyId: 'acad_loyalty_jiujitsu',
+    academyName: 'Loyalty Jiu-Jitsu',
     lastAttendanceDate: '12/08/2026',
     daysAbsent: 23,
     churnRisk: 'critico',
     contactStatus: 'pendente',
     detectedCause: 'desmotivado',
-    monthlyFee: 240.0,
+    monthlyFee: 290.0,
     preferredClassTime: '19:30 (Noite)'
   },
   {
@@ -1619,10 +1568,10 @@ export const mockRetentionAlerts: RetentionAlertItem[] = [
     studentId: 'stu_juliana_04',
     studentName: 'Juliana Camargo Silva',
     studentPhone: '(11) 99342-8811',
-    studentAvatar: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=200&auto=format&fit=crop&q=80',
+    studentAvatar: '/bjj_media/bjj_student_female.jpg',
     studentBelt: 'blue',
-    academyId: 'acad_bjj_jardins',
-    academyName: 'BJJ Academy Jardins',
+    academyId: 'acad_loyalty_jiujitsu',
+    academyName: 'Loyalty Jiu-Jitsu',
     lastAttendanceDate: '20/08/2026',
     daysAbsent: 15,
     churnRisk: 'alto',
@@ -1630,7 +1579,7 @@ export const mockRetentionAlerts: RetentionAlertItem[] = [
     lastContactDate: '02/09/2026',
     contactNotes: 'Relatou dores nas costas; fisioterapia em andamento. Volta dia 10.',
     detectedCause: 'lesao',
-    monthlyFee: 260.0,
+    monthlyFee: 290.0,
     preferredClassTime: '07:00 (Manhã)'
   },
   {
@@ -1638,16 +1587,16 @@ export const mockRetentionAlerts: RetentionAlertItem[] = [
     studentId: 'stu_felipe_07',
     studentName: 'Felipe Antunes Barreto',
     studentPhone: '(11) 97123-5599',
-    studentAvatar: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=200&auto=format&fit=crop&q=80',
+    studentAvatar: '/bjj_media/bjj_student_male.jpg',
     studentBelt: 'purple',
-    academyId: 'acad_bjj_jardins',
-    academyName: 'BJJ Academy Jardins',
+    academyId: 'acad_loyalty_jiujitsu',
+    academyName: 'Loyalty Jiu-Jitsu',
     lastAttendanceDate: '27/08/2026',
     daysAbsent: 8,
     churnRisk: 'moderado',
     contactStatus: 'pendente',
     detectedCause: 'trabalho',
-    monthlyFee: 220.0,
+    monthlyFee: 290.0,
     preferredClassTime: '20:30 (Competição)'
   },
   {
@@ -1655,16 +1604,16 @@ export const mockRetentionAlerts: RetentionAlertItem[] = [
     studentId: 'stu_ricardo_08',
     studentName: 'Ricardo Duarte Meirelles',
     studentPhone: '(11) 96543-2211',
-    studentAvatar: 'https://images.unsplash.com/photo-1522075469751-3a6694fb2f61?w=200&auto=format&fit=crop&q=80',
+    studentAvatar: '/bjj_media/bjj_student_male.jpg',
     studentBelt: 'white',
-    academyId: 'acad_bjj_jardins',
-    academyName: 'BJJ Academy Jardins',
+    academyId: 'acad_loyalty_jiujitsu',
+    academyName: 'Loyalty Jiu-Jitsu',
     lastAttendanceDate: '05/08/2026',
     daysAbsent: 30,
     churnRisk: 'critico',
     contactStatus: 'pendente',
     detectedCause: 'indefinido',
-    monthlyFee: 240.0,
+    monthlyFee: 290.0,
     preferredClassTime: '12:00 (Almoço)'
   },
   {
@@ -1672,16 +1621,16 @@ export const mockRetentionAlerts: RetentionAlertItem[] = [
     studentId: 'stu_gabriel_03',
     studentName: 'Gabriel Siqueira',
     studentPhone: '(11) 98111-3322',
-    studentAvatar: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=200&auto=format&fit=crop&q=80',
+    studentAvatar: '/bjj_media/bjj_student_male.jpg',
     studentBelt: 'blue',
-    academyId: 'acad_bjj_morumbi',
-    academyName: 'BJJ Academy Morumbi',
+    academyId: 'acad_loyalty_jiujitsu',
+    academyName: 'Loyalty Jiu-Jitsu',
     lastAttendanceDate: '18/08/2026',
     daysAbsent: 17,
     churnRisk: 'alto',
     contactStatus: 'pendente',
     detectedCause: 'trabalho',
-    monthlyFee: 280.0,
+    monthlyFee: 290.0,
     preferredClassTime: '19:30 (Noite)'
   },
   {
@@ -1689,10 +1638,10 @@ export const mockRetentionAlerts: RetentionAlertItem[] = [
     studentId: 'stu_carolina_06',
     studentName: 'Carolina Braga',
     studentPhone: '(11) 97444-9988',
-    studentAvatar: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=200&auto=format&fit=crop&q=80',
+    studentAvatar: '/bjj_media/bjj_student_female.jpg',
     studentBelt: 'white',
-    academyId: 'acad_bjj_morumbi',
-    academyName: 'BJJ Academy Morumbi',
+    academyId: 'acad_loyalty_jiujitsu',
+    academyName: 'Loyalty Jiu-Jitsu',
     lastAttendanceDate: '26/08/2026',
     daysAbsent: 9,
     churnRisk: 'moderado',
@@ -1700,7 +1649,7 @@ export const mockRetentionAlerts: RetentionAlertItem[] = [
     lastContactDate: '01/09/2026',
     contactNotes: 'Confirmou presença para o treino de sexta!',
     detectedCause: 'desmotivado',
-    monthlyFee: 250.0,
+    monthlyFee: 290.0,
     preferredClassTime: '18:30 (Feminino)'
   }
 ];
@@ -1821,11 +1770,11 @@ export const mockBirthdays: BirthdayPerson[] = [
     birthMonth: 9,
     phone: '(11) 98452-1920',
     email: 'lucas.mendes@bjjacademy.com',
-    avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=200&auto=format&fit=crop&q=80',
+    avatar: '/bjj_media/bjj_student_male.jpg',
     belt: 'blue',
     stripes: 3,
-    academyId: 'acad_bjj_jardins',
-    academyName: 'BJJ Academy Jardins',
+    academyId: 'acad_loyalty_jiujitsu',
+    academyName: 'Loyalty Jiu-Jitsu',
     congratulated: false
   },
   {
@@ -1836,11 +1785,11 @@ export const mockBirthdays: BirthdayPerson[] = [
     birthDay: 4,
     birthMonth: 9,
     phone: '(11) 99123-4567',
-    avatar: 'https://images.unsplash.com/photo-1543610892-0b1f7e6d8ac1?w=200&auto=format&fit=crop&q=80',
+    avatar: '/bjj_media/bjj_kid_student.jpg',
     belt: 'grey_white',
     stripes: 2,
-    academyId: 'acad_bjj_jardins',
-    academyName: 'BJJ Academy Jardins',
+    academyId: 'acad_loyalty_jiujitsu',
+    academyName: 'Loyalty Jiu-Jitsu',
     congratulated: true,
     congratulatedDate: '04/09 às 08:15',
     congratulatedChannel: 'whatsapp'
@@ -1853,11 +1802,11 @@ export const mockBirthdays: BirthdayPerson[] = [
     birthDay: 5,
     birthMonth: 9,
     phone: '(11) 98765-4321',
-    avatar: 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=200&auto=format&fit=crop&q=80',
+    avatar: '/bjj_media/bjj_student_female.jpg',
     belt: 'brown',
     stripes: 1,
-    academyId: 'acad_bjj_jardins',
-    academyName: 'BJJ Academy Jardins',
+    academyId: 'acad_loyalty_jiujitsu',
+    academyName: 'Loyalty Jiu-Jitsu',
     congratulated: false
   },
   {
@@ -1868,11 +1817,11 @@ export const mockBirthdays: BirthdayPerson[] = [
     birthDay: 7,
     birthMonth: 9,
     phone: '(11) 97123-4455',
-    avatar: 'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=200&auto=format&fit=crop&q=80',
+    avatar: '/bjj_media/bjj_student_male.jpg',
     belt: 'white',
     stripes: 2,
-    academyId: 'acad_bjj_jardins',
-    academyName: 'BJJ Academy Jardins',
+    academyId: 'acad_loyalty_jiujitsu',
+    academyName: 'Loyalty Jiu-Jitsu',
     congratulated: false
   },
   {
@@ -1883,11 +1832,11 @@ export const mockBirthdays: BirthdayPerson[] = [
     birthDay: 12,
     birthMonth: 9,
     phone: '(11) 99888-1122',
-    avatar: 'https://images.unsplash.com/photo-1560250097-0b93528c311a?w=200&auto=format&fit=crop&q=80',
+    avatar: '/bjj_media/bjj_professor_mestre.jpg',
     belt: 'black',
     stripes: 3,
-    academyId: 'acad_bjj_jardins',
-    academyName: 'BJJ Academy Jardins',
+    academyId: 'acad_loyalty_jiujitsu',
+    academyName: 'Loyalty Jiu-Jitsu',
     congratulated: false
   },
   {
@@ -1898,11 +1847,11 @@ export const mockBirthdays: BirthdayPerson[] = [
     birthDay: 18,
     birthMonth: 9,
     phone: '(11) 99555-3344',
-    avatar: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=200&auto=format&fit=crop&q=80',
+    avatar: '/bjj_media/bjj_professor_mestre.jpg',
     belt: 'black',
     stripes: 1,
-    academyId: 'acad_bjj_jardins',
-    academyName: 'BJJ Academy Jardins',
+    academyId: 'acad_loyalty_jiujitsu',
+    academyName: 'Loyalty Jiu-Jitsu',
     congratulated: false
   },
   {
@@ -1913,11 +1862,11 @@ export const mockBirthdays: BirthdayPerson[] = [
     birthDay: 22,
     birthMonth: 9,
     phone: '(11) 98222-7788',
-    avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=200&auto=format&fit=crop&q=80',
+    avatar: '/bjj_media/bjj_student_female.jpg',
     belt: 'white',
     stripes: 4,
-    academyId: 'acad_bjj_jardins',
-    academyName: 'BJJ Academy Jardins',
+    academyId: 'acad_loyalty_jiujitsu',
+    academyName: 'Loyalty Jiu-Jitsu',
     congratulated: false
   },
   {
@@ -1928,11 +1877,11 @@ export const mockBirthdays: BirthdayPerson[] = [
     birthDay: 25,
     birthMonth: 9,
     phone: '(11) 98111-9900',
-    avatar: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=200&auto=format&fit=crop&q=80',
+    avatar: '/bjj_media/bjj_student_male.jpg',
     belt: 'purple',
     stripes: 1,
-    academyId: 'acad_bjj_jardins',
-    academyName: 'BJJ Academy Jardins',
+    academyId: 'acad_loyalty_jiujitsu',
+    academyName: 'Loyalty Jiu-Jitsu',
     congratulated: false
   },
   {
@@ -1943,11 +1892,11 @@ export const mockBirthdays: BirthdayPerson[] = [
     birthDay: 15,
     birthMonth: 10,
     phone: '(11) 99333-8877',
-    avatar: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=200&auto=format&fit=crop&q=80',
+    avatar: '/bjj_media/bjj_kid_student.jpg',
     belt: 'yellow_white',
     stripes: 2,
-    academyId: 'acad_bjj_jardins',
-    academyName: 'BJJ Academy Jardins',
+    academyId: 'acad_loyalty_jiujitsu',
+    academyName: 'Loyalty Jiu-Jitsu',
     congratulated: false
   }
 ];

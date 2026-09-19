@@ -68,7 +68,9 @@ export const StudentView: React.FC<StudentViewProps> = ({
   const [isHoursModalOpen, setIsHoursModalOpen] = useState(false);
 
   const pendingInvoice = invoices.find(i => i.status === 'pending' || i.status === 'overdue');
-  const nextDegreeProgress = Math.round((student.currentAttendanceCount / student.classesForNextDegree) * 100);
+  const nextDegreeProgress = (student && student.classesForNextDegree > 0)
+    ? Math.min(100, Math.max(0, Math.round(((student.currentAttendanceCount || 0) / student.classesForNextDegree) * 100)))
+    : 0;
 
   const handleSend = (e: React.FormEvent) => {
     e.preventDefault();

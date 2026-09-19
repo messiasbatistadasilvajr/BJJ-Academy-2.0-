@@ -37,6 +37,7 @@ import { StudentManagementModal } from './components/common/StudentManagementMod
 import { CloudDatabaseStatusModal } from './components/common/CloudDatabaseStatusModal';
 import { CEOProfileModal } from './components/common/CEOProfileModal';
 import { CEOLoginModal } from './components/common/CEOLoginModal';
+import { AcademyOperatingHoursModal } from './components/common/AcademyOperatingHoursModal';
 import { academyVoiceEngine } from './utils/voiceNotification';
 import { useOnlineStatus } from './hooks/usePWAInstall';
 import { safeLocalStorageGet, safeLocalStorageSet } from './utils/safeStorage';
@@ -162,7 +163,18 @@ export default function App() {
   });
   const [isCloudSynced, setIsCloudSynced] = useState<boolean>(true);
   const [isStudentManagementOpen, setIsStudentManagementOpen] = useState(false);
+  const [studentManagementInitialRegistering, setStudentManagementInitialRegistering] = useState<boolean>(false);
+  const [studentManagementTargetAcademy, setStudentManagementTargetAcademy] = useState<RegisteredAcademy | undefined>(undefined);
   const [isCloudStatusOpen, setIsCloudStatusOpen] = useState(false);
+
+  const handleOpenStudentEnrollment = (targetAcademy?: RegisteredAcademy) => {
+    if (targetAcademy) {
+      setStudentManagementTargetAcademy(targetAcademy);
+      setActiveAcademyId(targetAcademy.id);
+    }
+    setStudentManagementInitialRegistering(true);
+    setIsStudentManagementOpen(true);
+  };
 
   useEffect(() => {
     safeLocalStorageSet('bjj_birthdays', birthdays);
@@ -205,34 +217,29 @@ export default function App() {
   };
 
   // Registered Academies State (Persisted in localStorage & Firestore)
+  // Strict Single-Academy Architecture: Loyalty Jiu-Jitsu Matriz Oficial
   const [academies, setAcademies] = useState<RegisteredAcademy[]>(() => {
-    const cached = safeLocalStorageGet<RegisteredAcademy[]>('bjj_academies', mockRegisteredAcademies);
-    // Ensure Loyalty Jiu-Jitsu is updated to Matriz Oficial CE with official photo.jpg / loyalty_logo
-    const loyaltyMock = mockRegisteredAcademies.find(a => a.id === 'acad_loyalty_jiujitsu');
-    if (loyaltyMock) {
-      const existingLoyaltyIndex = cached.findIndex(a => a.id === 'acad_loyalty_jiujitsu' || a.name.toLowerCase().includes('loyalty'));
-      if (existingLoyaltyIndex === -1) {
-        return [loyaltyMock, ...cached];
-      } else {
-        cached[existingLoyaltyIndex] = {
-          ...cached[existingLoyaltyIndex],
-          branch: 'Matriz Oficial • CE',
-          city: 'Fortaleza - CE',
-          state: 'CE',
-          logo: '/loyalty_logo.jpg',
-          logoPresetId: 'loyalty_official',
-          operatingHours: cached[existingLoyaltyIndex].operatingHours || loyaltyMock.operatingHours
-        };
-        return cached;
-      }
-    }
-    return cached;
+    const loyaltyMock = mockRegisteredAcademies.find(a => a.id === 'acad_loyalty_jiujitsu') || mockRegisteredAcademies[0];
+    const loyaltyOnly: RegisteredAcademy[] = [{
+      ...loyaltyMock,
+      branch: 'Matriz Oficial • CE',
+      city: 'Fortaleza - CE',
+      state: 'CE',
+      logo: '/loyalty_logo.jpg',
+      logoPresetId: 'loyalty_official',
+      operatingHours: loyaltyMock.operatingHours
+    }];
+    safeLocalStorageSet('bjj_academies', loyaltyOnly);
+    return loyaltyOnly;
   });
   const [activeAcademyId, setActiveAcademyId] = useState<string>(() => {
-    return safeLocalStorageGet<string>('bjj_active_academy_id', mockRegisteredAcademies[0].id);
+    safeLocalStorageSet('bjj_active_academy_id', 'acad_loyalty_jiujitsu');
+    return 'acad_loyalty_jiujitsu';
   });
 
   const activeAcademy = academies.find((a) => a.id === activeAcademyId) || academies[0];
+  const [isOperatingHoursOpen, setIsOperatingHoursOpen] = useState(false);
+  const [academyForHours, setAcademyForHours] = useState<RegisteredAcademy | null>(null);
 
   // Dynamic Island & Push Notifications State
   const [activePush, setActivePush] = useState<PushNotification | null>(null);
@@ -266,8 +273,13 @@ export default function App() {
 
     const unsubAcademies = subscribeToAcademies((updatedAcademies) => {
       if (updatedAcademies && updatedAcademies.length > 0) {
-        setAcademies(updatedAcademies);
-        safeLocalStorageSet('bjj_academies', updatedAcademies);
+        const loyaltyOnly = updatedAcademies.filter(
+          (a) => a.id === 'acad_loyalty_jiujitsu' || a.name.toLowerCase().includes('loyalty')
+        );
+        if (loyaltyOnly.length > 0) {
+          setAcademies(loyaltyOnly);
+          safeLocalStorageSet('bjj_academies', loyaltyOnly);
+        }
         setIsCloudSynced(true);
       }
     });
@@ -696,6 +708,31 @@ export default function App() {
       isCloudSynced={isCloudSynced}
       onOpenCEOProfile={() => setIsCEOProfileOpen(true)}
       onOpenCEOLogin={() => setIsCEOLoginOpen(true)}
+      academies={academies}
+      activeAcademyId={activeAcademyId}
+      onSelectAcademy={(id) => {
+        if (id === 'all') {
+          setActiveAcademyId('all');
+          triggerPushNotification(
+            '🌐 Rede BJJACADEMY — Visão Global',
+            `Filtro aplicado para todas as ${academies.length} academias cadastradas.`
+          );
+        } else {
+          setActiveAcademyId(id);
+          const chosen = academies.find((a) => a.id === id);
+          if (chosen) {
+            triggerPushNotification(
+              '🥋 Tatame Selecionado',
+              `Alternado para ${chosen.name} (${chosen.branch || chosen.city || 'Matriz'})`
+            );
+          }
+        }
+      }}
+      onOpenOperatingHours={(acad) => {
+        setAcademyForHours(acad);
+        setIsOperatingHoursOpen(true);
+      }}
+      onOpenStudentEnrollment={handleOpenStudentEnrollment}
     >
       {/* Offline Mode Banner */}
       {!isOnline && (
@@ -863,6 +900,7 @@ export default function App() {
           isGeneralManager={isSuperAdminOrCEO}
           isCEO={isCEO}
           onOpenStudentManagement={() => setIsStudentManagementOpen(true)}
+          onOpenStudentEnrollment={handleOpenStudentEnrollment}
           onOpenCloudStatus={() => setIsCloudStatusOpen(true)}
           studentsCount={studentsList.length}
           onOpenCEOProfile={() => setIsCEOProfileOpen(true)}
@@ -909,6 +947,7 @@ export default function App() {
             academyVoiceEngine.announceAcademyMessage(activeAcademy, title, body);
           }}
           onBackToManager={() => setActiveRole('manager')}
+          onOpenStudentEnrollment={handleOpenStudentEnrollment}
         />
       )}
 
@@ -1255,7 +1294,10 @@ export default function App() {
       {/* 👥 Cloud Student Management & Multi-User Roster Modal */}
       <StudentManagementModal
         isOpen={isStudentManagementOpen}
-        onClose={() => setIsStudentManagementOpen(false)}
+        onClose={() => {
+          setIsStudentManagementOpen(false);
+          setStudentManagementInitialRegistering(false);
+        }}
         students={studentsList}
         activeStudentId={student.id}
         onSelectStudent={(selected) => {
@@ -1272,9 +1314,10 @@ export default function App() {
             `${saved.name} foi sincronizado no Firebase Firestore com sucesso.`
           );
         }}
-        academyName={activeAcademy.name}
-        activeAcademy={activeAcademy}
+        academyName={(studentManagementTargetAcademy || activeAcademy).name}
+        activeAcademy={studentManagementTargetAcademy || activeAcademy}
         onUpdateAcademy={handleUpdateAcademy}
+        initialRegistering={studentManagementInitialRegistering}
       />
 
       {/* ☁️ Cloud Database Architecture & Real-Time Sync Status Modal */}
@@ -1314,6 +1357,15 @@ export default function App() {
         onOpenSaaSSimulator={() => setIsSaaSSimulatorOpen(true)}
         onOpenFinancial={() => setIsFinancialOpen(true)}
       />
+
+      {/* 🥋 Academy Operating Hours Modal (Opened via Academy Filter Bar) */}
+      {isOperatingHoursOpen && academyForHours && (
+        <AcademyOperatingHoursModal
+          isOpen={isOperatingHoursOpen}
+          onClose={() => setIsOperatingHoursOpen(false)}
+          academy={academyForHours}
+        />
+      )}
     </DeviceFrame>
     </ErrorBoundary>
   );

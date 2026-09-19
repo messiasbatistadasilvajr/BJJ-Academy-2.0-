@@ -106,6 +106,7 @@ export interface StudentProfile {
   birthDate?: string;
   age?: number;
   cpf?: string;
+  studentCpf?: string;
   rg?: string;
   gender?: 'male' | 'female' | 'other';
   heightCm?: number;
@@ -486,6 +487,8 @@ export interface TechniqueItem {
   category: TechniqueCategory;
   minimumBelt: BeltColor;
   videoThumb: string;
+  videoUrl?: string;
+  videoDuration?: string;
   difficulty: 'Iniciante' | 'Intermediário' | 'Avançado';
   steps: string[];
   keyDetails: string[];

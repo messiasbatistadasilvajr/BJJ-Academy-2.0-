@@ -22,6 +22,8 @@ import { sendReceiptViaWhatsApp, sendReminderViaWhatsApp } from '../../utils/wha
 import { DueAlertsDrawer } from '../common/DueAlertsDrawer';
 import { AcademyOperatingHoursModal } from '../common/AcademyOperatingHoursModal';
 import { safeLocalStorageGet, safeLocalStorageSet } from '../../utils/safeStorage';
+import { StudentEnrollmentButton } from '../common/StudentEnrollmentButton';
+import { saveCRMLeadToFirestore, subscribeToCRMLeads } from '../../firebase/firestoreService';
 
 interface ManagerViewProps {
   classes: ClassSession[];
@@ -55,6 +57,7 @@ interface ManagerViewProps {
   onOpenBirthdayAlert?: () => void;
   todayBirthdaysCount?: number;
   onOpenStudentManagement?: () => void;
+  onOpenStudentEnrollment?: (academy?: RegisteredAcademy) => void;
   onOpenCloudStatus?: () => void;
   studentsCount?: number;
   onOpenCEOProfile?: () => void;
@@ -92,11 +95,16 @@ export const ManagerView: React.FC<ManagerViewProps> = ({
   onOpenBirthdayAlert,
   todayBirthdaysCount,
   onOpenStudentManagement,
+  onOpenStudentEnrollment,
   onOpenCloudStatus,
   studentsCount,
   onOpenCEOProfile,
 }) => {
   const [activeTab, setActiveTab] = useState<'dashboard' | 'financeiro' | 'crm' | 'push' | 'academies'>('dashboard');
+
+  const activeRegisteredAcademy = useMemo(() => {
+    return academies.find(a => a.id === activeAcademyId) || academies[0];
+  }, [academies, activeAcademyId]);
   
   // CRM Kanban Leads state
   const [leads, setLeads] = useState<CRMLead[]>(() => {
@@ -108,6 +116,16 @@ export const ManagerView: React.FC<ManagerViewProps> = ({
   const [newLeadInterest, setNewLeadInterest] = useState('Jiu-Jitsu Adulto Fundamentos');
   const [newLeadChannel, setNewLeadChannel] = useState<'instagram' | 'indicacao' | 'google' | 'passante' | 'whatsapp'>('instagram');
   const [newLeadNotes, setNewLeadNotes] = useState('');
+
+  useEffect(() => {
+    const unsub = subscribeToCRMLeads((cloudLeads) => {
+      if (cloudLeads && cloudLeads.length > 0) {
+        setLeads(cloudLeads);
+        safeLocalStorageSet('bjj_crm_leads', cloudLeads);
+      }
+    });
+    return () => unsub();
+  }, []);
 
   const saveLeadsToStorage = (updated: CRMLead[]) => {
     setLeads(updated);
@@ -124,18 +142,24 @@ export const ManagerView: React.FC<ManagerViewProps> = ({
       'perdido'
     ];
 
+    let targetLead: CRMLead | null = null;
     const updated = leads.map(ld => {
       if (ld.id === leadId) {
         const currentIdx = stageOrder.indexOf(ld.stage);
         const newIdx = direction === 'next' 
           ? Math.min(stageOrder.length - 1, currentIdx + 1)
           : Math.max(0, currentIdx - 1);
-        return { ...ld, stage: stageOrder[newIdx] };
+        const modified = { ...ld, stage: stageOrder[newIdx] };
+        targetLead = modified;
+        return modified;
       }
       return ld;
     });
 
     saveLeadsToStorage(updated);
+    if (targetLead) {
+      saveCRMLeadToFirestore(targetLead).catch(err => console.warn('Falha ao salvar lead no Firestore:', err));
+    }
   };
 
   const handleAddLead = (e: React.FormEvent) => {
@@ -157,6 +181,7 @@ export const ManagerView: React.FC<ManagerViewProps> = ({
     };
 
     saveLeadsToStorage([created, ...leads]);
+    saveCRMLeadToFirestore(created).catch(err => console.warn('Falha ao salvar novo lead no Firestore:', err));
     setNewLeadName('');
     setNewLeadPhone('');
     setNewLeadNotes('');
@@ -515,6 +540,20 @@ export const ManagerView: React.FC<ManagerViewProps> = ({
               <span className="sm:hidden">+ Academia</span>
             </button>
 
+            {/* Standard Button: Cadastrar Novo Aluno (Adulto ou Kids) */}
+            <StudentEnrollmentButton
+              academy={activeRegisteredAcademy || { id: activeAcademyId, name: activeAcademyName }}
+              onOpenEnrollment={(acad) => {
+                if (onOpenStudentEnrollment) {
+                  onOpenStudentEnrollment(acad || activeRegisteredAcademy);
+                } else if (onOpenStudentManagement) {
+                  onOpenStudentManagement();
+                }
+              }}
+              variant="header"
+              label="+ Cadastrar Aluno"
+            />
+
             {/* View Mode Toggle Button */}
             <button
               onClick={onToggleDesktopLayout}
@@ -735,6 +774,41 @@ export const ManagerView: React.FC<ManagerViewProps> = ({
                   Ocupação média: 82%
                 </div>
               </div>
+            </div>
+
+            {/* Destaque Oficial: Cadastro de Novos Alunos (Adulto & Kids com Responsável) */}
+            <div className="p-4 rounded-3xl bg-gradient-to-r from-blue-950/80 via-slate-900 to-indigo-950/70 border border-blue-500/40 shadow-xl flex flex-col sm:flex-row items-center justify-between gap-3">
+              <div className="flex items-center gap-3">
+                <div className="w-11 h-11 rounded-2xl bg-blue-600/20 border border-blue-400/30 flex items-center justify-center text-blue-300 shrink-0">
+                  <UserPlus className="w-5 h-5" />
+                </div>
+                <div>
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <h4 className="text-sm font-black text-white">
+                      Matrícula de Novos Alunos
+                    </h4>
+                    <span className="text-[10px] font-bold text-amber-300 bg-amber-500/20 px-2 py-0.5 rounded-full border border-amber-500/30">
+                      {activeAcademyName}
+                    </span>
+                  </div>
+                  <p className="text-[11px] text-slate-300 mt-0.5">
+                    Fluxo oficial para alunos adultos e <strong>Turma Kids</strong> com campos obrigatórios do responsável legal.
+                  </p>
+                </div>
+              </div>
+
+              <StudentEnrollmentButton
+                academy={activeRegisteredAcademy || { id: activeAcademyId, name: activeAcademyName }}
+                onOpenEnrollment={(acad) => {
+                  if (onOpenStudentEnrollment) {
+                    onOpenStudentEnrollment(acad || activeRegisteredAcademy);
+                  } else if (onOpenStudentManagement) {
+                    onOpenStudentManagement();
+                  }
+                }}
+                variant="hero"
+                label="Cadastrar Novo Aluno"
+              />
             </div>
 
             {/* Módulos Operacionais Tatame 2.0 */}
@@ -1029,20 +1103,50 @@ export const ManagerView: React.FC<ManagerViewProps> = ({
                     </span>
                   </div>
 
-                  <div className="flex items-center justify-between gap-2 pt-1">
-                    <span className="text-xs text-slate-400 flex items-center gap-1 font-semibold">
-                      <Building2 size={13} className="text-amber-400" /> Filtrar Filial:
-                    </span>
-                    <select
-                      value={selectedAcademyId}
-                      onChange={(e) => setSelectedAcademyId(e.target.value)}
-                      className="bg-slate-950 border border-slate-700 text-xs text-white rounded-xl px-2.5 py-1 font-bold"
-                    >
-                      <option value="all">🌐 Todas as Filiais (Consolidado)</option>
-                      {academies.map(a => (
-                        <option key={a.id} value={a.id}>{a.name} ({a.city})</option>
-                      ))}
-                    </select>
+                  <div className="space-y-2 pt-1">
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs text-slate-400 flex items-center gap-1 font-semibold">
+                        <Building2 size={13} className="text-amber-400" /> Navegação & Filtro BJJACADEMY:
+                      </span>
+                      <span className="text-[10px] text-amber-400 font-mono">
+                        {selectedAcademyId === 'all' ? 'Rede Completa' : academies.find(a => a.id === selectedAcademyId)?.shortName || 'Filial Ativa'}
+                      </span>
+                    </div>
+
+                    <div className="flex items-center gap-1.5 overflow-x-auto pb-1 no-scrollbar">
+                      <button
+                        type="button"
+                        onClick={() => setSelectedAcademyId('all')}
+                        className={`px-3 py-1.5 rounded-full text-xs font-bold transition-all shrink-0 flex items-center gap-1.5 ${
+                          selectedAcademyId === 'all'
+                            ? 'bg-black text-white border-2 border-amber-400 ring-2 ring-amber-400/40 shadow-sm'
+                            : 'bg-black text-white border border-slate-800 hover:border-slate-600'
+                        }`}
+                      >
+                        <span>🌐 Todas as Filiais</span>
+                      </button>
+                      {academies.map((a) => {
+                        const isSel = selectedAcademyId === a.id;
+                        return (
+                          <button
+                            key={a.id}
+                            type="button"
+                            onClick={() => setSelectedAcademyId(a.id)}
+                            className={`px-3 py-1.5 rounded-full text-xs font-bold transition-all shrink-0 flex items-center gap-1.5 ${
+                              isSel
+                                ? 'bg-black text-white border-2 border-amber-400 ring-2 ring-amber-400/40 shadow-sm'
+                                : 'bg-black text-white border border-slate-800 hover:border-slate-600'
+                            }`}
+                          >
+                            <span className={`w-1.5 h-1.5 rounded-full ${isSel ? 'bg-emerald-400' : 'bg-amber-400'}`} />
+                            <span>{a.name}</span>
+                            {a.state && (
+                              <span className="text-[9px] font-mono text-slate-400">({a.state})</span>
+                            )}
+                          </button>
+                        );
+                      })}
+                    </div>
                   </div>
                 </>
               ) : (

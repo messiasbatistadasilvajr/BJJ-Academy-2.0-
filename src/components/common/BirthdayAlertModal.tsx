@@ -165,10 +165,10 @@ export const BirthdayAlertModal: React.FC<BirthdayAlertModalProps> = ({
       birthMonth: Number(newMonth),
       phone: newPhone.trim() || '(11) 98000-0000',
       avatar: newRole === 'kids' 
-        ? 'https://images.unsplash.com/photo-1543610892-0b1f7e6d8ac1?w=200&auto=format&fit=crop&q=80'
+        ? '/bjj_media/bjj_kid_student.jpg'
         : newRole === 'teacher'
-        ? 'https://images.unsplash.com/photo-1560250097-0b93528c311a?w=200&auto=format&fit=crop&q=80'
-        : 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=200&auto=format&fit=crop&q=80',
+        ? '/bjj_media/bjj_professor_mestre.jpg'
+        : '/bjj_media/bjj_student_male.jpg',
       belt: newBelt,
       stripes: 0,
       academyName: activeAcademyName,

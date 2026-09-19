@@ -17,7 +17,7 @@ const SAMPLE_TATAME_PHOTOS = [
   {
     id: 'sample_gi_night',
     title: 'Turma Adulto Gi - Noite (10 Atletas)',
-    imageUrl: 'https://images.unsplash.com/photo-1517838277536-f5f99be501cd?w=800&auto=format&fit=crop&q=80',
+    imageUrl: '/bjj_media/bjj_team_group.jpg',
     detectedCount: 6,
     athletes: [
       { id: 'st_1', name: 'Carlos "Gracie" Silva', belt: 'blue' as BeltColor, stripes: 2, confidence: 0.98, confirmed: true },
@@ -31,7 +31,7 @@ const SAMPLE_TATAME_PHOTOS = [
   {
     id: 'sample_kids',
     title: 'Turma BJJ Kids & Juvenil (6 Atletas)',
-    imageUrl: 'https://images.unsplash.com/photo-1544367567-0f2fcb009e0b?w=800&auto=format&fit=crop&q=80',
+    imageUrl: '/bjj_media/bjj_kids_class.jpg',
     detectedCount: 4,
     athletes: [
       { id: 'st_1', name: 'Carlos "Gracie" Silva', belt: 'blue' as BeltColor, stripes: 2, confidence: 0.95, confirmed: true },

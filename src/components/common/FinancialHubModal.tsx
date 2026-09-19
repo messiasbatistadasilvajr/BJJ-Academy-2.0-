@@ -43,6 +43,12 @@ export const FinancialHubModal: React.FC<FinancialHubModalProps> = ({
 }) => {
   // Local Invoices State
   const [invoices, setInvoices] = useState<Invoice[]>(initialInvoices);
+
+  useEffect(() => {
+    if (initialInvoices) {
+      setInvoices(initialInvoices);
+    }
+  }, [initialInvoices]);
   
   // Financial RBAC Profile: 'general_manager' (Super Admin BJJ ACADEMY) vs 'unit_manager' (Unit Local Manager)
   const [accessProfile, setAccessProfile] = useState<FinancialAccessProfile>(

@@ -13,7 +13,12 @@ import {
   ChimeType, PlatformGeneralManager, AcademyPricingPlan,
   AcademyOperatingDay
 } from '../../types';
-import { defaultPlatformGeneralManager, loyaltyOfficialOperatingHours } from '../../data/mockData';
+import { 
+  defaultPlatformGeneralManager, 
+  loyaltyOfficialOperatingHours,
+  loyaltyOfficialScheduleGroups,
+  loyaltyOfficialKidsSchedule
+} from '../../data/mockData';
 import { AcademyOperatingHoursModal } from '../common/AcademyOperatingHoursModal';
 import { academyVoiceEngine } from '../../utils/voiceNotification';
 import { formatBRL } from '../../utils/financialCalculations';
@@ -26,6 +31,7 @@ import {
   validatePixKey, generateContractProtocol
 } from '../../utils/brazilianDocValidators';
 import { SaaSAgreementModal } from '../common/SaaSAgreementModal';
+import { StudentEnrollmentButton } from '../common/StudentEnrollmentButton';
 
 interface AcademyRegistrationViewProps {
   academies: RegisteredAcademy[];
@@ -37,6 +43,7 @@ interface AcademyRegistrationViewProps {
   generalManager?: PlatformGeneralManager;
   onOpenVoiceNotice?: (title: string, body: string) => void;
   onBackToManager?: () => void;
+  onOpenStudentEnrollment?: (academy: RegisteredAcademy) => void;
 }
 
 // Preset logos or martial shields
@@ -72,7 +79,8 @@ export const AcademyRegistrationView: React.FC<AcademyRegistrationViewProps> = (
   onDeleteAcademy,
   generalManager = defaultPlatformGeneralManager,
   onOpenVoiceNotice,
-  onBackToManager
+  onBackToManager,
+  onOpenStudentEnrollment
 }) => {
   // Navigation tabs: 'form' (Formulário de Cadastro/Edição) | 'list' (Filiais Cadastradas) | 'repasses' (Repasses Gestor Geral)
   const [activeTab, setActiveTab] = useState<'form' | 'list' | 'repasses'>('form');
@@ -1841,9 +1849,16 @@ export const AcademyRegistrationView: React.FC<AcademyRegistrationViewProps> = (
                   <div className="flex items-center gap-2">
                     <Clock className="w-5 h-5 text-amber-400" />
                     <div>
-                      <h3 className="text-sm font-black text-white uppercase tracking-wider">
-                        8. Horários de Funcionamento (Grade Semanal)
-                      </h3>
+                      <div className="flex items-center gap-2">
+                        <h3 className="text-sm font-black text-white uppercase tracking-wider">
+                          8. Horários de Funcionamento (Grade Semanal)
+                        </h3>
+                        {(name.toLowerCase().includes('loyalty') || editingAcademyId === 'acad_loyalty_jiujitsu') && (
+                          <span className="text-[10px] font-black uppercase text-amber-400 bg-amber-500/10 px-2 py-0.5 rounded-full border border-amber-500/30">
+                            Grade Oficial Loyalty Atualizada
+                          </span>
+                        )}
+                      </div>
                       <p className="text-[11px] text-slate-400">
                         Configuração dos horários e turmas nos tatames (Segunda a Domingo).
                       </p>
@@ -1863,6 +1878,73 @@ export const AcademyRegistrationView: React.FC<AcademyRegistrationViewProps> = (
                     <span>Carregar Grade Matriz</span>
                   </button>
                 </div>
+
+                {/* Exibição Exclusiva da Nova Grade Oficial para a Academia Loyalty Jiu-Jitsu */}
+                {(name.toLowerCase().includes('loyalty') || editingAcademyId === 'acad_loyalty_jiujitsu') && (
+                  <div className="p-4 rounded-2xl bg-gradient-to-r from-amber-950/40 via-slate-950 to-slate-900 border border-amber-500/40 space-y-3.5">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <span className="text-sm">🥋</span>
+                        <span className="text-xs font-black text-amber-300 uppercase tracking-wider">
+                          Nova Grade Oficial de Horários Atualizada — Loyalty Jiu-Jitsu
+                        </span>
+                      </div>
+                      <span className="text-[10px] text-slate-400 font-mono">MM XXIII</span>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                      {/* Segunda, Quarta e Sexta */}
+                      <div className="p-3 rounded-xl bg-slate-900/90 border border-slate-800 space-y-1.5 text-xs">
+                        <div className="font-black text-amber-400 border-b border-slate-800 pb-1 flex items-center justify-between">
+                          <span>Segunda, Quarta e Sexta (Adulto & Kids)</span>
+                          <span className="text-[10px] text-slate-400 font-normal">8 turmas</span>
+                        </div>
+                        <ul className="space-y-1 text-slate-300 text-[11px] font-mono">
+                          <li><strong className="text-white">07:00</strong> — Jiu-Jitsu Adulto (No-Gi / Sem Kimono)</li>
+                          <li><strong className="text-white">08:00</strong> — Jiu-Jitsu Adulto (Gi / Com Kimono)</li>
+                          <li><strong className="text-white">11:00</strong> — Jiu-Jitsu Adulto (Gi / Com Kimono)</li>
+                          <li><strong className="text-white">12:00</strong> — Jiu-Jitsu Adulto (No-Gi / Sem Kimono) <span className="text-amber-400/80">(Almoço)</span></li>
+                          <li><strong className="text-white">16:00</strong> — Jiu-Jitsu Adulto (No-Gi / Sem Kimono) <span className="text-amber-400/80">(Tarde)</span></li>
+                          <li className="text-purple-300 font-semibold"><strong className="text-white">18:00</strong> — Jiu-Jitsu Kids 1 (Seg/Qua) & Kids 2 (Sex)</li>
+                          <li><strong className="text-white">19:00</strong> — Jiu-Jitsu Adulto (Gi / Com Kimono) <span className="text-blue-400/80">(Noite)</span></li>
+                          <li><strong className="text-white">20:00</strong> — Jiu-Jitsu Adulto (Gi / Com Kimono) <span className="text-blue-400/80">(Noite)</span></li>
+                        </ul>
+                      </div>
+
+                      {/* Terça e Quinta */}
+                      <div className="p-3 rounded-xl bg-slate-900/90 border border-slate-800 space-y-1.5 text-xs">
+                        <div className="font-black text-amber-400 border-b border-slate-800 pb-1 flex items-center justify-between">
+                          <span>Terça e Quinta (Adulto & Kids)</span>
+                          <span className="text-[10px] text-slate-400 font-normal">7 turmas</span>
+                        </div>
+                        <ul className="space-y-1 text-slate-300 text-[11px] font-mono">
+                          <li><strong className="text-white">07:00</strong> — Jiu-Jitsu Adulto (No-Gi / Sem Kimono)</li>
+                          <li><strong className="text-white">11:00</strong> — Jiu-Jitsu Adulto (Gi / Com Kimono)</li>
+                          <li><strong className="text-white">12:00</strong> — Jiu-Jitsu Adulto (No-Gi / Sem Kimono) <span className="text-amber-400/80">(Almoço)</span></li>
+                          <li><strong className="text-white">16:00</strong> — Jiu-Jitsu Adulto (No-Gi / Sem Kimono) <span className="text-amber-400/80">(Tarde)</span></li>
+                          <li className="text-purple-300 font-semibold"><strong className="text-white">18:00</strong> — Jiu-Jitsu Kids 2</li>
+                          <li className="text-purple-300 font-semibold"><strong className="text-white">19:00</strong> — Jiu-Jitsu Kids 3</li>
+                          <li><strong className="text-white">20:00</strong> — Jiu-Jitsu Adulto (Gi / Com Kimono) <span className="text-blue-400/80">(Noite)</span></li>
+                        </ul>
+                      </div>
+                    </div>
+
+                    {/* Turmas Infantis */}
+                    <div className="p-2.5 rounded-xl bg-purple-950/30 border border-purple-900/50 flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs">
+                      <div className="flex items-center gap-2">
+                        <Users className="w-4 h-4 text-purple-400" />
+                        <span className="font-black text-purple-300 uppercase text-[11px]">Turmas Infantis (Kids):</span>
+                      </div>
+                      <div className="flex flex-wrap items-center gap-3 text-[11px] text-slate-300">
+                        <span><strong>Kids 1:</strong> Seg/Qua às 18:00</span>
+                        <span>•</span>
+                        <span><strong>Kids 2:</strong> Ter/Qui/Sex às 18:00</span>
+                        <span>•</span>
+                        <span><strong>Kids 3:</strong> Ter/Qui às 19:00</span>
+                      </div>
+                    </div>
+                  </div>
+                )}
 
                 <div className="space-y-2.5">
                   {operatingHours.map((dayItem, dIdx) => (
@@ -2346,7 +2428,68 @@ export const AcademyRegistrationView: React.FC<AcademyRegistrationViewProps> = (
                 <Plus size={14} />
                 <span>Nova Filial</span>
               </button>
+
+              {onOpenStudentEnrollment && (
+                <StudentEnrollmentButton
+                  academy={activeAcademy}
+                  onOpenEnrollment={onOpenStudentEnrollment}
+                  variant="hero"
+                  label={`+ Cadastrar Aluno (${activeAcademy.shortName || activeAcademy.name.split(' ')[0]})`}
+                />
+              )}
             </div>
+          </div>
+
+          {/* Quick Academy Navigation & Filter Buttons (BJJACADEMY) */}
+          <div className="flex items-center gap-2 overflow-x-auto pb-1 pt-1 no-scrollbar">
+            <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider shrink-0 flex items-center gap-1">
+              <Building2 className="w-3.5 h-3.5 text-amber-400" /> Tatames:
+            </span>
+            <button
+              type="button"
+              onClick={() => setSearchTerm('')}
+              className={`px-3.5 py-1.5 rounded-full text-xs font-bold transition-all shrink-0 flex items-center gap-1.5 ${
+                searchTerm === ''
+                  ? 'bg-black text-white border-2 border-amber-400 ring-2 ring-amber-400/40 shadow-sm'
+                  : 'bg-black text-white border border-slate-800 hover:border-slate-600'
+              }`}
+            >
+              <span>🌐 Todas ({academies.length})</span>
+            </button>
+            {academies.map((acad) => {
+              const isSelected = acad.id === activeAcademy.id;
+              const isFiltered = searchTerm.toLowerCase() === acad.name.toLowerCase();
+              return (
+                <button
+                  key={acad.id}
+                  type="button"
+                  onClick={() => {
+                    if (searchTerm.toLowerCase() === acad.name.toLowerCase()) {
+                      setSearchTerm('');
+                    } else {
+                      setSearchTerm(acad.name);
+                    }
+                  }}
+                  className={`px-3.5 py-1.5 rounded-full text-xs font-bold transition-all shrink-0 flex items-center gap-2 shadow-xs ${
+                    isFiltered || isSelected
+                      ? 'bg-black text-white border-2 border-amber-400 ring-2 ring-amber-400/40 shadow-sm'
+                      : 'bg-black text-white border border-slate-800 hover:border-slate-600'
+                  }`}
+                  title={`${acad.name} • ${acad.city || ''}`}
+                >
+                  <span className={`w-2 h-2 rounded-full shrink-0 ${isSelected ? 'bg-emerald-400 animate-pulse' : 'bg-amber-400'}`} />
+                  <span>{acad.name}</span>
+                  {acad.state && (
+                    <span className="text-[10px] font-mono text-amber-300/80 uppercase">({acad.state})</span>
+                  )}
+                  {isSelected && (
+                    <span className="text-[9px] font-black uppercase text-emerald-400 bg-emerald-950/60 px-1.5 py-0.2 rounded-full border border-emerald-500/30">
+                      Ativa
+                    </span>
+                  )}
+                </button>
+              );
+            })}
           </div>
 
           {/* Academies Grid */}
@@ -2487,6 +2630,19 @@ export const AcademyRegistrationView: React.FC<AcademyRegistrationViewProps> = (
                       </button>
                     )}
                   </div>
+
+                  {/* Standard Enrollment Trigger for this Academy */}
+                  {onOpenStudentEnrollment && (
+                    <div className="pt-2 border-t border-slate-800/60">
+                      <StudentEnrollmentButton
+                        academy={acad}
+                        onOpenEnrollment={onOpenStudentEnrollment}
+                        variant="card"
+                        label={`+ Cadastrar Aluno em ${acad.shortName || acad.name.split(' ')[0]}`}
+                        className="w-full justify-center"
+                      />
+                    </div>
+                  )}
                 </div>
               );
             })}

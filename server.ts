@@ -163,6 +163,20 @@ async function startServer() {
   });
 
   // -----------------------------------------------------------------
+  // 3.1 PROCESSED WEBHOOK NOTIFICATIONS
+  // -----------------------------------------------------------------
+  app.get('/api/financial/notifications', (req, res) => {
+    const tenantId = (req.query.tenantId as string) || 'all';
+    const notifications = financialWorker.getNotifications(tenantId);
+    res.json({
+      success: true,
+      tenantId,
+      count: notifications.length,
+      notifications
+    });
+  });
+
+  // -----------------------------------------------------------------
   // 4. SIMULATION ENDPOINT FOR TESTING & INTEGRATION
   // Safely generates and fires a real webhook event through the pipeline
   // -----------------------------------------------------------------

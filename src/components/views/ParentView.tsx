@@ -45,17 +45,29 @@ export const ParentView: React.FC<ParentViewProps> = ({
   const currentChild = dependents[selectedChildIndex] || dependents[0];
 
   // Child-specific invoices
-  const childInvoices = invoices.filter(i => 
-    i.studentId === currentChild.id || i.studentName.toLowerCase().includes(currentChild.name.split(' ')[0].toLowerCase())
-  );
+  const childInvoices = currentChild
+    ? invoices.filter(i => 
+        i.studentId === currentChild.id || (i.studentName && i.studentName.toLowerCase().includes(currentChild.name.split(' ')[0].toLowerCase()))
+      )
+    : [];
   const pendingChildInvoice = childInvoices.find(i => i.status === 'pending');
 
   const handleSend = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!chatInput.trim()) return;
+    if (!chatInput.trim() || !currentChild) return;
     onSendMessage(`[Recado de Pai para ${currentChild.name.split(' ')[0]}]: ${chatInput.trim()}`);
     setChatInput('');
   };
+
+  if (!currentChild) {
+    return (
+      <div className="flex flex-col items-center justify-center h-full p-8 text-center text-slate-400">
+        <Users className="w-12 h-12 mb-3 text-slate-600" />
+        <h3 className="text-base font-bold text-slate-200">Nenhum dependente vinculado</h3>
+        <p className="text-xs text-slate-400 mt-1">Cadastre seus dependentes ou alunos Kids na recepção da academia.</p>
+      </div>
+    );
+  }
 
   return (
     <div className="flex flex-col h-full bg-slate-950/65 backdrop-blur-[0.5px] text-slate-100 overflow-y-auto pb-20 no-scrollbar">

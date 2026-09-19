@@ -1,15 +1,17 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   X, Users, UserPlus, Search, Shield, Award, 
   Phone, Mail, CheckCircle2, ChevronRight, Trash2, 
   Sparkles, Cloud, RefreshCw, AlertCircle, Zap, 
-  Lock, UserCheck, UserX, ArrowUpRight
+  Lock, UserCheck, UserX, ArrowUpRight, Baby,
+  HeartHandshake, FileText, Calendar, ShieldCheck
 } from 'lucide-react';
 import { StudentProfile, BeltColor, RegisteredAcademy, SaasPlanTier, SAAS_PLAN_DETAILS, SAAS_PLAN_LIMITS } from '../../types';
 import { BeltBadge } from './BeltBadge';
 import { saveStudentToFirestore, removeStudentFromFirestore } from '../../firebase/firestoreService';
 import { StudentEnrollmentService } from '../../services/studentEnrollmentService';
 import { PlanUpgradeModal } from './PlanUpgradeModal';
+import { validateCPF, formatCPF, formatPhone } from '../../utils/brazilianDocValidators';
 
 interface StudentManagementModalProps {
   isOpen: boolean;
@@ -21,6 +23,7 @@ interface StudentManagementModalProps {
   academyName: string;
   activeAcademy?: RegisteredAcademy;
   onUpdateAcademy?: (academy: RegisteredAcademy) => void;
+  initialRegistering?: boolean;
 }
 
 export const StudentManagementModal: React.FC<StudentManagementModalProps> = ({
@@ -32,10 +35,11 @@ export const StudentManagementModal: React.FC<StudentManagementModalProps> = ({
   onStudentSaved,
   academyName,
   activeAcademy,
-  onUpdateAcademy
+  onUpdateAcademy,
+  initialRegistering = false,
 }) => {
   const [searchTerm, setSearchTerm] = useState('');
-  const [isRegistering, setIsRegistering] = useState(false);
+  const [isRegistering, setIsRegistering] = useState(initialRegistering);
   const [isSaving, setIsSaving] = useState(false);
   const [statusFilter, setStatusFilter] = useState<'ALL' | 'ATIVO' | 'INATIVO'>('ALL');
   
@@ -43,16 +47,38 @@ export const StudentManagementModal: React.FC<StudentManagementModalProps> = ({
   const [isUpgradeModalOpen, setIsUpgradeModalOpen] = useState(false);
   const [blockedStudentName, setBlockedStudentName] = useState('');
   const [planErrorMessage, setPlanErrorMessage] = useState<string | null>(null);
+  const [formValidationError, setFormValidationError] = useState<string | null>(null);
 
   // Form State for new student
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [phone, setPhone] = useState('');
+  const [birthDate, setBirthDate] = useState('');
+  const [studentCpf, setStudentCpf] = useState('');
   const [belt, setBelt] = useState<BeltColor>('white');
   const [stripes, setStripes] = useState<number>(0);
   const [category, setCategory] = useState<'Adulto Médio' | 'Infantil B' | 'Master 1 Pesado' | 'Juvenil Leve'>('Adulto Médio');
   const [weightKg, setWeightKg] = useState<number>(75);
   const [studentStatus, setStudentStatus] = useState<'ATIVO' | 'INATIVO'>('ATIVO');
+
+  // Kids / Minor Responsible State (Mandatory when isMinor is true)
+  const [isMinor, setIsMinor] = useState<boolean>(false);
+  const [parentName, setParentName] = useState('');
+  const [parentRelationship, setParentRelationship] = useState('Mãe');
+  const [parentCpf, setParentCpf] = useState('');
+  const [parentPhone, setParentPhone] = useState('');
+  const [parentEmail, setParentEmail] = useState('');
+  const [parentRg, setParentRg] = useState('');
+  const [parentProfession, setParentProfession] = useState('');
+  const [emergencyContactName, setEmergencyContactName] = useState('');
+  const [emergencyContactPhone, setEmergencyContactPhone] = useState('');
+
+  // Sync initialRegistering prop when modal opens
+  useEffect(() => {
+    if (isOpen && initialRegistering) {
+      setIsRegistering(true);
+    }
+  }, [isOpen, initialRegistering]);
 
   if (!isOpen) return null;
 
@@ -95,7 +121,40 @@ export const StudentManagementModal: React.FC<StudentManagementModalProps> = ({
 
   const handleCreateStudent = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!name.trim()) return;
+    setFormValidationError(null);
+
+    if (!name.trim()) {
+      setFormValidationError('O Nome Completo do aluno é obrigatório.');
+      return;
+    }
+
+    // Regra e Validação para Aluno Menor de Idade / Turma Kids
+    if (isMinor) {
+      if (!parentName.trim()) {
+        setFormValidationError('⚠️ Campo Obrigatório: Informe o Nome Completo do Responsável Legal do aluno Kids.');
+        return;
+      }
+      if (!parentRelationship.trim()) {
+        setFormValidationError('⚠️ Campo Obrigatório: Selecione o Grau de Parentesco do Responsável Legal.');
+        return;
+      }
+      if (!parentCpf.trim()) {
+        setFormValidationError('⚠️ Campo Obrigatório: Informe o CPF do Responsável Legal para o contrato.');
+        return;
+      }
+      if (!validateCPF(parentCpf)) {
+        setFormValidationError('⚠️ CPF Inválido: O CPF informado para o Responsável Legal não possui dígitos verificadores válidos.');
+        return;
+      }
+      if (!parentPhone.trim()) {
+        setFormValidationError('⚠️ Campo Obrigatório: Informe o Telefone / WhatsApp de contato do Responsável Legal.');
+        return;
+      }
+      if (!parentEmail.trim() || !parentEmail.includes('@')) {
+        setFormValidationError('⚠️ Campo Obrigatório: Informe um E-mail válido para o Responsável Legal receber faturas e contrato.');
+        return;
+      }
+    }
 
     setPlanErrorMessage(null);
     setIsSaving(true);
@@ -104,9 +163,9 @@ export const StudentManagementModal: React.FC<StudentManagementModalProps> = ({
     const newStudent: StudentProfile = {
       id: newStudentId,
       name: name.trim(),
-      email: email.trim() || `${name.trim().toLowerCase().replace(/\s+/g, '.')}@bjjacademy.com`,
-      phone: phone.trim() || '(11) 99999-0000',
-      avatar: `https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=200&auto=format&fit=crop&q=80`,
+      email: email.trim() || (isMinor && parentEmail.trim() ? parentEmail.trim() : `${name.trim().toLowerCase().replace(/\s+/g, '.')}@bjjacademy.com`),
+      phone: phone.trim() || (isMinor && parentPhone.trim() ? parentPhone.trim() : '(11) 99999-0000'),
+      avatar: isMinor ? '/bjj_media/bjj_kid_student.jpg' : '/bjj_media/bjj_student_male.jpg',
       belt,
       stripes,
       degreesNeededForNext: 4,
@@ -122,6 +181,20 @@ export const StudentManagementModal: React.FC<StudentManagementModalProps> = ({
       tenantId: currentAcademy.id,
       academyId: currentAcademy.id,
       academyName: currentAcademy.name,
+      // Kids / Menor de Idade & Responsável Legal
+      isMinor: !!isMinor,
+      birthDate: birthDate.trim() || undefined,
+      cpf: studentCpf.trim() || undefined,
+      studentCpf: studentCpf.trim() || undefined,
+      parentName: isMinor ? parentName.trim() : undefined,
+      parentRelationship: isMinor ? parentRelationship.trim() : undefined,
+      parentCpf: isMinor ? parentCpf.trim() : undefined,
+      parentRg: isMinor && parentRg.trim() ? parentRg.trim() : undefined,
+      parentPhone: isMinor ? parentPhone.trim() : undefined,
+      parentEmail: isMinor ? parentEmail.trim() : undefined,
+      parentProfession: isMinor && parentProfession.trim() ? parentProfession.trim() : undefined,
+      emergencyContactName: emergencyContactName.trim() || undefined,
+      emergencyContactPhone: emergencyContactPhone.trim() || undefined,
       promotions: [
         {
           id: 'prom_init_' + Date.now(),
@@ -129,7 +202,9 @@ export const StudentManagementModal: React.FC<StudentManagementModalProps> = ({
           stripes,
           date: new Date().toLocaleDateString('pt-BR'),
           instructor: 'Registro Inicial no Sistema',
-          notes: 'Matrícula efetuada com validação no Database Tier.'
+          notes: isMinor 
+            ? `Matrícula Kids efetuada. Responsável Legal: ${parentName.trim()} (${parentRelationship.trim()}).`
+            : 'Matrícula efetuada com validação no Database Tier.'
         }
       ]
     };
@@ -161,8 +236,21 @@ export const StudentManagementModal: React.FC<StudentManagementModalProps> = ({
       setName('');
       setEmail('');
       setPhone('');
+      setBirthDate('');
+      setStudentCpf('');
       setStripes(0);
       setStudentStatus('ATIVO');
+      setIsMinor(false);
+      setParentName('');
+      setParentRelationship('Mãe');
+      setParentCpf('');
+      setParentPhone('');
+      setParentEmail('');
+      setParentRg('');
+      setParentProfession('');
+      setEmergencyContactName('');
+      setEmergencyContactPhone('');
+      setFormValidationError(null);
     } catch (err) {
       console.error('Erro ao salvar aluno na nuvem:', err);
     } finally {
@@ -396,21 +484,261 @@ export const StudentManagementModal: React.FC<StudentManagementModalProps> = ({
                   </span>
                 </div>
 
+                {/* Validation Feedback Error */}
+                {formValidationError && (
+                  <div className="p-3 rounded-xl bg-red-950/70 border border-red-500/80 text-red-300 text-xs flex items-center gap-2">
+                    <AlertCircle size={16} className="text-red-400 shrink-0" />
+                    <span>{formValidationError}</span>
+                  </div>
+                )}
+
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
                   <div className="sm:col-span-2">
-                    <label className="block text-slate-300 font-semibold mb-1">Nome Completo *</label>
+                    <label className="block text-slate-300 font-semibold mb-1">Nome Completo do Aluno *</label>
                     <input
                       type="text"
                       required
                       placeholder="Ex: Carlos Eduardo de Oliveira"
                       value={name}
-                      onChange={(e) => setName(e.target.value)}
+                      onChange={(e) => {
+                        setName(e.target.value);
+                        if (formValidationError) setFormValidationError(null);
+                      }}
                       className="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-white placeholder-slate-500 focus:outline-none focus:border-blue-500"
                     />
                   </div>
 
                   <div>
-                    <label className="block text-slate-300 font-semibold mb-1">E-mail</label>
+                    <label className="block text-slate-300 font-semibold mb-1">Data de Nascimento</label>
+                    <input
+                      type="date"
+                      value={birthDate}
+                      onChange={(e) => setBirthDate(e.target.value)}
+                      className="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-white placeholder-slate-500 focus:outline-none focus:border-blue-500"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-slate-300 font-semibold mb-1">
+                      CPF do Aluno {isMinor ? '(Opcional para Kids)' : '*'}
+                    </label>
+                    <input
+                      type="text"
+                      maxLength={14}
+                      placeholder="000.000.000-00"
+                      value={studentCpf}
+                      onChange={(e) => setStudentCpf(formatCPF(e.target.value))}
+                      className="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-white placeholder-slate-500 focus:outline-none focus:border-blue-500 font-mono"
+                    />
+                  </div>
+
+                  {/* PERGUNTA INTERATIVA: O aluno é menor de idade / Turma Kids? */}
+                  <div className="sm:col-span-2 p-3.5 rounded-2xl bg-gradient-to-r from-slate-900 to-slate-950 border border-slate-700/80 space-y-2.5">
+                    <div className="flex items-center justify-between gap-2 flex-wrap">
+                      <div className="flex items-center gap-2">
+                        <div className="p-1.5 rounded-xl bg-purple-500/20 text-purple-300 border border-purple-500/40">
+                          <Baby size={18} />
+                        </div>
+                        <div>
+                          <label className="text-xs font-black text-white flex items-center gap-1.5">
+                            O aluno é menor de idade / Turma Kids?
+                            <span className="text-amber-400">*</span>
+                          </label>
+                          <p className="text-[10px] text-slate-400">
+                            Define a obrigatoriedade dos dados do responsável legal para validade jurídica e contrato.
+                          </p>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center bg-slate-950 p-1 rounded-xl border border-slate-800">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setIsMinor(false);
+                            setFormValidationError(null);
+                            if (category === 'Infantil B') setCategory('Adulto Médio');
+                          }}
+                          className={`px-3 py-1.5 rounded-lg text-xs font-black transition-all cursor-pointer ${
+                            !isMinor 
+                              ? 'bg-slate-800 text-white shadow-xs border border-slate-700' 
+                              : 'text-slate-400 hover:text-slate-200'
+                          }`}
+                        >
+                          NÃO (Adulto / 18+)
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setIsMinor(true);
+                            setFormValidationError(null);
+                            if (category === 'Adulto Médio' || category === 'Master 1 Pesado') setCategory('Infantil B');
+                            if (belt === 'blue' || belt === 'purple' || belt === 'brown' || belt === 'black') setBelt('grey');
+                          }}
+                          className={`px-3 py-1.5 rounded-lg text-xs font-black transition-all cursor-pointer flex items-center gap-1.5 ${
+                            isMinor 
+                              ? 'bg-gradient-to-r from-purple-600 to-indigo-600 text-white shadow-md shadow-purple-950 border border-purple-400/40' 
+                              : 'text-slate-400 hover:text-purple-300'
+                          }`}
+                        >
+                          <span>SIM (Kids / Menor)</span>
+                          <span className="text-[9px] px-1 rounded bg-purple-950 text-purple-200 border border-purple-400/30">Obrigatório</span>
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* SE A RESPOSTA FOR SIM: CAMPOS OBRIGATÓRIOS DO RESPONSÁVEL LEGAL */}
+                    {isMinor && (
+                      <div className="mt-3 pt-3 border-t border-purple-500/30 bg-purple-950/20 rounded-xl p-3 space-y-3 border border-purple-500/30">
+                        <div className="flex items-center justify-between gap-2">
+                          <span className="text-xs font-extrabold text-purple-200 uppercase tracking-wider flex items-center gap-1.5">
+                            <HeartHandshake size={14} className="text-purple-300" />
+                            Dados Obrigatórios do Responsável Legal (Contrato & Cobrança)
+                          </span>
+                          <span className="text-[10px] text-purple-300 bg-purple-900/60 px-2 py-0.5 rounded-full border border-purple-500/40 font-mono">
+                            Exigência Jurídica & ECA
+                          </span>
+                        </div>
+
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                          <div className="sm:col-span-2">
+                            <label className="block text-slate-200 font-bold mb-1 text-[11px]">
+                              Nome Completo do Responsável Legal *
+                            </label>
+                            <input
+                              type="text"
+                              required={isMinor}
+                              placeholder="Ex: Patrícia Cristina da Silva"
+                              value={parentName}
+                              onChange={(e) => setParentName(e.target.value)}
+                              className="w-full bg-slate-900 border border-purple-500/40 rounded-xl px-3 py-2 text-white placeholder-slate-500 focus:outline-none focus:border-purple-400 text-xs"
+                            />
+                          </div>
+
+                          <div>
+                            <label className="block text-slate-200 font-bold mb-1 text-[11px]">
+                              Grau de Parentesco *
+                            </label>
+                            <select
+                              value={parentRelationship}
+                              onChange={(e) => setParentRelationship(e.target.value)}
+                              className="w-full bg-slate-900 border border-purple-500/40 rounded-xl px-3 py-2 text-white focus:outline-none focus:border-purple-400 text-xs font-semibold"
+                            >
+                              <option value="Mãe">Mãe</option>
+                              <option value="Pai">Pai</option>
+                              <option value="Tutor(a) Legal">Tutor(a) Legal / Guardião</option>
+                              <option value="Avó / Avô">Avó / Avô</option>
+                              <option value="Tia / Tio">Tia / Tio</option>
+                              <option value="Outro Responsável Legal">Outro Responsável Legal</option>
+                            </select>
+                          </div>
+
+                          <div>
+                            <label className="block text-slate-200 font-bold mb-1 text-[11px] flex items-center justify-between">
+                              <span>CPF do Responsável *</span>
+                              {parentCpf && (
+                                <span className={`text-[10px] font-mono ${validateCPF(parentCpf) ? 'text-emerald-400' : 'text-red-400'}`}>
+                                  {validateCPF(parentCpf) ? '✓ CPF Válido' : '✕ CPF Inválido'}
+                                </span>
+                              )}
+                            </label>
+                            <input
+                              type="text"
+                              required={isMinor}
+                              maxLength={14}
+                              placeholder="000.000.000-00"
+                              value={parentCpf}
+                              onChange={(e) => setParentCpf(formatCPF(e.target.value))}
+                              className={`w-full bg-slate-900 border rounded-xl px-3 py-2 text-white placeholder-slate-500 focus:outline-none text-xs font-mono ${
+                                parentCpf && !validateCPF(parentCpf) ? 'border-red-500 focus:border-red-400' : 'border-purple-500/40 focus:border-purple-400'
+                              }`}
+                            />
+                          </div>
+
+                          <div>
+                            <label className="block text-slate-200 font-bold mb-1 text-[11px]">
+                              WhatsApp / Telefone do Responsável *
+                            </label>
+                            <input
+                              type="text"
+                              required={isMinor}
+                              maxLength={15}
+                              placeholder="(11) 98888-7777"
+                              value={parentPhone}
+                              onChange={(e) => setParentPhone(formatPhone(e.target.value))}
+                              className="w-full bg-slate-900 border border-purple-500/40 rounded-xl px-3 py-2 text-white placeholder-slate-500 focus:outline-none focus:border-purple-400 text-xs font-mono"
+                            />
+                          </div>
+
+                          <div>
+                            <label className="block text-slate-200 font-bold mb-1 text-[11px]">
+                              E-mail do Responsável (Faturas & Contrato) *
+                            </label>
+                            <input
+                              type="email"
+                              required={isMinor}
+                              placeholder="responsavel@exemplo.com"
+                              value={parentEmail}
+                              onChange={(e) => setParentEmail(e.target.value)}
+                              className="w-full bg-slate-900 border border-purple-500/40 rounded-xl px-3 py-2 text-white placeholder-slate-500 focus:outline-none focus:border-purple-400 text-xs"
+                            />
+                          </div>
+
+                          <div>
+                            <label className="block text-slate-300 mb-1 text-[11px]">
+                              RG do Responsável (Opcional)
+                            </label>
+                            <input
+                              type="text"
+                              placeholder="Ex: 12.345.678-9 SSP"
+                              value={parentRg}
+                              onChange={(e) => setParentRg(e.target.value)}
+                              className="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-white placeholder-slate-500 focus:outline-none text-xs"
+                            />
+                          </div>
+
+                          <div>
+                            <label className="block text-slate-300 mb-1 text-[11px]">
+                              Profissão do Responsável (Opcional p/ Contrato)
+                            </label>
+                            <input
+                              type="text"
+                              placeholder="Ex: Engenheira / Advogado"
+                              value={parentProfession}
+                              onChange={(e) => setParentProfession(e.target.value)}
+                              className="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-white placeholder-slate-500 focus:outline-none text-xs"
+                            />
+                          </div>
+
+                          <div className="sm:col-span-2 pt-1 border-t border-purple-500/20">
+                            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1.5">
+                              Contato de Emergência Secundário (Opcional):
+                            </span>
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                              <input
+                                type="text"
+                                placeholder="Nome do Contato (Ex: Avó Maria)"
+                                value={emergencyContactName}
+                                onChange={(e) => setEmergencyContactName(e.target.value)}
+                                className="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-1.5 text-white placeholder-slate-500 text-xs"
+                              />
+                              <input
+                                type="text"
+                                placeholder="Telefone Emergência"
+                                value={emergencyContactPhone}
+                                onChange={(e) => setEmergencyContactPhone(formatPhone(e.target.value))}
+                                className="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-1.5 text-white placeholder-slate-500 text-xs font-mono"
+                              />
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+
+                  <div>
+                    <label className="block text-slate-300 font-semibold mb-1">
+                      E-mail do Aluno {isMinor && '(Opcional se fornecido do Responsável)'}
+                    </label>
                     <input
                       type="email"
                       placeholder="carlos@exemplo.com"
@@ -421,13 +749,16 @@ export const StudentManagementModal: React.FC<StudentManagementModalProps> = ({
                   </div>
 
                   <div>
-                    <label className="block text-slate-300 font-semibold mb-1">Telefone / WhatsApp</label>
+                    <label className="block text-slate-300 font-semibold mb-1">
+                      Telefone do Aluno {isMinor && '(Opcional se fornecido do Responsável)'}
+                    </label>
                     <input
                       type="text"
+                      maxLength={15}
                       placeholder="(11) 98888-7777"
                       value={phone}
-                      onChange={(e) => setPhone(e.target.value)}
-                      className="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-white placeholder-slate-500 focus:outline-none focus:border-blue-500"
+                      onChange={(e) => setPhone(formatPhone(e.target.value))}
+                      className="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-white placeholder-slate-500 focus:outline-none focus:border-blue-500 font-mono"
                     />
                   </div>
 
@@ -538,7 +869,7 @@ export const StudentManagementModal: React.FC<StudentManagementModalProps> = ({
                   >
                     <div className="flex items-center gap-3 min-w-0">
                       <img 
-                        src={s.avatar || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&auto=format&fit=crop&q=80'} 
+                        src={s.avatar || (s.isMinor ? '/bjj_media/bjj_kid_student.jpg' : '/bjj_media/bjj_student_male.jpg')} 
                         alt={s.name}
                         className="w-11 h-11 rounded-full object-cover border-2 border-slate-700 shrink-0"
                       />
@@ -546,6 +877,13 @@ export const StudentManagementModal: React.FC<StudentManagementModalProps> = ({
                         <div className="flex items-center gap-2 flex-wrap">
                           <span className="font-bold text-sm text-white truncate">{s.name}</span>
                           
+                          {/* Kids Badge */}
+                          {s.isMinor && (
+                            <span className="px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider shrink-0 bg-purple-500/20 text-purple-300 border border-purple-500/40 flex items-center gap-1">
+                              🧒 Turma Kids
+                            </span>
+                          )}
+
                           {/* Student Status Badge (ATIVO vs INATIVO) */}
                           <span className={`px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider shrink-0 border ${
                             isStudentActive 
@@ -561,6 +899,19 @@ export const StudentManagementModal: React.FC<StudentManagementModalProps> = ({
                             </span>
                           )}
                         </div>
+
+                        {/* Info do Responsável Legal para Alunos Kids */}
+                        {s.isMinor && s.parentName && (
+                          <div className="text-[11px] text-purple-300/90 font-medium flex items-center gap-1.5 mt-0.5 flex-wrap">
+                            <HeartHandshake size={12} className="text-purple-400 shrink-0" />
+                            <span>
+                              Resp: <strong className="text-white">{s.parentName}</strong> ({s.parentRelationship || 'Resp.'})
+                            </span>
+                            {s.parentPhone && <span className="text-slate-400 font-mono">• {s.parentPhone}</span>}
+                            {s.parentCpf && <span className="text-slate-500 font-mono text-[10px]">({s.parentCpf})</span>}
+                          </div>
+                        )}
+
                         <div className="flex items-center gap-2 mt-1">
                           <BeltBadge belt={s.belt} stripes={s.stripes} />
                           <span className="text-[11px] text-slate-400">
@@ -568,6 +919,11 @@ export const StudentManagementModal: React.FC<StudentManagementModalProps> = ({
                           </span>
                           {s.weightKg && (
                             <span className="text-[11px] text-slate-500">• {s.weightKg} kg</span>
+                          )}
+                          {s.category && (
+                            <span className="text-[10px] text-slate-400 bg-slate-800/80 px-1.5 py-0.2 rounded border border-slate-700">
+                              {s.category}
+                            </span>
                           )}
                         </div>
                       </div>

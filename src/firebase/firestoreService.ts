@@ -22,19 +22,23 @@ import {
   PayableExpense
 } from '../types';
 
-// Helper to remove undefined values since Firestore rejects undefined fields
-function sanitizeForFirestore<T extends Record<string, any>>(obj: T): Record<string, any> {
+// Helper to deeply remove undefined values and sanitize objects/arrays for Firestore
+export function sanitizeForFirestore(val: any): any {
+  if (val === undefined) return null;
+  if (val === null || typeof val !== 'object') return val;
+  if (val instanceof Date) return val;
+  if (Array.isArray(val)) {
+    return val
+      .filter((item) => item !== undefined)
+      .map((item) => (typeof item === 'object' && item !== null ? sanitizeForFirestore(item) : item));
+  }
   const clean: Record<string, any> = {};
-  Object.keys(obj).forEach((key) => {
-    const val = obj[key];
-    if (val !== undefined) {
-      if (val !== null && typeof val === 'object' && !Array.isArray(val) && !(val instanceof Date)) {
-        clean[key] = sanitizeForFirestore(val);
-      } else {
-        clean[key] = val;
-      }
+  for (const key of Object.keys(val)) {
+    const propVal = val[key];
+    if (propVal !== undefined) {
+      clean[key] = sanitizeForFirestore(propVal);
     }
-  });
+  }
   return clean;
 }
 
@@ -55,11 +59,13 @@ export function subscribeToStudents(
           students.push(docSnap.data() as StudentProfile);
         });
         onUpdate(students);
+      } else {
+        onUpdate([]);
       }
     },
     (error) => {
+      console.warn(`[Firestore Listener] ${colPath}:`, error);
       if (onError) onError(error);
-      handleFirestoreError(error, OperationType.GET, colPath);
     }
   );
 }
@@ -100,11 +106,13 @@ export function subscribeToAcademies(
           academies.push(docSnap.data() as RegisteredAcademy);
         });
         onUpdate(academies);
+      } else {
+        onUpdate([]);
       }
     },
     (error) => {
+      console.warn(`[Firestore Listener] ${colPath}:`, error);
       if (onError) onError(error);
-      handleFirestoreError(error, OperationType.GET, colPath);
     }
   );
 }
@@ -136,11 +144,13 @@ export function subscribeToClasses(
           classes.push(docSnap.data() as ClassSession);
         });
         onUpdate(classes);
+      } else {
+        onUpdate([]);
       }
     },
     (error) => {
+      console.warn(`[Firestore Listener] ${colPath}:`, error);
       if (onError) onError(error);
-      handleFirestoreError(error, OperationType.GET, colPath);
     }
   );
 }
@@ -172,11 +182,13 @@ export function subscribeToInvoices(
           invoices.push(docSnap.data() as Invoice);
         });
         onUpdate(invoices);
+      } else {
+        onUpdate([]);
       }
     },
     (error) => {
+      console.warn(`[Firestore Listener] ${colPath}:`, error);
       if (onError) onError(error);
-      handleFirestoreError(error, OperationType.GET, colPath);
     }
   );
 }
@@ -208,11 +220,13 @@ export function subscribeToSparringSessions(
           sessions.push(docSnap.data() as SparringSession);
         });
         onUpdate(sessions);
+      } else {
+        onUpdate([]);
       }
     },
     (error) => {
+      console.warn(`[Firestore Listener] ${colPath}:`, error);
       if (onError) onError(error);
-      handleFirestoreError(error, OperationType.GET, colPath);
     }
   );
 }
@@ -244,11 +258,13 @@ export function subscribeToBirthdays(
           list.push(docSnap.data() as BirthdayPerson);
         });
         onUpdate(list);
+      } else {
+        onUpdate([]);
       }
     },
     (error) => {
+      console.warn(`[Firestore Listener] ${colPath}:`, error);
       if (onError) onError(error);
-      handleFirestoreError(error, OperationType.GET, colPath);
     }
   );
 }
@@ -260,6 +276,54 @@ export async function saveBirthdayToFirestore(person: BirthdayPerson): Promise<v
     await setDoc(docRef, sanitizeForFirestore(person), { merge: true });
   } catch (error) {
     handleFirestoreError(error, OperationType.WRITE, `${colPath}/${person.id}`);
+  }
+}
+
+// -------------------------------------------------------------
+// CRM LEADS (Captação e Funil de Matrículas)
+// -------------------------------------------------------------
+export function subscribeToCRMLeads(
+  onUpdate: (leads: CRMLead[]) => void,
+  onError?: (err: unknown) => void
+) {
+  const colPath = 'crm_leads';
+  return onSnapshot(
+    collection(db, colPath),
+    (snapshot) => {
+      if (!snapshot.empty) {
+        const list: CRMLead[] = [];
+        snapshot.forEach((docSnap) => {
+          list.push(docSnap.data() as CRMLead);
+        });
+        onUpdate(list);
+      } else {
+        onUpdate([]);
+      }
+    },
+    (error) => {
+      console.warn(`[Firestore Listener] ${colPath}:`, error);
+      if (onError) onError(error);
+    }
+  );
+}
+
+export async function saveCRMLeadToFirestore(lead: CRMLead): Promise<void> {
+  const colPath = 'crm_leads';
+  try {
+    const docRef = doc(db, colPath, lead.id);
+    await setDoc(docRef, sanitizeForFirestore(lead), { merge: true });
+  } catch (error) {
+    handleFirestoreError(error, OperationType.WRITE, `${colPath}/${lead.id}`);
+  }
+}
+
+export async function deleteCRMLeadFromFirestore(leadId: string): Promise<void> {
+  const colPath = 'crm_leads';
+  try {
+    const docRef = doc(db, colPath, leadId);
+    await deleteDoc(docRef);
+  } catch (error) {
+    handleFirestoreError(error, OperationType.DELETE, `${colPath}/${leadId}`);
   }
 }
 
@@ -412,7 +476,7 @@ export async function seedInitialFirestoreDataIfEmpty(initial: {
       console.log('[Firestore] Students seeded successfully.');
     }
 
-    // Check academies collection
+    // Check academies collection - ensure only Loyalty Jiu-Jitsu exists
     const academiesSnap = await getDocs(collection(db, 'academies'));
     if (academiesSnap.empty && initial.academies.length > 0) {
       console.log('[Firestore] Seeding initial academies to cloud database...');
@@ -423,6 +487,22 @@ export async function seedInitialFirestoreDataIfEmpty(initial: {
       });
       await batch.commit();
       console.log('[Firestore] Academies seeded successfully.');
+    } else if (!academiesSnap.empty) {
+      // Remove any legacy academies other than Loyalty Jiu-Jitsu
+      const batch = writeBatch(db);
+      let needsPrune = false;
+      academiesSnap.forEach((docSnap) => {
+        const data = docSnap.data();
+        const isLoyalty = docSnap.id === 'acad_loyalty_jiujitsu' || (data?.name && data.name.toLowerCase().includes('loyalty'));
+        if (!isLoyalty) {
+          batch.delete(docSnap.ref);
+          needsPrune = true;
+        }
+      });
+      if (needsPrune) {
+        await batch.commit();
+        console.log('[Firestore] Pruned non-Loyalty academies from cloud database.');
+      }
     }
 
     // Check classes collection

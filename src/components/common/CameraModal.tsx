@@ -94,8 +94,8 @@ export const CameraModal: React.FC<CameraModalProps> = ({
   };
 
   const simulatePhoto = () => {
-    // High quality BJJ martial arts training photo
-    const sample = 'https://images.unsplash.com/photo-1517838277536-f5f99be501cd?w=600&auto=format&fit=crop&q=80';
+    // 100% Brazilian Jiu-Jitsu martial arts tatame training photo
+    const sample = '/bjj_media/bjj_team_group.jpg';
     setCapturedImage(sample);
   };
 

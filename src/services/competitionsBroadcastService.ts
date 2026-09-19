@@ -23,7 +23,7 @@ export const INITIAL_COMPETITIONS_LIST: TournamentItem[] = [
     enrolledAcademyCount: 24,
     categories: ['Juvenil, Adulto e Master 1 a 6', 'Faixas Branca a Preta', 'Gi & No-Gi'],
     description: 'Um dos maiores eventos do Norte/Nordeste com pontuação oficial no ranking mundial da IBJJF.',
-    bannerImage: 'https://images.unsplash.com/photo-1517838277536-f5f99be501cd?w=600&auto=format&fit=crop&q=80',
+    bannerImage: '/bjj_media/bjj_fighters_bg_1789389198066.jpg',
     broadcastCount: 1,
     lastBroadcastAt: '12/09/2026 14:30'
   },
@@ -41,7 +41,7 @@ export const INITIAL_COMPETITIONS_LIST: TournamentItem[] = [
     enrolledAcademyCount: 19,
     categories: ['Mirim, Infantil, Juvenil e Adulto', 'Todas as Faixas', 'Gi & No-Gi'],
     description: 'Etapa histórica em Salvador com estrutura de 10 tatames e premiações especiais para absolutos.',
-    bannerImage: 'https://images.unsplash.com/photo-1549719386-74dfcbf7dbed?w=600&auto=format&fit=crop&q=80',
+    bannerImage: '/bjj_media/bjj_team_group.jpg',
     broadcastCount: 0
   },
   {
@@ -58,7 +58,7 @@ export const INITIAL_COMPETITIONS_LIST: TournamentItem[] = [
     enrolledAcademyCount: 42,
     categories: ['Profissional e Master', 'Faixas Roxa, Marrom e Preta', 'Premiação em Dólar'],
     description: 'Torneio internacional oficial da AJP Tour com premiação em dinheiro em todas as categorias principais.',
-    bannerImage: 'https://images.unsplash.com/photo-1517838277536-f5f99be501cd?w=600&auto=format&fit=crop&q=80',
+    bannerImage: '/bjj_media/bjj_berimbolo.jpg',
     broadcastCount: 2,
     lastBroadcastAt: '10/09/2026 09:15'
   },
@@ -76,7 +76,7 @@ export const INITIAL_COMPETITIONS_LIST: TournamentItem[] = [
     enrolledAcademyCount: 68,
     categories: ['Pré-Mirim a Master 7', 'Todas as Faixas', 'Gi & No-Gi'],
     description: 'O maior campeonato de Jiu-Jitsu do Brasil. Disputa por equipes e consagração nacional.',
-    bannerImage: 'https://images.unsplash.com/photo-1549719386-74dfcbf7dbed?w=600&auto=format&fit=crop&q=80',
+    bannerImage: '/bjj_media/bjj_guard_pass.jpg',
     broadcastCount: 1,
     lastBroadcastAt: '08/09/2026 18:00'
   },
@@ -94,7 +94,7 @@ export const INITIAL_COMPETITIONS_LIST: TournamentItem[] = [
     enrolledAcademyCount: 35,
     categories: ['Juvenil, Adulto e Master', 'Todas as Faixas', 'Com e Sem Kimono'],
     description: 'Tradicional Open da capital paulista reunindo os maiores times do sudeste.',
-    bannerImage: 'https://images.unsplash.com/photo-1517838277536-f5f99be501cd?w=600&auto=format&fit=crop&q=80',
+    bannerImage: '/bjj_media/bjj_triangle.jpg',
     broadcastCount: 0
   },
   {
@@ -111,7 +111,7 @@ export const INITIAL_COMPETITIONS_LIST: TournamentItem[] = [
     enrolledAcademyCount: 21,
     categories: ['Todas as Divisões de Idade e Peso', 'Branca a Preta'],
     description: 'Etapa oficial no sul do país com grande tradição de atletas de alto nível.',
-    bannerImage: 'https://images.unsplash.com/photo-1549719386-74dfcbf7dbed?w=600&auto=format&fit=crop&q=80',
+    bannerImage: '/bjj_media/bjj_scissor_sweep.jpg',
     broadcastCount: 0
   }
 ];
