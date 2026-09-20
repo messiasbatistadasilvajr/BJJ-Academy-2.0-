@@ -308,6 +308,22 @@ export const AcademyVoiceSettingsModal: React.FC<AcademyVoiceSettingsModalProps>
                 <div className="grid grid-cols-2 gap-2">
                   {[
                     {
+                      id: 'welcome_specific',
+                      label: 'Boas-Vindas Academia',
+                      icon: '🥋',
+                      title: `Oss! Seja bem-vindo à academia ${activeAcademy.name}.`,
+                      body: 'Acesso pelo aplicativo do aluno e professor.',
+                      isWelcomeSpecific: true
+                    },
+                    {
+                      id: 'welcome_general',
+                      label: 'Boas-Vindas BJJACADEMY',
+                      icon: '🌐',
+                      title: 'Oss! Seja bem-vindo ao BJJACADEMY.',
+                      body: 'Acesso pela plataforma geral do sistema.',
+                      isWelcomeGeneral: true
+                    },
+                    {
                       id: 'checkin',
                       label: 'Check-in Tatame',
                       icon: '🥋',
@@ -335,14 +351,20 @@ export const AcademyVoiceSettingsModal: React.FC<AcademyVoiceSettingsModalProps>
                       title: 'Recado do Mestre Rodrigo!',
                       body: 'Seminário especial de raspagens neste sábado às 10h.'
                     }
-                  ].map((sc) => {
+                  ].map((sc: any) => {
                     const isSelected = testScenario.id === sc.id;
                     return (
                       <button
                         key={sc.id}
                         onClick={() => {
                           setTestScenario(sc);
-                          handlePlayVoicePreview(sc.title, sc.body);
+                          if (sc.isWelcomeSpecific) {
+                            academyVoiceEngine.speakWelcomeAnnouncement('PAGINA_ACADEMIA', activeAcademy);
+                          } else if (sc.isWelcomeGeneral) {
+                            academyVoiceEngine.speakWelcomeAnnouncement('SISTEMA_GERAL', null);
+                          } else {
+                            handlePlayVoicePreview(sc.title, sc.body);
+                          }
                         }}
                         className={`p-3 rounded-2xl border text-left transition flex items-start gap-2.5 ${
                           isSelected

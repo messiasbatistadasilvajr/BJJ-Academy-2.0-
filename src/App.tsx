@@ -369,13 +369,26 @@ export default function App() {
     safeLocalStorageSet('bjj_sparring_sessions', sparringSessions);
   }, [sparringSessions]);
 
-  // Initial welcoming push notification after 2 seconds with Voice
+  // Initial welcoming push notification after 2 seconds with Voice (Tech Lead Architecture)
+  // Regra 1 (Acesso Geral / Visão Geral): "Oss! Seja bem-vindo ao BJJACADEMY."
+  // Regra 2 (Acesso Específico): "Oss! Seja bem-vindo à academia [Nome da Academia]."
   useEffect(() => {
     const timer = setTimeout(() => {
+      const tipoAcesso = (!activeAcademyId || activeAcademyId === 'all') ? 'SISTEMA_GERAL' : 'PAGINA_ACADEMIA';
+      const academiaAtual = academies.find(a => a.id === activeAcademyId) || activeAcademy;
+      const nomeAcademia = tipoAcesso === 'PAGINA_ACADEMIA' ? (academiaAtual?.name || academiaAtual?.shortName || '') : '';
+
+      const fraseBoasVindas = academyVoiceEngine.definirMensagemDeBoasVindas(tipoAcesso, nomeAcademia);
+
       triggerPushNotification(
-        '🥋 Bem-vindo ao BJJ Academy 2.0!',
-        'Seu aplicativo está pronto com PWA, Capacitor e portais para Alunos, Pais, Professores e Gestor.'
+        fraseBoasVindas,
+        `Seja bem-vindo ao tatame da ${nomeAcademia || 'BJJACADEMY'}. Seu aplicativo oficial de Jiu-Jitsu está pronto!`
       );
+
+      // Reproduz o áudio da voz de boas-vindas
+      if (academiaAtual?.voiceEnabled !== false) {
+        academyVoiceEngine.speakWelcomeAnnouncement(tipoAcesso, academiaAtual);
+      }
     }, 2000);
     return () => clearTimeout(timer);
   }, []);
@@ -713,18 +726,24 @@ export default function App() {
       onSelectAcademy={(id) => {
         if (id === 'all') {
           setActiveAcademyId('all');
+          const fraseGeral = academyVoiceEngine.definirMensagemDeBoasVindas('SISTEMA_GERAL', null);
           triggerPushNotification(
-            '🌐 Rede BJJACADEMY — Visão Global',
-            `Filtro aplicado para todas as ${academies.length} academias cadastradas.`
+            fraseGeral,
+            `Visão Global ativada para todas as ${academies.length} academias cadastradas.`
           );
+          academyVoiceEngine.speakWelcomeAnnouncement('SISTEMA_GERAL', null);
         } else {
           setActiveAcademyId(id);
           const chosen = academies.find((a) => a.id === id);
           if (chosen) {
+            const fraseAcademia = academyVoiceEngine.definirMensagemDeBoasVindas('PAGINA_ACADEMIA', chosen.name);
             triggerPushNotification(
-              '🥋 Tatame Selecionado',
-              `Alternado para ${chosen.name} (${chosen.branch || chosen.city || 'Matriz'})`
+              fraseAcademia,
+              `Alternado para ${chosen.name} (${chosen.branch || chosen.city || 'Matriz'}).`
             );
+            if (chosen.voiceEnabled !== false) {
+              academyVoiceEngine.speakWelcomeAnnouncement('PAGINA_ACADEMIA', chosen);
+            }
           }
         }
       }}
