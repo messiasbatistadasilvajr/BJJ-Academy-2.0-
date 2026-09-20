@@ -8,7 +8,7 @@ import {
   Tablet, ShoppingBag, Award, FileText, Trophy, Volume2,
   Lock, Unlock, Calculator, Building2, ShieldAlert, Copy, Check,
   QrCode, CheckCheck, Edit3, Sparkles, Download, AlertCircle, MessageCircle, Cake,
-  Database, Cloud, Crown, Clock
+  Database, Cloud, Crown, Clock, Swords, Star, Tv
 } from 'lucide-react';
 import { 
   ClassSession, Invoice, Announcement, PushNotification, 
@@ -21,6 +21,7 @@ import { exportFinancialInvoicesCSV, exportAcademiesListCSV } from '../../utils/
 import { sendReceiptViaWhatsApp, sendReminderViaWhatsApp } from '../../utils/whatsappHelper';
 import { DueAlertsDrawer } from '../common/DueAlertsDrawer';
 import { AcademyOperatingHoursModal } from '../common/AcademyOperatingHoursModal';
+import { DataIntegrityModal } from '../common/DataIntegrityModal';
 import { safeLocalStorageGet, safeLocalStorageSet } from '../../utils/safeStorage';
 import { StudentEnrollmentButton } from '../common/StudentEnrollmentButton';
 import { saveCRMLeadToFirestore, subscribeToCRMLeads } from '../../firebase/firestoreService';
@@ -61,6 +62,11 @@ interface ManagerViewProps {
   onOpenCloudStatus?: () => void;
   studentsCount?: number;
   onOpenCEOProfile?: () => void;
+  onOpenCBJJGraduation?: () => void;
+  onOpenSparringMatchmaker?: () => void;
+  onOpenRespectfulBilling?: () => void;
+  onOpenKidsBehavioralFeed?: () => void;
+  onOpenTatameTV?: () => void;
 }
 
 export const ManagerView: React.FC<ManagerViewProps> = ({
@@ -99,6 +105,11 @@ export const ManagerView: React.FC<ManagerViewProps> = ({
   onOpenCloudStatus,
   studentsCount,
   onOpenCEOProfile,
+  onOpenCBJJGraduation,
+  onOpenSparringMatchmaker,
+  onOpenRespectfulBilling,
+  onOpenKidsBehavioralFeed,
+  onOpenTatameTV,
 }) => {
   const [activeTab, setActiveTab] = useState<'dashboard' | 'financeiro' | 'crm' | 'push' | 'academies'>('dashboard');
 
@@ -250,6 +261,7 @@ export const ManagerView: React.FC<ManagerViewProps> = ({
   // Smart Due Alerts Drawer State
   const [isDueAlertsOpen, setIsDueAlertsOpen] = useState(false);
   const [isOperatingHoursModalOpen, setIsOperatingHoursModalOpen] = useState(false);
+  const [isDataIntegrityModalOpen, setIsDataIntegrityModalOpen] = useState(false);
   const overdueInvoicesCount = invoices.filter(inv => inv.status === 'overdue').length;
 
   const handleExportInvoicesCSV = () => {
@@ -992,6 +1004,109 @@ export const ManagerView: React.FC<ManagerViewProps> = ({
                   {activeAcademyName || 'Loyalty Jiu-Jitsu'}
                 </span>
               </button>
+
+              {/* Botão de Auditoria de Integridade (Firestore ↔ LocalStorage) */}
+              <button
+                onClick={() => setIsDataIntegrityModalOpen(true)}
+                className="w-full py-2.5 px-3 rounded-xl bg-gradient-to-r from-emerald-600/20 via-slate-900 to-emerald-600/20 hover:from-emerald-600/30 hover:to-emerald-600/30 border border-emerald-500/40 text-xs font-bold text-emerald-300 flex items-center justify-between transition shadow-sm"
+              >
+                <div className="flex items-center gap-2">
+                  <ShieldAlert className="w-4 h-4 text-emerald-400 animate-pulse" />
+                  <span>Auditoria de Integridade (Firestore ↔ Cache Local)</span>
+                </div>
+                <span className="text-[10px] bg-emerald-400/20 text-emerald-300 border border-emerald-500/30 px-2 py-0.5 rounded-full font-bold">
+                  Alunos & Faturas
+                </span>
+              </button>
+
+              {/* 5 Pilares Master BJJ */}
+              <div className="pt-2 border-t border-slate-800 space-y-2">
+                <span className="text-[11px] font-extrabold uppercase tracking-wider text-amber-400 flex items-center gap-1.5">
+                  <Crown size={12} /> Recursos de Excelência Tatame 10/10
+                </span>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                  {onOpenCBJJGraduation && (
+                    <button
+                      type="button"
+                      onClick={onOpenCBJJGraduation}
+                      className="p-3 rounded-2xl bg-gradient-to-br from-amber-950/40 to-slate-950 border border-amber-500/40 hover:border-amber-400 text-left transition flex items-center gap-2.5"
+                    >
+                      <div className="w-8 h-8 rounded-xl bg-amber-500/20 text-amber-300 flex items-center justify-center shrink-0">
+                        <Award size={16} />
+                      </div>
+                      <div>
+                        <strong className="text-xs text-white block">Certificados CBJJ / IBJJF</strong>
+                        <span className="text-[10px] text-amber-300/80">Regulamento & QR Code</span>
+                      </div>
+                    </button>
+                  )}
+
+                  {onOpenSparringMatchmaker && (
+                    <button
+                      type="button"
+                      onClick={onOpenSparringMatchmaker}
+                      className="p-3 rounded-2xl bg-gradient-to-br from-red-950/40 to-slate-950 border border-red-500/40 hover:border-red-400 text-left transition flex items-center gap-2.5"
+                    >
+                      <div className="w-8 h-8 rounded-xl bg-red-600/20 text-red-300 flex items-center justify-center shrink-0">
+                        <Swords size={16} />
+                      </div>
+                      <div>
+                        <strong className="text-xs text-white block">Temporizador & Rola</strong>
+                        <span className="text-[10px] text-red-300/80">Sorteio por peso & lesão</span>
+                      </div>
+                    </button>
+                  )}
+
+                  {onOpenRespectfulBilling && (
+                    <button
+                      type="button"
+                      onClick={onOpenRespectfulBilling}
+                      className="p-3 rounded-2xl bg-gradient-to-br from-emerald-950/40 to-slate-950 border border-emerald-500/40 hover:border-emerald-400 text-left transition flex items-center gap-2.5"
+                    >
+                      <div className="w-8 h-8 rounded-xl bg-emerald-600/20 text-emerald-300 flex items-center justify-center shrink-0">
+                        <DollarSign size={16} />
+                      </div>
+                      <div>
+                        <strong className="text-xs text-white block">Cobrança Amigável WhatsApp</strong>
+                        <span className="text-[10px] text-emerald-300/80">Sem constrangimento</span>
+                      </div>
+                    </button>
+                  )}
+
+                  {onOpenKidsBehavioralFeed && (
+                    <button
+                      type="button"
+                      onClick={onOpenKidsBehavioralFeed}
+                      className="p-3 rounded-2xl bg-gradient-to-br from-amber-950/30 to-slate-950 border border-amber-500/30 hover:border-amber-400 text-left transition flex items-center gap-2.5"
+                    >
+                      <div className="w-8 h-8 rounded-xl bg-amber-500/20 text-amber-300 flex items-center justify-center shrink-0">
+                        <Star size={16} />
+                      </div>
+                      <div>
+                        <strong className="text-xs text-white block">Valores & Feed Kids</strong>
+                        <span className="text-[10px] text-amber-300/80">Metas em casa & escola</span>
+                      </div>
+                    </button>
+                  )}
+                </div>
+
+                {onOpenTatameTV && (
+                  <button
+                    type="button"
+                    onClick={onOpenTatameTV}
+                    className="w-full py-2.5 px-3.5 rounded-xl bg-gradient-to-r from-red-700/80 via-slate-900 to-red-700/80 hover:from-red-600 hover:to-red-600 border border-red-500/50 text-xs font-black text-white flex items-center justify-between transition shadow-lg"
+                  >
+                    <div className="flex items-center gap-2">
+                      <Tv size={16} className="text-red-400 animate-pulse" />
+                      <span>Ativar Modo TV do Tatame (Digital Signage / Totem de Recepção)</span>
+                    </div>
+                    <span className="text-[10px] bg-red-500/30 text-white px-2 py-0.5 rounded-full font-extrabold border border-red-400/40">
+                      Tela Cheia TV
+                    </span>
+                  </button>
+                )}
+              </div>
 
               <button
                 onClick={onOpenTournaments}
@@ -2299,6 +2414,15 @@ export const ManagerView: React.FC<ManagerViewProps> = ({
               createdAt: new Date().toISOString()
             } as RegisteredAcademy
           }
+        />
+      )}
+
+      {/* Modal de Auditoria e Integridade Firestore ↔ LocalStorage */}
+      {isDataIntegrityModalOpen && (
+        <DataIntegrityModal
+          isOpen={isDataIntegrityModalOpen}
+          onClose={() => setIsDataIntegrityModalOpen(false)}
+          activeAcademyName={activeAcademyName}
         />
       )}
     </div>

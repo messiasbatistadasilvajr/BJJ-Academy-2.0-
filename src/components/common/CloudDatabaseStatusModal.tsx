@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { 
   X, Database, CheckCircle2, ShieldCheck, Users, 
-  RefreshCw, Cloud, Server, Zap, Globe, RotateCcw, AlertTriangle
+  RefreshCw, Cloud, Server, Zap, Globe, RotateCcw, AlertTriangle, ShieldAlert
 } from 'lucide-react';
 import { testConnection } from '../../firebase/config';
 
@@ -13,6 +13,7 @@ interface CloudDatabaseStatusModalProps {
   invoicesCount: number;
   academiesCount: number;
   isCloudSynced: boolean;
+  onOpenDataIntegrity?: () => void;
 }
 
 export const CloudDatabaseStatusModal: React.FC<CloudDatabaseStatusModalProps> = ({
@@ -22,7 +23,8 @@ export const CloudDatabaseStatusModal: React.FC<CloudDatabaseStatusModalProps> =
   classesCount,
   invoicesCount,
   academiesCount,
-  isCloudSynced
+  isCloudSynced,
+  onOpenDataIntegrity
 }) => {
   const [isTesting, setIsTesting] = useState(false);
   const [testResult, setTestResult] = useState<'idle' | 'success' | 'warning'>('idle');
@@ -175,6 +177,35 @@ export const CloudDatabaseStatusModal: React.FC<CloudDatabaseStatusModalProps> =
               </div>
             </div>
           </div>
+
+          {/* Botão de Auditoria de Integridade LocalStorage ↔ Firestore */}
+          {onOpenDataIntegrity && (
+            <div className="p-3.5 bg-gradient-to-r from-emerald-950/40 via-slate-950 to-emerald-950/40 border border-emerald-500/40 rounded-2xl flex items-center justify-between gap-3">
+              <div className="flex items-center gap-2.5">
+                <div className="p-2 rounded-xl bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">
+                  <ShieldAlert size={18} />
+                </div>
+                <div>
+                  <h4 className="text-xs font-bold text-white leading-tight">
+                    Auditoria de Integridade Cruzada
+                  </h4>
+                  <p className="text-[11px] text-slate-400 mt-0.5">
+                    Verificar consistência entre Firestore e LocalStorage (Alunos & Faturas)
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => {
+                  onClose();
+                  onOpenDataIntegrity();
+                }}
+                className="px-3 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold transition shadow-sm shrink-0"
+              >
+                Abrir Auditoria
+              </button>
+            </div>
+          )}
 
           {/* Opção de Limpeza de Cache e Reinício do Sistema */}
           <div className="bg-slate-950/60 border border-slate-800 rounded-2xl p-4 space-y-3">

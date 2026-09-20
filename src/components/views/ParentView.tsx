@@ -4,7 +4,7 @@ import {
   Users, Award, Calendar, DollarSign, MessageSquare, 
   CheckCircle2, AlertCircle, QrCode, ArrowUpRight, 
   ShieldCheck, Heart, Clock, BellRing, Sparkles, Send,
-  FileText, ShoppingBag, Trophy, BookOpen
+  FileText, ShoppingBag, Trophy, BookOpen, Star
 } from 'lucide-react';
 import { DependentStudent, Invoice, Announcement, ChatMessage } from '../../types';
 import { BeltBadge } from '../common/BeltBadge';
@@ -22,6 +22,7 @@ interface ParentViewProps {
   onOpenProShop?: () => void;
   onOpenTournaments?: () => void;
   onOpenBeltGuide?: () => void;
+  onOpenKidsBehavioralFeed?: () => void;
 }
 
 export const ParentView: React.FC<ParentViewProps> = ({
@@ -36,6 +37,7 @@ export const ParentView: React.FC<ParentViewProps> = ({
   onOpenProShop,
   onOpenTournaments,
   onOpenBeltGuide,
+  onOpenKidsBehavioralFeed,
 }) => {
   const [selectedChildIndex, setSelectedChildIndex] = useState<number>(0);
   const [activeTab, setActiveTab] = useState<'geral' | 'frequencia' | 'financeiro' | 'mensagens'>('geral');
@@ -191,13 +193,13 @@ export const ParentView: React.FC<ParentViewProps> = ({
           </div>
 
           {/* Quick Shortcuts for Parent */}
-          <div className="grid grid-cols-3 gap-2 pt-2 border-t border-slate-800/80">
+          <div className="grid grid-cols-4 gap-2 pt-2 border-t border-slate-800/80">
             <button
               onClick={onOpenContract}
               className="py-2 px-2 rounded-xl bg-slate-950 border border-slate-800 hover:border-cyan-500/50 text-slate-200 text-xs font-semibold flex items-center justify-center gap-1.5 transition"
             >
               <FileText className="w-3.5 h-3.5 text-cyan-400" />
-              <span className="text-[10px]">Contrato & Termo</span>
+              <span className="text-[10px]">Contrato</span>
             </button>
 
             <button
@@ -205,7 +207,7 @@ export const ParentView: React.FC<ParentViewProps> = ({
               className="py-2 px-2 rounded-xl bg-slate-950 border border-slate-800 hover:border-purple-500/50 text-slate-200 text-xs font-semibold flex items-center justify-center gap-1.5 transition"
             >
               <ShoppingBag className="w-3.5 h-3.5 text-purple-400" />
-              <span className="text-[10px]">Kimono & Shop</span>
+              <span className="text-[10px]">Kimono</span>
             </button>
 
             <button
@@ -213,8 +215,19 @@ export const ParentView: React.FC<ParentViewProps> = ({
               className="py-2 px-2 rounded-xl bg-slate-950 border border-slate-800 hover:border-amber-500/50 text-slate-200 text-xs font-semibold flex items-center justify-center gap-1.5 transition"
             >
               <Trophy className="w-3.5 h-3.5 text-amber-400" />
-              <span className="text-[10px]">Torneios Kids</span>
+              <span className="text-[10px]">Torneios</span>
             </button>
+
+            {onOpenKidsBehavioralFeed && (
+              <button
+                onClick={onOpenKidsBehavioralFeed}
+                className="py-2 px-2 rounded-xl bg-gradient-to-r from-amber-500/20 to-amber-600/20 border border-amber-500/40 hover:border-amber-400 text-amber-300 text-xs font-bold flex items-center justify-center gap-1.5 transition"
+                title="Feed Comportamental & Valores BJJ Kids"
+              >
+                <Star className="w-3.5 h-3.5 text-amber-400 fill-amber-400" />
+                <span className="text-[10px]">Valores Kids</span>
+              </button>
+            )}
           </div>
         </div>
       </div>

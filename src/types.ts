@@ -970,3 +970,109 @@ export interface BirthdayPerson {
   customMessage?: string;
 }
 
+// -------------------------------------------------------------
+// 1. CBJJ / IBJJF Graduation Certificate & Rules
+// -------------------------------------------------------------
+export interface CBJJGraduationCheck {
+  isEligible: boolean;
+  minAgeRequired: number;
+  currentAge: number;
+  minMonthsRequired: number;
+  monthsInCurrentBelt: number;
+  attendanceCompleted: number;
+  attendanceRequired: number;
+  reason: string;
+  nextBelt: BeltColor;
+}
+
+export interface OfficialGraduationCertificate {
+  id: string;
+  studentId: string;
+  studentName: string;
+  studentCpf?: string;
+  academyId: string;
+  academyName: string;
+  headMasterName: string;
+  masterCref: string;
+  awardedBelt: BeltColor;
+  awardedStripes: number;
+  issueDate: string;
+  validationQrCodeUrl: string;
+  verificationHash: string;
+  cbjjFederationNumber?: string;
+}
+
+// -------------------------------------------------------------
+// 2. Sparring Matchmaker & Smart Round Timer
+// -------------------------------------------------------------
+export interface SparringPair {
+  id: string;
+  athlete1: {
+    id: string;
+    name: string;
+    belt: BeltColor;
+    weightKg: number;
+    injuryNote?: string;
+    hasInjuryWarning?: boolean;
+  };
+  athlete2: {
+    id: string;
+    name: string;
+    belt: BeltColor;
+    weightKg: number;
+    injuryNote?: string;
+    hasInjuryWarning?: boolean;
+  };
+  weightDiffKg: number;
+  balanceScore: 'Perfeito' | 'Equilibrado' | 'Atenção';
+}
+
+// -------------------------------------------------------------
+// 3. Automated Respectful WhatsApp Billing
+// -------------------------------------------------------------
+export interface RespectfulBillingTemplate {
+  type: 'preventive' | 'due_today' | 'polite_late' | 'kiosk_discrete';
+  title: string;
+  body: string;
+  pixKeyText: string;
+}
+
+// -------------------------------------------------------------
+// 4. Kids Behavioral & Family Evolution Feed
+// -------------------------------------------------------------
+export interface KidsBehaviorTask {
+  id: string;
+  title: string;
+  description: string;
+  category: 'respeito' | 'disciplina' | 'escola' | 'casa';
+  points: number;
+  completed: boolean;
+  completedAt?: string;
+  parentComment?: string;
+}
+
+export interface KidsEvolutionRecord {
+  id: string;
+  studentId: string;
+  studentName: string;
+  weekLabel: string;
+  meritPoints: number;
+  tasks: KidsBehaviorTask[];
+  awardedStripeCandidate: boolean;
+  masterFeedback?: string;
+}
+
+// -------------------------------------------------------------
+// 5. Tatame TV Digital Signage Mode
+// -------------------------------------------------------------
+export interface TatameTVSettings {
+  academyName: string;
+  refreshIntervalSeconds: number;
+  showRanking: boolean;
+  showBirthdays: boolean;
+  showSchedule: boolean;
+  showTournaments: boolean;
+  announcementTicker: string;
+}
+
+

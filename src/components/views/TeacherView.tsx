@@ -5,7 +5,7 @@ import {
   Clock, MapPin, Users, Edit3, Plus, Sparkles, 
   ChevronDown, Flame, FileText, Check, AlertCircle,
   Timer, BookOpen, Download, MessageCircle, Zap, ShieldCheck,
-  Bell, Send, Trophy, Calendar, Shield, Megaphone, Flag, Volume2, ShieldAlert, Cake
+  Bell, Send, Trophy, Calendar, Shield, Megaphone, Flag, Volume2, ShieldAlert, Cake, Swords
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { ClassSession, BeltColor } from '../../types';
@@ -32,6 +32,8 @@ interface TeacherViewProps {
   todayBirthdaysCount?: number;
   academyName?: string;
   onOpenBeltGuide?: () => void;
+  onOpenCBJJGraduation?: () => void;
+  onOpenSparringMatchmaker?: () => void;
   // Teacher actions requested by user:
   onAddClass?: (newClass: ClassSession) => void;
   onSendClassAnnouncement?: (title: string, content: string, priority: 'urgent' | 'normal', target: string) => void;
@@ -64,6 +66,8 @@ export const TeacherView: React.FC<TeacherViewProps> = ({
   todayBirthdaysCount,
   academyName = 'BJJ Academy',
   onOpenBeltGuide,
+  onOpenCBJJGraduation,
+  onOpenSparringMatchmaker,
   onAddClass,
   onSendClassAnnouncement,
   onAddTournamentReminder,
@@ -456,6 +460,18 @@ export const TeacherView: React.FC<TeacherViewProps> = ({
             >
               <Award size={14} className="text-yellow-400" />
               <span>Faixas IBJJF</span>
+            </button>
+          )}
+
+          {onOpenSparringMatchmaker && (
+            <button
+              type="button"
+              onClick={onOpenSparringMatchmaker}
+              className="p-2 rounded-xl bg-red-600/20 hover:bg-red-600/30 text-red-300 border border-red-500/40 flex flex-col items-center justify-center gap-1 text-[10px] font-bold transition shadow-sm"
+              title="Cronômetro Inteligente e Sorteio de Duplas para o Rola"
+            >
+              <Swords size={14} className="text-red-400 animate-pulse" />
+              <span>Rola & Duplas</span>
             </button>
           )}
         </div>

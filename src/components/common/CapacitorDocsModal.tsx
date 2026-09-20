@@ -35,7 +35,7 @@ export const CapacitorDocsModal: React.FC<CapacitorDocsModalProps> = ({
     {
       title: '3. Configurar android/key.properties',
       desc: 'Configura o caminho da chave e senhas (ignorado no git):',
-      code: 'RELEASE_STORE_FILE=../../release-key.jks\nRELEASE_STORE_PASSWORD=sua_senha\nRELEASE_KEY_ALIAS=bjjacademy\nRELEASE_KEY_PASSWORD=sua_senha'
+      code: 'RELEASE_STORE_FILE=../release-key.jks\nRELEASE_STORE_PASSWORD=sua_senha\nRELEASE_KEY_ALIAS=bjjacademy\nRELEASE_KEY_PASSWORD=sua_senha'
     },
     {
       title: '4. Compilar o Pacote .AAB de Produção',

@@ -38,6 +38,12 @@ import { CloudDatabaseStatusModal } from './components/common/CloudDatabaseStatu
 import { CEOProfileModal } from './components/common/CEOProfileModal';
 import { CEOLoginModal } from './components/common/CEOLoginModal';
 import { AcademyOperatingHoursModal } from './components/common/AcademyOperatingHoursModal';
+import { DataIntegrityModal } from './components/common/DataIntegrityModal';
+import { CBJJGraduationModal } from './components/common/CBJJGraduationModal';
+import { SparringMatchmakerModal } from './components/common/SparringMatchmakerModal';
+import { RespectfulBillingModal } from './components/common/RespectfulBillingModal';
+import { KidsBehavioralFeedModal } from './components/common/KidsBehavioralFeedModal';
+import { TatameTVModal } from './components/common/TatameTVModal';
 import { academyVoiceEngine } from './utils/voiceNotification';
 import { useOnlineStatus } from './hooks/usePWAInstall';
 import { safeLocalStorageGet, safeLocalStorageSet } from './utils/safeStorage';
@@ -135,6 +141,14 @@ export default function App() {
   const [isPhotoAttendanceOpen, setIsPhotoAttendanceOpen] = useState(false);
   const [isAICoachOpen, setIsAICoachOpen] = useState(false);
   const [isDataMigrationOpen, setIsDataMigrationOpen] = useState(false);
+  const [isDataIntegrityOpen, setIsDataIntegrityOpen] = useState(false);
+
+  // 5 Master BJJ Pillars
+  const [isCBJJGraduationOpen, setIsCBJJGraduationOpen] = useState(false);
+  const [isSparringMatchmakerOpen, setIsSparringMatchmakerOpen] = useState(false);
+  const [isRespectfulBillingOpen, setIsRespectfulBillingOpen] = useState(false);
+  const [isKidsBehavioralFeedOpen, setIsKidsBehavioralFeedOpen] = useState(false);
+  const [isTatameTVOpen, setIsTatameTVOpen] = useState(false);
 
   // Improvement #3: Radar Anti-Evasão
   const [isRetentionRadarOpen, setIsRetentionRadarOpen] = useState(false);
@@ -822,6 +836,7 @@ export default function App() {
           onOpenProShop={() => setIsProShopOpen(true)}
           onOpenTournaments={() => setIsTournamentsOpen(true)}
           onOpenBeltGuide={() => setIsBeltGuideOpen(true)}
+          onOpenKidsBehavioralFeed={() => setIsKidsBehavioralFeedOpen(true)}
         />
       )}
 
@@ -845,6 +860,8 @@ export default function App() {
           onOpenRetentionRadar={() => setIsRetentionRadarOpen(true)}
           onOpenBirthdayAlert={() => setIsBirthdayAlertOpen(true)}
           onOpenBeltGuide={() => setIsBeltGuideOpen(true)}
+          onOpenCBJJGraduation={() => setIsCBJJGraduationOpen(true)}
+          onOpenSparringMatchmaker={() => setIsSparringMatchmakerOpen(true)}
           todayBirthdaysCount={todayBirthdaysCount}
           academyName={activeAcademy.shortName || activeAcademy.name}
           onAddClass={(newClass) => {
@@ -923,6 +940,11 @@ export default function App() {
           onOpenCloudStatus={() => setIsCloudStatusOpen(true)}
           studentsCount={studentsList.length}
           onOpenCEOProfile={() => setIsCEOProfileOpen(true)}
+          onOpenCBJJGraduation={() => setIsCBJJGraduationOpen(true)}
+          onOpenSparringMatchmaker={() => setIsSparringMatchmakerOpen(true)}
+          onOpenRespectfulBilling={() => setIsRespectfulBillingOpen(true)}
+          onOpenKidsBehavioralFeed={() => setIsKidsBehavioralFeedOpen(true)}
+          onOpenTatameTV={() => setIsTatameTVOpen(true)}
         />
       )}
 
@@ -1348,6 +1370,70 @@ export default function App() {
         invoicesCount={invoices.length}
         academiesCount={academies.length}
         isCloudSynced={isCloudSynced}
+        onOpenDataIntegrity={() => setIsDataIntegrityOpen(true)}
+      />
+
+      {/* 🛡️ Data Integrity Diagnostics Modal (Firestore ↔ LocalStorage) */}
+      <DataIntegrityModal
+        isOpen={isDataIntegrityOpen}
+        onClose={() => setIsDataIntegrityOpen(false)}
+        activeAcademyName={activeAcademy.name}
+      />
+
+      {/* 1. 🥋 CBJJ / IBJJF Graduation Certificate Modal */}
+      <CBJJGraduationModal
+        isOpen={isCBJJGraduationOpen}
+        onClose={() => setIsCBJJGraduationOpen(false)}
+        students={studentsList}
+        academyName={activeAcademy.name}
+        academyId={activeAcademy.id}
+        onGraduateStudent={(studentId, newBelt) => {
+          const target = studentsList.find(s => s.id === studentId);
+          handlePromoteStudent(
+            studentId,
+            target?.name || 'Atleta',
+            newBelt,
+            0,
+            'Graduação Oficial chancelada pelas diretrizes CBJJ / IBJJF'
+          );
+          triggerPushNotification(
+            '🏆 Atleta Promovido Oficialmente!',
+            `Graduação CBJJ para Faixa ${newBelt} registrada com sucesso!`
+          );
+        }}
+      />
+
+      {/* 2. ⚔️ Sparring Matchmaker & Smart Round Timer */}
+      <SparringMatchmakerModal
+        isOpen={isSparringMatchmakerOpen}
+        onClose={() => setIsSparringMatchmakerOpen(false)}
+        students={studentsList}
+        activeClass={classes[0]}
+      />
+
+      {/* 3. 💬 Respectful WhatsApp Automated Billing Modal */}
+      <RespectfulBillingModal
+        isOpen={isRespectfulBillingOpen}
+        onClose={() => setIsRespectfulBillingOpen(false)}
+        invoices={invoices}
+        students={studentsList}
+        academyName={activeAcademy.name}
+      />
+
+      {/* 4. ⭐ Kids Behavioral & Family Values Feed Modal */}
+      <KidsBehavioralFeedModal
+        isOpen={isKidsBehavioralFeedOpen}
+        onClose={() => setIsKidsBehavioralFeedOpen(false)}
+        kidsName={studentsList.find(s => s.isMinor || s.belt === 'grey' || s.belt === 'yellow')?.name || 'Davi Lucas'}
+      />
+
+      {/* 5. 📺 Tatame TV Digital Signage Modal */}
+      <TatameTVModal
+        isOpen={isTatameTVOpen}
+        onClose={() => setIsTatameTVOpen(false)}
+        academyName={activeAcademy.name}
+        students={studentsList}
+        classes={classes}
       />
 
       {/* 🔐 CEO Master Login Modal */}
