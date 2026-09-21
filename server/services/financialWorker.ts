@@ -26,7 +26,7 @@ class FinancialWorker {
    */
   public start() {
     if (this.workerInterval) return;
-    console.log('[Motor Financeiro] Worker de Filas Asaas iniciado com sucesso.');
+    console.log('[Motor Financeiro] Worker de Filas (webhook-ingestion-queue) iniciado com suporte a DLQ.');
 
     this.workerInterval = setInterval(() => {
       this.pollNextJob();
@@ -60,9 +60,15 @@ class FinancialWorker {
   }
 
   /**
-   * Processes an individual financial queue job
+   * Processes an individual financial queue job from webhook-ingestion-queue
    */
   public async handleJob(job: FinancialQueueJob): Promise<void> {
+    // Suporta eventos Asaas diretos ou eventos unificados (Stripe / Mercado Pago)
+    if (job.type === 'GATEWAY_WEBHOOK_EVENT') {
+      await this.handleUnifiedGatewayJob(job);
+      return;
+    }
+
     const payload = job.payload as AsaasWebhookPayload;
     const eventType = payload.event;
     const payment = payload.payment;
@@ -110,8 +116,7 @@ class FinancialWorker {
       }
 
       // 3. State Machine transition check
-      // For new or existing, check transition validity
-      const currentStatus: InternalInvoiceStatus = 'pending'; // baseline or loaded from storage
+      const currentStatus: InternalInvoiceStatus = 'pending';
       const evalResult = FinancialStateMachine.evaluateTransition(currentStatus, targetStatus, eventType);
 
       if (!evalResult.isValid) {
@@ -223,7 +228,79 @@ class FinancialWorker {
       await financialQueueService.markCompleted(job.id);
       console.log(`[Worker] Job ${job.id} processado com sucesso: ${eventType} -> Status ${targetStatus}`);
     } catch (err: any) {
-      console.error(`[Worker] Erro ao processar job ${job.id}:`, err.message);
+      console.error(`[Worker] Erro ao processar job ${job.id} (Tentativa ${job.attempts}/${job.maxAttempts}):`, err.message);
+      await idempotencyService.releaseOrMarkFailed(idempotencyKey);
+      
+      // Volta para a fila com backoff exponencial ou move para DLQ após 3 tentativas
+      const failureResult = await financialQueueService.markFailed(job.id, err.message);
+      if (failureResult.movedToDlq) {
+        financialAuditService.record({
+          tenantId,
+          action: 'WEBHOOK_PROCESSED',
+          entity: 'webhook',
+          entityId: eventId,
+          origin: 'financial_worker_dlq',
+          result: 'failed',
+          details: {
+            jobId: job.id,
+            error: err.message,
+            attempts: job.attempts,
+            movedToDlq: true
+          }
+        });
+      }
+    }
+  }
+
+  /**
+   * Processa jobs normalizados de múltiplos gateways (Mercado Pago, Stripe)
+   */
+  private async handleUnifiedGatewayJob(job: FinancialQueueJob): Promise<void> {
+    const { parsedEvent } = job.payload || {};
+    if (!parsedEvent) {
+      await financialQueueService.markCompleted(job.id);
+      return;
+    }
+
+    const gateway = parsedEvent.gateway || job.gateway || 'gateway';
+    const eventId = `evt_${job.id}`;
+    const idempotencyKey = idempotencyService.makeKey(gateway, `${parsedEvent.externalChargeId}_${parsedEvent.eventType}`);
+    const { acquired, existingEntry } = await idempotencyService.acquireLock(idempotencyKey);
+
+    if (!acquired && existingEntry?.status === 'completed') {
+      console.log(`[Worker] Idempotência ativada para gateway ${gateway}. Ignorando duplicata.`);
+      await financialQueueService.markCompleted(job.id);
+      return;
+    }
+
+    try {
+      financialAuditService.record({
+        tenantId: parsedEvent.tenantId || 'acad_matriz',
+        action: parsedEvent.status === 'paid' ? 'PAYMENT_RECEIVED' : 'WEBHOOK_PROCESSED',
+        entity: 'invoice',
+        entityId: parsedEvent.externalChargeId,
+        origin: 'financial_worker',
+        result: 'success',
+        details: {
+          gateway,
+          amount: parsedEvent.amount,
+          status: parsedEvent.status,
+          paymentMethod: parsedEvent.paymentMethod,
+          paidAt: parsedEvent.paidAt
+        }
+      });
+
+      console.log(`[Worker] Pagamento baixado via ${gateway.toUpperCase()} (Fila webhook-ingestion-queue): Cobrança ${parsedEvent.externalChargeId} -> R$ ${parsedEvent.amount}`);
+
+      await idempotencyService.markCompleted(idempotencyKey, {
+        status: 'completed',
+        externalChargeId: parsedEvent.externalChargeId,
+        processedAt: new Date().toISOString()
+      });
+
+      await financialQueueService.markCompleted(job.id);
+    } catch (err: any) {
+      console.error(`[Worker] Falha ao processar evento de gateway ${job.id}:`, err.message);
       await idempotencyService.releaseOrMarkFailed(idempotencyKey);
       await financialQueueService.markFailed(job.id, err.message);
     }

@@ -351,7 +351,7 @@ export interface FinancialAuditLog {
   entity: 'invoice' | 'webhook' | 'expense' | 'student' | 'split' | 'financial_metric' | 'tenant_subscription';
   entityId: string;
   timestamp: string;
-  origin: 'asaas_webhook' | 'financial_worker' | 'manager_ui' | 'system_cron' | 'sansao_ai' | 'database_tier_rule' | 'saas_billing';
+  origin: 'asaas_webhook' | 'financial_worker' | 'manager_ui' | 'system_cron' | 'sansao_ai' | 'database_tier_rule' | 'saas_billing' | 'gateway_webhook' | 'financial_worker_dlq';
   result: 'success' | 'failed' | 'ignored_duplicate' | 'blocked';
   details?: Record<string, any>;
 }

@@ -606,40 +606,17 @@ async function startServer() {
   // -----------------------------------------------------------------
   app.post('/api/webhooks/gateway/:provider', async (req, res) => {
     const provider = req.params.provider;
-    const event = paymentGatewayWebhookService.parseWebhookPayload(provider, req.body);
 
-    if (!event) {
-      return res.status(200).json({
-        received: true,
-        processed: false,
-        message: 'Evento ignorado ou sem alteração de liquidação financeira.'
-      });
-    }
-
-    // Registra auditoria financeira da liquidação
-    financialAuditService.record({
-      tenantId: event.tenantId || 'acad_matriz',
-      action: event.status === 'paid' ? 'PAYMENT_RECEIVED' : 'WEBHOOK_PROCESSED',
-      entity: 'invoice',
-      entityId: event.externalChargeId,
-      origin: 'asaas_webhook',
-      result: 'success',
-      details: {
-        provider,
-        amount: event.amount,
-        status: event.status,
-        paymentMethod: event.paymentMethod,
-        paidAt: event.paidAt
+    try {
+      const result = await paymentGatewayWebhookService.ingestWebhook(provider, req.body, req.headers);
+      return res.status(200).json(result);
+    } catch (err: any) {
+      if (err.message && err.message.startsWith('UNAUTHORIZED')) {
+        return res.status(401).json({ error: 'UNAUTHORIZED', message: err.message });
       }
-    });
-
-    console.log(`[Webhook Gateway] Pagamento baixado automaticamente via ${provider.toUpperCase()}: Cobrança ${event.externalChargeId} -> R$ ${event.amount} (${event.status})`);
-
-    return res.status(200).json({
-      success: true,
-      received: true,
-      event
-    });
+      console.error(`[Webhook Gateway] Erro ao processar webhook do ${provider}:`, err);
+      return res.status(500).json({ error: 'INTERNAL_ERROR', message: err.message });
+    }
   });
 
   // -----------------------------------------------------------------
