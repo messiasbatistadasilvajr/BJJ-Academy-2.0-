@@ -39,6 +39,7 @@ import { CEOProfileModal } from './components/common/CEOProfileModal';
 import { CEOLoginModal } from './components/common/CEOLoginModal';
 import { AcademyOperatingHoursModal } from './components/common/AcademyOperatingHoursModal';
 import { DataIntegrityModal } from './components/common/DataIntegrityModal';
+import { SystemDiagnosticsModal } from './components/common/SystemDiagnosticsModal';
 import { CBJJGraduationModal } from './components/common/CBJJGraduationModal';
 import { SparringMatchmakerModal } from './components/common/SparringMatchmakerModal';
 import { RespectfulBillingModal } from './components/common/RespectfulBillingModal';
@@ -142,6 +143,7 @@ export default function App() {
   const [isAICoachOpen, setIsAICoachOpen] = useState(false);
   const [isDataMigrationOpen, setIsDataMigrationOpen] = useState(false);
   const [isDataIntegrityOpen, setIsDataIntegrityOpen] = useState(false);
+  const [isSystemDiagnosticsOpen, setIsSystemDiagnosticsOpen] = useState(false);
 
   // 5 Master BJJ Pillars
   const [isCBJJGraduationOpen, setIsCBJJGraduationOpen] = useState(false);
@@ -1371,6 +1373,7 @@ export default function App() {
         academiesCount={academies.length}
         isCloudSynced={isCloudSynced}
         onOpenDataIntegrity={() => setIsDataIntegrityOpen(true)}
+        onOpenSystemDiagnostics={() => setIsSystemDiagnosticsOpen(true)}
       />
 
       {/* 🛡️ Data Integrity Diagnostics Modal (Firestore ↔ LocalStorage) */}
@@ -1378,6 +1381,12 @@ export default function App() {
         isOpen={isDataIntegrityOpen}
         onClose={() => setIsDataIntegrityOpen(false)}
         activeAcademyName={activeAcademy.name}
+      />
+
+      {/* 🧪 System Diagnostics E2E Modal */}
+      <SystemDiagnosticsModal
+        isOpen={isSystemDiagnosticsOpen}
+        onClose={() => setIsSystemDiagnosticsOpen(false)}
       />
 
       {/* 1. 🥋 CBJJ / IBJJF Graduation Certificate Modal */}

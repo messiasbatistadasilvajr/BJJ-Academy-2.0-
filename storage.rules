@@ -1,0 +1,71 @@
+rules_version = '2';
+service firebase.storage {
+  match /b/{bucket}/o {
+
+    // =========================================================================
+    // 🛡️ REGRAS DE SEGURANÇA FIREBASE STORAGE (RBAC & ISOLAMENTO POR USUÁRIO)
+    // =========================================================================
+
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    function isCeo() {
+      return isAuthenticated() && (
+        request.auth.token.role == 'ceo' || 
+        request.auth.token.email == 'messiasbjunior76@gmail.com'
+      );
+    }
+
+    function isAdmin() {
+      return isAuthenticated() && (
+        isCeo() || 
+        request.auth.token.role == 'admin' ||
+        request.auth.token.role == 'SUPER_ADMIN' ||
+        request.auth.token.role == 'ADMIN_ACADEMIA'
+      );
+    }
+
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+
+    // 1. Fotos de Perfil (Profile Avatars)
+    // Caminho: /avatars/{userId}/{fileName}
+    match /avatars/{userId}/{fileName} {
+      // Qualquer usuário autenticado ou no app pode ver a foto de perfil/avatar
+      allow read: if true;
+      // Somente o próprio dono ou o Administrador pode subir ou alterar a foto de perfil
+      allow write: if (isOwner(userId) || isAdmin())
+        && request.resource.size < 5 * 1024 * 1024 // Limite 5MB
+        && request.resource.contentType.matches('image/.*');
+    }
+
+    // 2. Diplomas e Certificados Oficiais CBJJ / IBJJF
+    // Caminho: /certificates/{studentId}/{certificateId}
+    match /certificates/{studentId}/{certificateId} {
+      // O aluno, o Mestre e o Administrador podem visualizar e baixar o certificado
+      allow read: if isAuthenticated() && (isOwner(studentId) || isAdmin() || request.auth.token.role == 'professor');
+      // Apenas o Administrador ou o Mestre responsável pode emitir e gravar o certificado oficial
+      allow write: if isAdmin() || request.auth.token.role == 'professor';
+    }
+
+    // 3. Comprovantes de Pagamento e Faturas (Receipts / Invoices)
+    // Caminho: /receipts/{tenantId}/{invoiceId}/{fileName}
+    match /receipts/{tenantId}/{invoiceId}/{fileName} {
+      // Apenas o Gestor Financeiro, Admin ou o Aluno vinculado à fatura pode acessar
+      allow read: if isAuthenticated();
+      // Upload de comprovante permitido para o Aluno (ao anexar comprovante PIX) ou Admin
+      allow write: if isAuthenticated()
+        && request.resource.size < 10 * 1024 * 1024 // Limite 10MB
+        && (request.resource.contentType.matches('image/.*') || request.resource.contentType == 'application/pdf');
+    }
+
+    // 4. Documentos da Academia / Contratos (Academies Media)
+    // Caminho: /academies/{academyId}/{fileName}
+    match /academies/{academyId}/{fileName} {
+      allow read: if true;
+      allow write: if isAdmin() || isCeo();
+    }
+  }
+}

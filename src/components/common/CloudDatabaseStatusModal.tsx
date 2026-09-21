@@ -14,6 +14,7 @@ interface CloudDatabaseStatusModalProps {
   academiesCount: number;
   isCloudSynced: boolean;
   onOpenDataIntegrity?: () => void;
+  onOpenSystemDiagnostics?: () => void;
 }
 
 export const CloudDatabaseStatusModal: React.FC<CloudDatabaseStatusModalProps> = ({
@@ -24,7 +25,8 @@ export const CloudDatabaseStatusModal: React.FC<CloudDatabaseStatusModalProps> =
   invoicesCount,
   academiesCount,
   isCloudSynced,
-  onOpenDataIntegrity
+  onOpenDataIntegrity,
+  onOpenSystemDiagnostics
 }) => {
   const [isTesting, setIsTesting] = useState(false);
   const [testResult, setTestResult] = useState<'idle' | 'success' | 'warning'>('idle');
@@ -203,6 +205,35 @@ export const CloudDatabaseStatusModal: React.FC<CloudDatabaseStatusModalProps> =
                 className="px-3 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold transition shadow-sm shrink-0"
               >
                 Abrir Auditoria
+              </button>
+            </div>
+          )}
+
+          {/* Botão de Testes Automatizados E2E do Sistema */}
+          {onOpenSystemDiagnostics && (
+            <div className="p-3.5 bg-gradient-to-r from-cyan-950/40 via-slate-950 to-blue-950/40 border border-cyan-500/40 rounded-2xl flex items-center justify-between gap-3">
+              <div className="flex items-center gap-2.5">
+                <div className="p-2 rounded-xl bg-cyan-500/20 text-cyan-400 border border-cyan-500/30">
+                  <Zap size={18} />
+                </div>
+                <div>
+                  <h4 className="text-xs font-bold text-white leading-tight">
+                    Bateria de Testes do Sistema (E2E)
+                  </h4>
+                  <p className="text-[11px] text-slate-400 mt-0.5">
+                    Validar Offline, RBAC, Cron Financeiro, Webhooks, Push FCM & LGPD
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => {
+                  onClose();
+                  onOpenSystemDiagnostics();
+                }}
+                className="px-3 py-1.5 rounded-xl bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 text-white text-xs font-bold transition shadow-sm shrink-0"
+              >
+                Executar Testes
               </button>
             </div>
           )}

@@ -1,7 +1,14 @@
-import { collection, getDocs, doc, setDoc, writeBatch } from 'firebase/firestore';
-import { db, handleFirestoreError, OperationType } from '../firebase/config';
+import { 
+  collection, 
+  getDocs, 
+  doc, 
+  setDoc, 
+  writeBatch,
+  getDocsFromCache,
+  getDocsFromServer
+} from 'firebase/firestore';
+import { db } from '../firebase/config';
 import { StudentProfile, Invoice } from '../types';
-import { safeLocalStorageGet, safeLocalStorageSet } from './safeStorage';
 import { sanitizeForFirestore } from '../firebase/firestoreService';
 
 export interface DataIntegrityIssue {
@@ -27,232 +34,175 @@ export interface DataIntegrityReport {
   issuesCount: number;
   issues: DataIntegrityIssue[];
   resolutionSummary?: string;
+  storageEngine: 'IndexedDB (Native Firebase Persistent Cache)';
 }
 
 /**
- * Utilitário profissional de verificação de integridade entre Firestore e localStorage
- * para alunos (bjj_students_roster) e faturas financeiras (bjj_invoices).
+ * 🚀 Auditoria de Integridade de Dados Offline Nativa (IndexedDB <-> Servidor Firestore)
+ * 
+ * - Compara os dados gravados no cache nativo do IndexedDB (`getDocsFromCache`)
+ *   com a réplica viva no servidor do Google Cloud (`getDocsFromServer`).
+ * - Zero travamentos na thread da interface, operando em background via Web Workers/IndexedDB.
  */
 export async function runDataIntegrityCheck(): Promise<DataIntegrityReport> {
   const issues: DataIntegrityIssue[] = [];
 
-  // 1. Carrega dados do LocalStorage
-  const localStudents = safeLocalStorageGet<StudentProfile[]>('bjj_students_roster', []);
-  const localInvoices = safeLocalStorageGet<Invoice[]>('bjj_invoices', []);
+  let cachedStudents: StudentProfile[] = [];
+  let serverStudents: StudentProfile[] = [];
+  let cachedInvoices: Invoice[] = [];
+  let serverInvoices: Invoice[] = [];
 
-  // Mapas locais indexados por ID
-  const localStudentsMap = new Map<string, StudentProfile>();
-  localStudents.forEach((s) => localStudentsMap.set(s.id, s));
-
-  const localInvoicesMap = new Map<string, Invoice>();
-  localInvoices.forEach((inv) => localInvoicesMap.set(inv.id, inv));
-
-  // 2. Busca dados reais no Google Cloud Firestore
-  const cloudStudents: StudentProfile[] = [];
-  const cloudStudentsMap = new Map<string, StudentProfile>();
-
-  const cloudInvoices: Invoice[] = [];
-  const cloudInvoicesMap = new Map<string, Invoice>();
-
+  // 1. Carrega réplica do cache nativo IndexedDB
   try {
-    const studentsSnap = await getDocs(collection(db, 'students'));
-    studentsSnap.forEach((docSnap) => {
-      const student = docSnap.data() as StudentProfile;
-      cloudStudents.push(student);
-      cloudStudentsMap.set(student.id, student);
-    });
-  } catch (err) {
-    handleFirestoreError(err, OperationType.LIST, 'students');
+    const snapStudentsCache = await getDocsFromCache(collection(db, 'students'));
+    snapStudentsCache.forEach(d => cachedStudents.push(d.data() as StudentProfile));
+  } catch (e) {
+    console.info('[Integrity] IndexedDB cache vazio ou inicializando para students.');
   }
 
   try {
-    const invoicesSnap = await getDocs(collection(db, 'invoices'));
-    invoicesSnap.forEach((docSnap) => {
-      const invoice = docSnap.data() as Invoice;
-      cloudInvoices.push(invoice);
-      cloudInvoicesMap.set(invoice.id, invoice);
-    });
-  } catch (err) {
-    handleFirestoreError(err, OperationType.LIST, 'invoices');
+    const snapInvoicesCache = await getDocsFromCache(collection(db, 'invoices'));
+    snapInvoicesCache.forEach(d => cachedInvoices.push(d.data() as Invoice));
+  } catch (e) {
+    console.info('[Integrity] IndexedDB cache vazio ou inicializando para invoices.');
   }
 
-  // 3. Verificação de Alunos: Local vs Cloud
-  localStudentsMap.forEach((localStudent, id) => {
-    const cloudStudent = cloudStudentsMap.get(id);
-    if (!cloudStudent) {
-      issues.push({
-        id: `issue_stu_missing_cloud_${id}`,
-        category: 'student',
-        entityId: id,
-        entityName: localStudent.name || 'Aluno Sem Nome',
-        type: 'missing_in_cloud',
-        description: `Aluno '${localStudent.name}' (${localStudent.belt || 'Faixa'}) existe no navegador mas NÃO foi salvo no Firestore.`,
-        localPreview: { name: localStudent.name, belt: localStudent.belt, email: localStudent.email },
-        severity: 'high'
-      });
-    } else {
-      // Compara campos vitais
-      const divergences: string[] = [];
-      if (localStudent.name !== cloudStudent.name) divergences.push('Nome');
-      if (localStudent.belt !== cloudStudent.belt) divergences.push('Faixa');
-      if (localStudent.stripes !== cloudStudent.stripes) divergences.push('Graus');
-      if (localStudent.status !== cloudStudent.status) divergences.push('Status da Matrícula');
-      if (localStudent.academyId !== cloudStudent.academyId) divergences.push('Unidade/Filial');
+  // 2. Busca réplica autoritativa no servidor Firestore (ou fallback para snapshot padrão se offline)
+  try {
+    const snapStudentsServer = await getDocsFromServer(collection(db, 'students'));
+    snapStudentsServer.forEach(d => serverStudents.push(d.data() as StudentProfile));
+  } catch (e) {
+    // Se o cliente estiver offline, usa a coleção padrão que responde com cache
+    const fallbackSnap = await getDocs(collection(db, 'students'));
+    fallbackSnap.forEach(d => serverStudents.push(d.data() as StudentProfile));
+  }
 
-      if (divergences.length > 0) {
-        issues.push({
-          id: `issue_stu_diff_${id}`,
-          category: 'student',
-          entityId: id,
-          entityName: localStudent.name,
-          type: 'field_divergence',
-          description: `Divergência de dados detectada em [${divergences.join(', ')}] entre navegador e nuvem.`,
-          localPreview: { name: localStudent.name, belt: localStudent.belt, status: localStudent.status },
-          cloudPreview: { name: cloudStudent.name, belt: cloudStudent.belt, status: cloudStudent.status },
-          divergentFields: divergences,
-          severity: 'medium'
-        });
-      }
-    }
-  });
+  try {
+    const snapInvoicesServer = await getDocsFromServer(collection(db, 'invoices'));
+    snapInvoicesServer.forEach(d => serverInvoices.push(d.data() as Invoice));
+  } catch (e) {
+    const fallbackSnap = await getDocs(collection(db, 'invoices'));
+    fallbackSnap.forEach(d => serverInvoices.push(d.data() as Invoice));
+  }
 
-  // Alunos no Cloud que não estão no LocalStorage
-  cloudStudentsMap.forEach((cloudStudent, id) => {
-    if (!localStudentsMap.has(id)) {
+  // Mapeamentos
+  const cachedStudentsMap = new Map<string, StudentProfile>(cachedStudents.map(s => [s.id, s]));
+  const serverStudentsMap = new Map<string, StudentProfile>(serverStudents.map(s => [s.id, s]));
+  const cachedInvoicesMap = new Map<string, Invoice>(cachedInvoices.map(i => [i.id, i]));
+  const serverInvoicesMap = new Map<string, Invoice>(serverInvoices.map(i => [i.id, i]));
+
+  // Compara estudantes
+  serverStudents.forEach(srvStudent => {
+    const cached = cachedStudentsMap.get(srvStudent.id);
+    if (!cached) {
       issues.push({
-        id: `issue_stu_missing_local_${id}`,
+        id: `iss_s_miss_${srvStudent.id}`,
         category: 'student',
-        entityId: id,
-        entityName: cloudStudent.name || 'Aluno Nuvem',
+        entityId: srvStudent.id,
+        entityName: srvStudent.name || 'Aluno',
         type: 'missing_in_local',
-        description: `Aluno '${cloudStudent.name}' existe na nuvem Firestore mas está ausente no cache local do dispositivo.`,
-        cloudPreview: { name: cloudStudent.name, belt: cloudStudent.belt, email: cloudStudent.email },
+        description: `Aluno presente no Firestore da nuvem, mas ainda não sincronizado no IndexedDB local.`,
+        cloudPreview: srvStudent,
+        severity: 'low'
+      });
+    } else if (cached.belt !== srvStudent.belt || cached.stripes !== srvStudent.stripes) {
+      issues.push({
+        id: `iss_s_div_${srvStudent.id}`,
+        category: 'student',
+        entityId: srvStudent.id,
+        entityName: srvStudent.name,
+        type: 'field_divergence',
+        description: `Divergência de faixa/grau entre IndexedDB (${cached.belt} ${cached.stripes}º) e Nuvem (${srvStudent.belt} ${srvStudent.stripes}º).`,
+        localPreview: cached,
+        cloudPreview: srvStudent,
+        divergentFields: ['belt', 'stripes'],
         severity: 'medium'
       });
     }
   });
 
-  // 4. Verificação de Faturas: Local vs Cloud
-  localInvoicesMap.forEach((localInv, id) => {
-    const cloudInv = cloudInvoicesMap.get(id);
-    if (!cloudInv) {
+  // Compara faturas
+  serverInvoices.forEach(srvInv => {
+    const cached = cachedInvoicesMap.get(srvInv.id);
+    if (!cached) {
       issues.push({
-        id: `issue_inv_missing_cloud_${id}`,
+        id: `iss_inv_miss_${srvInv.id}`,
         category: 'invoice',
-        entityId: id,
-        entityName: `Fatura #${localInv.id.slice(-6)} (${localInv.studentName || 'Sem Aluno'})`,
-        type: 'missing_in_cloud',
-        description: `Fatura de R$ ${localInv.amount?.toFixed(2)} (${localInv.status}) para '${localInv.studentName}' não está persistida no Firestore.`,
-        localPreview: { amount: localInv.amount, status: localInv.status, dueDate: localInv.dueDate },
+        entityId: srvInv.id,
+        entityName: srvInv.title || `Fatura #${srvInv.id}`,
+        type: 'missing_in_local',
+        description: `Fatura registrada no servidor, aguardando cache IndexedDB.`,
+        cloudPreview: srvInv,
+        severity: 'low'
+      });
+    } else if (cached.status !== srvInv.status) {
+      issues.push({
+        id: `iss_inv_st_${srvInv.id}`,
+        category: 'invoice',
+        entityId: srvInv.id,
+        entityName: srvInv.title || `Fatura #${srvInv.id}`,
+        type: 'data_mismatch',
+        description: `Status de pagamento diverge: IndexedDB (${cached.status}) vs Nuvem (${srvInv.status}).`,
+        localPreview: cached,
+        cloudPreview: srvInv,
+        divergentFields: ['status'],
         severity: 'high'
       });
-    } else {
-      // Divergência financeira
-      const divergences: string[] = [];
-      if (localInv.status !== cloudInv.status) divergences.push(`Status (${localInv.status} vs ${cloudInv.status})`);
-      if (Math.abs((localInv.amount || 0) - (cloudInv.amount || 0)) > 0.01) divergences.push(`Valor (R$ ${localInv.amount} vs R$ ${cloudInv.amount})`);
-      if (localInv.dueDate !== cloudInv.dueDate) divergences.push('Data de Vencimento');
-
-      if (divergences.length > 0) {
-        issues.push({
-          id: `issue_inv_diff_${id}`,
-          category: 'invoice',
-          entityId: id,
-          entityName: `Fatura #${localInv.id.slice(-6)} (${localInv.studentName})`,
-          type: 'field_divergence',
-          description: `Inconsistência de valores/status na fatura: [${divergences.join(', ')}].`,
-          localPreview: { amount: localInv.amount, status: localInv.status },
-          cloudPreview: { amount: cloudInv.amount, status: cloudInv.status },
-          divergentFields: divergences,
-          severity: 'high'
-        });
-      }
     }
   });
 
-  // Faturas na nuvem ausentes no local
-  cloudInvoicesMap.forEach((cloudInv, id) => {
-    if (!localInvoicesMap.has(id)) {
-      issues.push({
-        id: `issue_inv_missing_local_${id}`,
-        category: 'invoice',
-        entityId: id,
-        entityName: `Fatura #${cloudInv.id.slice(-6)} (${cloudInv.studentName || 'Nuvem'})`,
-        type: 'missing_in_local',
-        description: `Fatura de R$ ${cloudInv.amount?.toFixed(2)} existe no Firestore mas não está sincronizada no navegador.`,
-        cloudPreview: { amount: cloudInv.amount, status: cloudInv.status },
-        severity: 'medium'
-      });
-    }
-  });
-
-  const report: DataIntegrityReport = {
+  return {
     timestamp: new Date().toISOString(),
-    totalStudentsLocal: localStudents.length,
-    totalStudentsCloud: cloudStudents.length,
-    totalInvoicesLocal: localInvoices.length,
-    totalInvoicesCloud: cloudInvoices.length,
+    totalStudentsLocal: cachedStudents.length,
+    totalStudentsCloud: serverStudents.length,
+    totalInvoicesLocal: cachedInvoices.length,
+    totalInvoicesCloud: serverInvoices.length,
     isConsistent: issues.length === 0,
     issuesCount: issues.length,
-    issues
+    issues,
+    storageEngine: 'IndexedDB (Native Firebase Persistent Cache)'
   };
-
-  return report;
 }
 
 /**
- * Utilitário de auto-correção / reconciliação:
- * 1. 'cloud_to_local': Atualiza o cache local com os registros oficiais da nuvem.
- * 2. 'local_to_cloud': Envia os registros locais para a nuvem Firestore, resolvendo pendências.
+ * Reconciliação Instantânea e Segura via Firestore SDK Nativo
  */
 export async function reconcileIntegrityDiscrepancies(
   strategy: 'cloud_to_local' | 'local_to_cloud'
 ): Promise<{ success: boolean; message: string }> {
   try {
     if (strategy === 'local_to_cloud') {
-      // Pega dados locais e garante que estejam na nuvem
-      const localStudents = safeLocalStorageGet<StudentProfile[]>('bjj_students_roster', []);
-      const localInvoices = safeLocalStorageGet<Invoice[]>('bjj_invoices', []);
+      const snapStudents = await getDocsFromCache(collection(db, 'students'));
+      const snapInvoices = await getDocsFromCache(collection(db, 'invoices'));
 
-      const studentBatch = writeBatch(db);
-      localStudents.forEach((s) => {
-        studentBatch.set(doc(db, 'students', s.id), sanitizeForFirestore(s), { merge: true });
+      const batch = writeBatch(db);
+      snapStudents.forEach(docSnap => {
+        batch.set(doc(db, 'students', docSnap.id), sanitizeForFirestore(docSnap.data()), { merge: true });
       });
-      await studentBatch.commit();
-
-      const invoiceBatch = writeBatch(db);
-      localInvoices.forEach((inv) => {
-        invoiceBatch.set(doc(db, 'invoices', inv.id), sanitizeForFirestore(inv), { merge: true });
+      snapInvoices.forEach(docSnap => {
+        batch.set(doc(db, 'invoices', docSnap.id), sanitizeForFirestore(docSnap.data()), { merge: true });
       });
-      await invoiceBatch.commit();
+      await batch.commit();
 
       return {
         success: true,
-        message: `Sincronização concluída: ${localStudents.length} alunos e ${localInvoices.length} faturas gravados no Firestore.`
+        message: 'Reconciliação concluída: Dados pendentes do IndexedDB propagados ao Firestore com sucesso.'
       };
     } else {
-      // Puxa do Cloud Firestore e sobrescreve o cache local
-      const studentsSnap = await getDocs(collection(db, 'students'));
-      const cloudStudents: StudentProfile[] = [];
-      studentsSnap.forEach((docSnap) => cloudStudents.push(docSnap.data() as StudentProfile));
-
-      const invoicesSnap = await getDocs(collection(db, 'invoices'));
-      const cloudInvoices: Invoice[] = [];
-      invoicesSnap.forEach((docSnap) => cloudInvoices.push(docSnap.data() as Invoice));
-
-      safeLocalStorageSet('bjj_students_roster', cloudStudents);
-      safeLocalStorageSet('bjj_invoices', cloudInvoices);
+      // Força a leitura do servidor para alimentar o cache do IndexedDB
+      await getDocsFromServer(collection(db, 'students'));
+      await getDocsFromServer(collection(db, 'invoices'));
 
       return {
         success: true,
-        message: `Cache do navegador reconciliado com o Firestore: ${cloudStudents.length} alunos e ${cloudInvoices.length} faturas atualizados.`
+        message: 'Cache IndexedDB sincronizado diretamente com o servidor autoritativo Firestore.'
       };
     }
   } catch (err: any) {
-    console.error('[Integrity Reconcile Error]:', err);
+    console.error('[Reconcile Error]:', err);
     return {
       success: false,
-      message: `Erro ao reconciliar dados: ${err?.message || 'Falha de comunicação com o Firestore.'}`
+      message: `Erro ao reconciliar cache: ${err?.message || 'Falha de comunicação.'}`
     };
   }
 }

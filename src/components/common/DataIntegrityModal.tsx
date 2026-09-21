@@ -86,8 +86,8 @@ export const DataIntegrityModal: React.FC<DataIntegrityModalProps> = ({
             <div>
               <div className="flex items-center gap-2">
                 <h3 className="text-base font-black text-white">Auditoria de Integridade de Dados</h3>
-                <span className="text-[10px] px-2 py-0.5 rounded-full bg-slate-800 border border-slate-700 text-slate-300 font-mono">
-                  Firestore ↔ LocalStorage
+                <span className="text-[10px] px-2 py-0.5 rounded-full bg-cyan-950/60 border border-cyan-800/80 text-cyan-300 font-mono">
+                  Firestore ↔ IndexedDB Nativo
                 </span>
               </div>
               <p className="text-xs text-slate-400">

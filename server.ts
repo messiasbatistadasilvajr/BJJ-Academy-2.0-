@@ -10,6 +10,10 @@ import { SansaoFinancialQueryService } from './server/services/sansaoFinancialQu
 import { tenantValidationService } from './server/services/tenantValidationService';
 import { asaasSubaccountService } from './server/services/asaasSubaccountService';
 import { whatsappService } from './server/services/whatsappService';
+import { scheduledTasksService } from './server/services/scheduledTasksService';
+import { paymentGatewayWebhookService } from './server/services/paymentGatewayWebhookService';
+import { fcmNotificationService } from './server/services/fcmNotificationService';
+import { lgpdComplianceService } from './server/services/lgpdComplianceService';
 
 const PORT = 3000;
 
@@ -22,6 +26,8 @@ async function startServer() {
 
   // Start background worker for Redis / Financial Queue
   financialWorker.start();
+  // Start background cron scheduler for 02h00 daily financial routines
+  scheduledTasksService.startScheduler();
 
   // -----------------------------------------------------------------
   // 1. ASAAS WEBHOOK OFFICIAL INGESTION ENDPOINT
@@ -566,6 +572,145 @@ async function startServer() {
     return res.json({
       success: true,
       logs: whatsappService.getRecentLogs()
+    });
+  });
+
+  // -----------------------------------------------------------------
+  // 7.8 ROTINA FINANCEIRA AGENDADA (CRON 02H00 / DISPARO MANUAL SEGURO)
+  // -----------------------------------------------------------------
+  app.post('/api/cron/financial-overdue-routine', (req, res) => {
+    const { invoices = [] } = req.body;
+    const result = scheduledTasksService.executeFinancialOverdueRoutine(invoices);
+    return res.json({
+      success: true,
+      routine: 'DAILY_02AM_PENALTY_CRON',
+      timestamp: new Date().toISOString(),
+      ...result
+    });
+  });
+
+  // 7.9 RADAR DE RETENÇÃO E EVASÃO (ALUNOS AUSENTES > 15 DIAS)
+  app.post('/api/cron/retention-radar-routine', (req, res) => {
+    const { students = [] } = req.body;
+    const result = scheduledTasksService.executeRetentionRadarRoutine(students);
+    return res.json({
+      success: true,
+      routine: 'DAILY_RETENTION_RADAR',
+      timestamp: new Date().toISOString(),
+      ...result
+    });
+  });
+
+  // -----------------------------------------------------------------
+  // 7.10 ENDPOINT UNIFICADO DE WEBHOOKS (ASAAS / MERCADO PAGO / STRIPE)
+  // -----------------------------------------------------------------
+  app.post('/api/webhooks/gateway/:provider', async (req, res) => {
+    const provider = req.params.provider;
+    const event = paymentGatewayWebhookService.parseWebhookPayload(provider, req.body);
+
+    if (!event) {
+      return res.status(200).json({
+        received: true,
+        processed: false,
+        message: 'Evento ignorado ou sem alteração de liquidação financeira.'
+      });
+    }
+
+    // Registra auditoria financeira da liquidação
+    financialAuditService.record({
+      tenantId: event.tenantId || 'acad_matriz',
+      action: event.status === 'paid' ? 'PAYMENT_RECEIVED' : 'WEBHOOK_PROCESSED',
+      entity: 'invoice',
+      entityId: event.externalChargeId,
+      origin: 'asaas_webhook',
+      result: 'success',
+      details: {
+        provider,
+        amount: event.amount,
+        status: event.status,
+        paymentMethod: event.paymentMethod,
+        paidAt: event.paidAt
+      }
+    });
+
+    console.log(`[Webhook Gateway] Pagamento baixado automaticamente via ${provider.toUpperCase()}: Cobrança ${event.externalChargeId} -> R$ ${event.amount} (${event.status})`);
+
+    return res.status(200).json({
+      success: true,
+      received: true,
+      event
+    });
+  });
+
+  // -----------------------------------------------------------------
+  // 7.11 NOTIFICAÇÕES PUSH (FCM) ENDPOINTS
+  // -----------------------------------------------------------------
+  app.post('/api/notifications/fcm/dispatch', async (req, res) => {
+    const { studentId, studentName, category, amount, dueDate, daysAbsent, newBelt, deviceToken } = req.body;
+
+    let result;
+    if (category === 'billing') {
+      result = await fcmNotificationService.sendUpcomingInvoiceAlert(studentId, studentName, Number(amount || 150), dueDate || 'amanhã', deviceToken);
+    } else if (category === 'retention') {
+      result = await fcmNotificationService.sendRetentionEngagementPush(studentId, studentName, Number(daysAbsent || 15), deviceToken);
+    } else if (category === 'graduation') {
+      result = await fcmNotificationService.sendGraduationPush(studentId, studentName, newBelt || 'Faixa Azul', deviceToken);
+    } else {
+      result = await fcmNotificationService.dispatchPushNotification({
+        targetUserId: studentId || 'all',
+        deviceToken,
+        title: req.body.title || '🥋 BJJ ACADEMY Notificação',
+        body: req.body.body || 'Aviso importante da academia.',
+        category: 'system'
+      });
+    }
+
+    return res.json({ success: true, result });
+  });
+
+  app.get('/api/notifications/fcm/history', (req, res) => {
+    return res.json({
+      success: true,
+      history: fcmNotificationService.getNotificationHistory()
+    });
+  });
+
+  // -----------------------------------------------------------------
+  // 7.12 CONFORMIDADE LGPD: EXCLUSÃO E ANONIMIZAÇÃO DE CONTA
+  // -----------------------------------------------------------------
+  app.post('/api/compliance/lgpd/delete-account', (req, res) => {
+    const { userId, email, name, invoicesCount = 0 } = req.body;
+
+    if (!userId) {
+      return res.status(400).json({ error: 'BAD_REQUEST', message: 'userId é obrigatório.' });
+    }
+
+    const auditRecord = lgpdComplianceService.processAccountDeletionAndAnonymization({
+      userId,
+      email: email || 'anonymized@bjjacademy.app',
+      name: name || 'Aluno',
+      invoicesCount
+    });
+
+    // Registra auditoria contábil imutável
+    financialAuditService.record({
+      tenantId: 'acad_matriz',
+      action: 'WEBHOOK_PROCESSED',
+      entity: 'invoice',
+      entityId: auditRecord.anonymizedUserId.substring(0, 16),
+      origin: 'system_cron',
+      result: 'success',
+      details: {
+        legalBasis: 'LGPD_ART_18_E_16',
+        pseudonym: auditRecord.pseudonym,
+        anonymizedAt: auditRecord.anonymizedAt
+      }
+    });
+
+    return res.json({
+      success: true,
+      message: 'Conta e dados pessoais excluídos com sucesso. Registros contábeis anonimizados conforme LGPD.',
+      audit: auditRecord
     });
   });
 

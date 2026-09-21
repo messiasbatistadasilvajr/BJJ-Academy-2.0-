@@ -1,14 +1,34 @@
 import { initializeApp } from 'firebase/app';
 import { getAuth } from 'firebase/auth';
-import { doc, getDocFromServer, getFirestore } from 'firebase/firestore';
+import { getStorage } from 'firebase/storage';
+import { 
+  initializeFirestore, 
+  persistentLocalCache, 
+  persistentMultipleTabManager,
+  getDocFromServer,
+  doc
+} from 'firebase/firestore';
 import firebaseConfig from '../../firebase-applet-config.json';
 
 // Initialize Firebase App
 const app = initializeApp(firebaseConfig);
 
-// CRITICAL: The app will break without specifying the custom databaseId
-export const db = getFirestore(app, firebaseConfig.firestoreDatabaseId);
+/**
+ * 🚀 PASSO 1: Persistência Offline Nativa do Firestore (IndexedDB)
+ * 
+ * - persistentLocalCache(): Ativa o motor de cache nativo via IndexedDB.
+ * - persistentMultipleTabManager(): Gerencia e sincroniza o cache com segurança
+ *   entre múltiplas abas ou janelas abertas simultaneamente, evitando conflitos de lock.
+ * - Elimina o overhead e bloqueios na thread principal causados pelo uso síncrono de localStorage.
+ */
+export const db = initializeFirestore(app, {
+  localCache: persistentLocalCache({
+    tabManager: persistentMultipleTabManager()
+  })
+}, firebaseConfig.firestoreDatabaseId);
+
 export const auth = getAuth(app);
+export const storage = getStorage(app);
 
 export enum OperationType {
   CREATE = 'create',
@@ -65,7 +85,7 @@ export async function testConnection(): Promise<boolean> {
     return true;
   } catch (error) {
     if (error instanceof Error && error.message.includes('the client is offline')) {
-      console.warn('[Firebase] Client is offline or establishing connection.');
+      console.warn('[Firebase] Client is offline or establishing connection. Native IndexedDB persistence is active.');
     }
     return false;
   }
