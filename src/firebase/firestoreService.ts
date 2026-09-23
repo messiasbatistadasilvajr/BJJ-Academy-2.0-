@@ -19,7 +19,8 @@ import {
   RetentionAlertItem,
   PlatformGeneralManager,
   FinancialAuditLog,
-  PayableExpense
+  PayableExpense,
+  DailyCashSummary
 } from '../types';
 
 // Helper to deeply remove undefined values and sanitize objects/arrays for Firestore
@@ -447,6 +448,49 @@ export async function deletePayableExpenseFromFirestore(expenseId: string): Prom
     await deleteDoc(docRef);
   } catch (error) {
     handleFirestoreError(error, OperationType.WRITE, `${colPath}/${expenseId}`);
+  }
+}
+
+// -------------------------------------------------------------
+// RESUMO DO DIA / FECHAMENTO DE CAIXA DIÁRIO
+// -------------------------------------------------------------
+export function subscribeToDailyCashSummaries(
+  academyId: string,
+  onUpdate: (summaries: DailyCashSummary[]) => void,
+  onError?: (err: unknown) => void
+) {
+  const colPath = 'daily_cash_summaries';
+  return onSnapshot(
+    collection(db, colPath),
+    (snapshot) => {
+      if (!snapshot.empty) {
+        const summaries: DailyCashSummary[] = [];
+        snapshot.forEach((docSnap) => {
+          const data = docSnap.data() as DailyCashSummary;
+          if (!academyId || data.academyId === academyId) {
+            summaries.push(data);
+          }
+        });
+        summaries.sort((a, b) => (b.date || '').localeCompare(a.date || ''));
+        onUpdate(summaries);
+      } else {
+        onUpdate([]);
+      }
+    },
+    (error) => {
+      console.warn(`[Firestore Listener] ${colPath}:`, error);
+      if (onError) onError(error);
+    }
+  );
+}
+
+export async function saveDailyCashSummaryToFirestore(summary: DailyCashSummary): Promise<void> {
+  const colPath = 'daily_cash_summaries';
+  try {
+    const docRef = doc(db, colPath, summary.id);
+    await setDoc(docRef, sanitizeForFirestore(summary), { merge: true });
+  } catch (error) {
+    handleFirestoreError(error, OperationType.WRITE, `${colPath}/${summary.id}`);
   }
 }
 

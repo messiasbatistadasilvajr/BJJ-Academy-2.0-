@@ -356,6 +356,67 @@ class AcademyVoiceNotificationEngine {
       this.setSpeaking(false);
     }
   }
+
+  /**
+   * 🥋 Totem de Chamadas - Locução Inteligente de Boas-Vindas e Status Financeiro:
+   * - Se com mensalidade em dia (pago): Saúda o aluno pelo nome e libera o treino com vibração positiva ("Bom treino, guerreiro! Oss!").
+   * - Se com mensalidade pendente/em atraso: Gera aviso sonoro discreto e cordial direcionando-o à recepção.
+   */
+  public async announceKioskCheckin(
+    studentName: string,
+    isPaid: boolean,
+    academyName: string = 'Loyalty Jiu-Jitsu'
+  ): Promise<void> {
+    const firstName = studentName ? studentName.split(' ')[0] : 'Guerreiro';
+
+    if (isPaid) {
+      // 1. Toca jingle alegre de liberação
+      await this.playMercadoLivreJingle();
+      // 2. Locução amigável liberando o tatame
+      const text = `Acesso liberado, ${firstName}! Bom treino, Oss!`;
+      this.speakText(text, 1.1, 1.05);
+    } else {
+      // Aviso sonoro discreto e respeitoso para mensalidade pendente
+      try {
+        const ctx = this.getAudioContext();
+        const now = ctx.currentTime;
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.type = 'triangle';
+        osc.frequency.setValueAtTime(440, now);
+        osc.frequency.linearRampToValueAtTime(330, now + 0.25);
+        gain.gain.setValueAtTime(0.2, now);
+        gain.gain.exponentialRampToValueAtTime(0.01, now + 0.3);
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.start(now);
+        osc.stop(now + 0.3);
+      } catch (err) {
+        // non-blocking
+      }
+
+      const text = `Olá, ${firstName}! Por gentileza, dirija-se à recepção para regularizar seu cadastro.`;
+      setTimeout(() => {
+        this.speakText(text, 1.0, 0.98);
+      }, 350);
+    }
+  }
+
+  private speakText(text: string, pitch = 1.1, rate = 1.05) {
+    if (typeof window === 'undefined' || !('speechSynthesis' in window)) return;
+    try {
+      window.speechSynthesis.cancel();
+      const utterance = new SpeechSynthesisUtterance(text);
+      utterance.lang = 'pt-BR';
+      const voice = this.getPreferredVoice();
+      if (voice) utterance.voice = voice;
+      utterance.pitch = pitch;
+      utterance.rate = rate;
+      window.speechSynthesis.speak(utterance);
+    } catch (err) {
+      console.warn('[VoiceNotification] speakText erro:', err);
+    }
+  }
 }
 
 export const academyVoiceEngine = new AcademyVoiceNotificationEngine();

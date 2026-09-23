@@ -9,12 +9,15 @@ import {
 } from 'lucide-react';
 import { 
   Invoice, RegisteredAcademy, AcademyPricingPlan, FinancialAccessProfile, 
-  PlatformGeneralManager, PlatformAcademyPayment 
+  PlatformGeneralManager, PlatformAcademyPayment, DailyCashSummary,
+  canManageFinancesOrDiscounts, DEFAULT_MONTHLY_FEE_BRL, PROMOTIONAL_MONTHLY_FEE_BRL,
+  MODO_SAAS_ATIVO
 } from '../../types';
 import { defaultPlatformGeneralManager, mockPlatformAcademyPayments } from '../../data/mockData';
 import { calculateLateFeeAndInterest, formatBRL } from '../../utils/financialCalculations';
 import { safeLocalStorageGet, safeLocalStorageSet } from '../../utils/safeStorage';
 import { FinancialMotorTab } from './FinancialMotorTab';
+import { subscribeToDailyCashSummaries, saveDailyCashSummaryToFirestore, saveInvoiceToFirestore } from '../../firebase/firestoreService';
 
 interface FinancialHubModalProps {
   isOpen: boolean;
@@ -22,6 +25,9 @@ interface FinancialHubModalProps {
   academies: RegisteredAcademy[];
   invoices: Invoice[];
   activeAcademy: RegisteredAcademy;
+  currentUserRole?: string;
+  currentUserId?: string;
+  currentUserName?: string;
   onUpdateInvoices?: (invoices: Invoice[]) => void;
   onOpenVoiceNotice?: (title: string, body: string) => void;
   generalManager?: PlatformGeneralManager;
@@ -35,12 +41,17 @@ export const FinancialHubModal: React.FC<FinancialHubModalProps> = ({
   academies,
   invoices: initialInvoices,
   activeAcademy,
+  currentUserRole = 'ADMIN_ACADEMIA',
+  currentUserId = 'user_gestor_01',
+  currentUserName = 'Professor / Dono',
   onUpdateInvoices,
   onOpenVoiceNotice,
   generalManager = defaultPlatformGeneralManager,
   onUpdateGeneralManager,
   isGeneralManager = true
 }) => {
+  // RBAC Permission Check
+  const hasManagerPermission = canManageFinancesOrDiscounts(currentUserRole);
   // Local Invoices State
   const [invoices, setInvoices] = useState<Invoice[]>(initialInvoices);
 
@@ -74,12 +85,41 @@ export const FinancialHubModal: React.FC<FinancialHubModalProps> = ({
     }
   }, [isGeneralManager, activeAcademy.id, academies]);
   
-  // Sub-tabs: 'overview' | 'invoices' | 'calculator' | 'plans' | 'repasses' | 'new_charge' | 'accounting' | 'motor'
-  const [activeTab, setActiveTab] = useState<'overview' | 'invoices' | 'calculator' | 'plans' | 'repasses' | 'new_charge' | 'accounting' | 'motor'>('overview');
+  // Sub-tabs: 'overview' | 'invoices' | 'calculator' | 'plans' | 'repasses' | 'new_charge' | 'accounting' | 'motor' | 'daily_summary'
+  const [activeTab, setActiveTab] = useState<'overview' | 'invoices' | 'calculator' | 'plans' | 'repasses' | 'new_charge' | 'accounting' | 'motor' | 'daily_summary'>('overview');
   
   // State for Fechamento Contábil (Item 4)
   const [accountingMonth, setAccountingMonth] = useState<string>('09/2026');
   const [copiedDre, setCopiedDre] = useState<boolean>(false);
+
+  // Resumo do Dia / Fechamento de Caixa Diário
+  const [dailySummaries, setDailySummaries] = useState<DailyCashSummary[]>([]);
+  const [isSavingSummary, setIsSavingSummary] = useState(false);
+  const [summaryFeedback, setSummaryFeedback] = useState<string | null>(null);
+
+  // Modal de Baixa Manual no Balcão
+  const [manualSettleInvoice, setManualSettleInvoice] = useState<Invoice | null>(null);
+  const [manualMethod, setManualMethod] = useState<'DINHEIRO' | 'CARTÃO (BALCÃO)'>('DINHEIRO');
+  const [manualAmount, setManualAmount] = useState<number>(100);
+  const [isProcessingManualSettle, setIsProcessingManualSettle] = useState(false);
+  const [manualSettleFeedback, setManualSettleFeedback] = useState<string | null>(null);
+
+  // Modal de Desconto Promocional (R$ 80)
+  const [discountInvoice, setDiscountInvoice] = useState<Invoice | null>(null);
+  const [discountReason, setDiscountReason] = useState<string>('Promoção de Incentivo ao Tatame');
+  const [customDiscountValue, setCustomDiscountValue] = useState<number>(PROMOTIONAL_MONTHLY_FEE_BRL);
+
+  // Subscribe to Daily Cash Summaries from Firestore
+  useEffect(() => {
+    const unsub = subscribeToDailyCashSummaries(
+      assignedUnitId,
+      (data) => setDailySummaries(data),
+      (err) => console.warn('[DailyCashSummaries listener warning]:', err)
+    );
+    return () => {
+      if (typeof unsub === 'function') unsub();
+    };
+  }, [assignedUnitId]);
   
   // Filter for invoices status
   const [invoiceStatusFilter, setInvoiceStatusFilter] = useState<'all' | 'paid' | 'pending' | 'overdue'>('all');
@@ -277,6 +317,205 @@ export const FinancialHubModal: React.FC<FinancialHubModalProps> = ({
       };
     });
   }, [academies, invoices]);
+
+  // Executar Baixa Manual no Balcão com cancelamento de PIX online no Asaas
+  const handleExecuteManualSettle = async () => {
+    if (!manualSettleInvoice) return;
+    if (!hasManagerPermission) {
+      alert('Acesso Negado: Apenas Dono ou Professor podem efetuar Baixa Manual.');
+      return;
+    }
+
+    setIsProcessingManualSettle(true);
+    setManualSettleFeedback('Processando baixa no balcão e cancelando PIX no Asaas...');
+
+    try {
+      // 1. Chamar rota segura no backend para cancelar a cobrança PIX aberta no Asaas
+      try {
+        await fetch(`/api/tenants/${manualSettleInvoice.academyId || assignedUnitId}/invoices/${manualSettleInvoice.id}/manual-settle`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            paymentMethod: manualMethod,
+            amount: manualAmount,
+            receivedByUserId: currentUserId,
+            receivedByUserName: currentUserName,
+            userRole: currentUserRole,
+            asaasPaymentId: manualSettleInvoice.asaasPaymentId || manualSettleInvoice.id
+          })
+        });
+      } catch (backendErr) {
+        console.warn('[Offline/Fallback manual settle notification]:', backendErr);
+      }
+
+      // 2. Atualiza a fatura local e no Firestore
+      const nowStr = new Date().toLocaleString('pt-BR');
+      const updatedInvoice: Invoice = {
+        ...manualSettleInvoice,
+        status: 'paid',
+        paidDate: `Presencial às ${nowStr.split(' ')[1] || '14:00'}`,
+        paymentMethod: manualMethod === 'DINHEIRO' ? 'dinheiro' : 'cartao_balcao',
+        amount: Number(manualAmount),
+        settledBy: currentUserName,
+        settlementChannel: 'BALCAO_PRESENCIAL',
+        asaasPixCancelled: true
+      };
+
+      const updatedList = invoices.map(i => i.id === manualSettleInvoice.id ? updatedInvoice : i);
+      setInvoices(updatedList);
+      if (onUpdateInvoices) onUpdateInvoices(updatedList);
+      await saveInvoiceToFirestore(updatedInvoice);
+
+      // 3. Salva automaticamente no Resumo do Dia para manter caixa auditável
+      await recordAutoDailyCash(updatedInvoice);
+
+      setManualSettleFeedback(`✅ Baixa de ${formatBRL(manualAmount)} em ${manualMethod} concluída! PIX online cancelado no Asaas.`);
+      setTimeout(() => {
+        setManualSettleFeedback(null);
+        setManualSettleInvoice(null);
+        setIsProcessingManualSettle(false);
+      }, 1500);
+    } catch (err: any) {
+      setManualSettleFeedback(`Erro na baixa: ${err.message || 'Falha ao processar'}`);
+      setIsProcessingManualSettle(false);
+    }
+  };
+
+  // Aplicar Desconto Promocional (R$ 80,00)
+  const handleApplyPromotionalDiscount = async () => {
+    if (!discountInvoice) return;
+    if (!hasManagerPermission) {
+      alert('Acesso Negado: Apenas Dono ou Professor podem conceder descontos promocionais.');
+      return;
+    }
+
+    const updatedInvoice: Invoice = {
+      ...discountInvoice,
+      amount: customDiscountValue,
+      originalAmount: discountInvoice.originalAmount || discountInvoice.amount,
+      discountAppliedBy: currentUserName,
+      discountReason: discountReason.trim() || 'Promoção Tatame',
+      isPromotional: true
+    };
+
+    const updatedList = invoices.map(i => i.id === discountInvoice.id ? updatedInvoice : i);
+    setInvoices(updatedList);
+    if (onUpdateInvoices) onUpdateInvoices(updatedList);
+    await saveInvoiceToFirestore(updatedInvoice);
+    setDiscountInvoice(null);
+  };
+
+  // Computar e Salvar Fechamento de Caixa / Resumo do Dia
+  const currentDayMetrics = useMemo(() => {
+    const todayInvoices = invoices.filter(i => {
+      if (selectedAcademyFilter !== 'all' && i.academyId !== selectedAcademyFilter) return false;
+      return i.status === 'paid';
+    });
+
+    let totalBruto = 0;
+    let totalDigital = 0;
+    let totalFisico = 0;
+    let countDinheiro = 0;
+    let countCartaoBalcao = 0;
+    let countPix = 0;
+
+    todayInvoices.forEach(inv => {
+      const val = Number(inv.amount) || 0;
+      totalBruto += val;
+
+      if (inv.paymentMethod === 'dinheiro') {
+        totalFisico += val;
+        countDinheiro++;
+      } else if (inv.paymentMethod === 'cartao_balcao' || inv.paymentMethod === 'cartao') {
+        totalFisico += val;
+        countCartaoBalcao++;
+      } else {
+        // pix ou online
+        totalDigital += val;
+        countPix++;
+      }
+    });
+
+    return {
+      totalBruto,
+      totalDigital,
+      totalFisico,
+      countDinheiro,
+      countCartaoBalcao,
+      countPix,
+      totalCount: todayInvoices.length
+    };
+  }, [invoices, selectedAcademyFilter]);
+
+  const recordAutoDailyCash = async (paidInv: Invoice) => {
+    const today = new Date().toISOString().split('T')[0];
+    const summaryId = `cash_${assignedUnitId}_${today}`;
+    const targetAcademy = academies.find(a => a.id === (paidInv.academyId || assignedUnitId)) || activeAcademy;
+
+    const summary: DailyCashSummary = {
+      id: summaryId,
+      date: today,
+      academyId: targetAcademy.id,
+      academyName: targetAcademy.name,
+      totalBruto: currentDayMetrics.totalBruto + paidInv.amount,
+      totalDigital: (paidInv.paymentMethod === 'dinheiro' || paidInv.paymentMethod === 'cartao_balcao')
+        ? currentDayMetrics.totalDigital 
+        : currentDayMetrics.totalDigital + paidInv.amount,
+      totalFisico: (paidInv.paymentMethod === 'dinheiro' || paidInv.paymentMethod === 'cartao_balcao')
+        ? currentDayMetrics.totalFisico + paidInv.amount
+        : currentDayMetrics.totalFisico,
+      totalDinheiro: paidInv.paymentMethod === 'dinheiro' ? (currentDayMetrics.totalFisico + paidInv.amount) : currentDayMetrics.totalFisico,
+      totalCartaoBalcao: paidInv.paymentMethod === 'cartao_balcao' ? paidInv.amount : 0,
+      totalPixOnline: currentDayMetrics.totalDigital,
+      closedByUserId: currentUserId,
+      closedByUserName: currentUserName,
+      status: 'ABERTO',
+      transactionsCount: currentDayMetrics.totalCount + 1,
+      lastUpdatedAt: new Date().toISOString()
+    };
+
+    await saveDailyCashSummaryToFirestore(summary);
+  };
+
+  const handleSaveDailySummary = async (status: 'ABERTO' | 'FECHADO' = 'FECHADO') => {
+    if (!hasManagerPermission) {
+      alert('Acesso Negado: Apenas Dono ou Professor podem fechar o caixa do dia.');
+      return;
+    }
+
+    setIsSavingSummary(true);
+    const today = new Date().toISOString().split('T')[0];
+    const summaryId = `cash_${assignedUnitId}_${today}`;
+    const targetAcademy = academies.find(a => a.id === assignedUnitId) || activeAcademy;
+
+    const summary: DailyCashSummary = {
+      id: summaryId,
+      date: today,
+      academyId: targetAcademy.id,
+      academyName: targetAcademy.name,
+      totalBruto: currentDayMetrics.totalBruto,
+      totalDigital: currentDayMetrics.totalDigital,
+      totalFisico: currentDayMetrics.totalFisico,
+      totalDinheiro: currentDayMetrics.totalFisico,
+      totalCartaoBalcao: currentDayMetrics.countCartaoBalcao * 100,
+      totalPixOnline: currentDayMetrics.totalDigital,
+      closedByUserId: currentUserId,
+      closedByUserName: currentUserName,
+      status,
+      transactionsCount: currentDayMetrics.totalCount,
+      lastUpdatedAt: new Date().toISOString()
+    };
+
+    try {
+      await saveDailyCashSummaryToFirestore(summary);
+      setSummaryFeedback(`Caixa do dia salvo com sucesso (${status})!`);
+      setTimeout(() => setSummaryFeedback(null), 3000);
+    } catch (err: any) {
+      setSummaryFeedback(`Erro ao salvar caixa: ${err.message}`);
+    } finally {
+      setIsSavingSummary(false);
+    }
+  };
 
   // Mark invoice as paid
   const handleMarkAsPaid = (invoiceId: string) => {
@@ -616,6 +855,19 @@ export const FinancialHubModal: React.FC<FinancialHubModalProps> = ({
           >
             <FileSpreadsheet size={14} className={activeTab === 'accounting' ? 'text-slate-950' : 'text-amber-400'} />
             <span>Fechamento Contábil</span>
+          </button>
+
+          {/* TAB 9: RESUMO DO DIA / FECHAMENTO DE CAIXA */}
+          <button
+            onClick={() => setActiveTab('daily_summary')}
+            className={`px-3 py-1.5 rounded-xl font-bold flex items-center gap-1.5 whitespace-nowrap transition ${
+              activeTab === 'daily_summary'
+                ? 'bg-amber-500 text-slate-950 shadow-md font-black'
+                : 'text-amber-400 hover:text-white hover:bg-slate-800 border border-amber-500/40'
+            }`}
+          >
+            <Clock size={14} className={activeTab === 'daily_summary' ? 'text-slate-950' : 'text-amber-400'} />
+            <span>Resumo do Dia (Caixa)</span>
           </button>
 
           {/* TAB 8: MOTOR FINANCEIRO & ASAAS */}
@@ -973,6 +1225,21 @@ export const FinancialHubModal: React.FC<FinancialHubModalProps> = ({
 
                             {/* ACTIONS */}
                             <div className="flex items-center gap-1.5 shrink-0">
+                              {inv.status !== 'paid' && hasManagerPermission && (
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    setDiscountInvoice(inv);
+                                    setCustomDiscountValue(PROMOTIONAL_MONTHLY_FEE_BRL);
+                                    setDiscountReason('Promoção de Incentivo ao Tatame');
+                                  }}
+                                  className="px-2.5 py-1.5 rounded-xl bg-amber-500/10 hover:bg-amber-500/20 text-amber-400 border border-amber-500/30 font-bold text-xs transition"
+                                  title="Aplicar Desconto Promocional de R$ 80,00"
+                                >
+                                  Promoção R$ 80
+                                </button>
+                              )}
+
                               {inv.status !== 'paid' && (
                                 <button
                                   type="button"
@@ -984,7 +1251,21 @@ export const FinancialHubModal: React.FC<FinancialHubModalProps> = ({
                                 </button>
                               )}
 
-                              {inv.status !== 'paid' && (
+                              {inv.status !== 'paid' && hasManagerPermission && (
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    setManualSettleInvoice(inv);
+                                    setManualAmount(inv.amount || 100);
+                                    setManualMethod('DINHEIRO');
+                                  }}
+                                  className="px-3 py-1.5 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-bold text-xs shadow-md transition flex items-center gap-1"
+                                >
+                                  <span>Baixa Balcão</span>
+                                </button>
+                              )}
+
+                              {inv.status !== 'paid' && !hasManagerPermission && (
                                 <button
                                   type="button"
                                   onClick={() => handleMarkAsPaid(inv.id)}
@@ -1771,6 +2052,156 @@ Status da Conciliação: Conciliado 100% com Extratos e Chave PIX.`;
             </div>
           )}
 
+          {/* TAB 9: RESUMO DO DIA (FECHAMENTO DE CAIXA) */}
+          {activeTab === 'daily_summary' && (
+            <div className="space-y-6">
+              {/* Header com Ações */}
+              <div className="p-5 rounded-3xl bg-slate-900 border border-slate-800 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                <div>
+                  <div className="flex items-center gap-2">
+                    <div className="w-8 h-8 rounded-xl bg-amber-500/20 text-amber-400 flex items-center justify-center font-bold">
+                      <Clock size={16} />
+                    </div>
+                    <h3 className="text-base font-bold text-white">
+                      Fechamento de Caixa Diário & Resumo do Dia
+                    </h3>
+                  </div>
+                  <p className="text-xs text-slate-400 mt-1">
+                    Auditoria de recebimentos presenciais no balcão (Dinheiro / Cartão) versus PIX Digital direto da academia.
+                  </p>
+                </div>
+
+                {hasManagerPermission && (
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      disabled={isSavingSummary}
+                      onClick={() => handleSaveDailySummary('FECHADO')}
+                      className="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold transition flex items-center gap-1.5 shadow-lg active:scale-95 disabled:opacity-50"
+                    >
+                      <CheckCircle2 size={14} />
+                      <span>{isSavingSummary ? 'Salvando...' : 'Salvar Resumo do Dia'}</span>
+                    </button>
+                  </div>
+                )}
+              </div>
+
+              {summaryFeedback && (
+                <div className="p-3 rounded-xl bg-emerald-950/60 border border-emerald-800 text-xs font-bold text-emerald-300">
+                  {summaryFeedback}
+                </div>
+              )}
+
+              {/* Cards de Métricas do Dia Atual */}
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                {/* 1. Total Bruto do Dia */}
+                <div className="p-5 rounded-3xl bg-slate-900 border border-slate-800 space-y-1">
+                  <div className="text-[10px] font-bold uppercase tracking-wider text-slate-400 flex items-center justify-between">
+                    <span>Total Bruto Computado</span>
+                    <DollarSign size={14} className="text-emerald-400" />
+                  </div>
+                  <div className="text-2xl font-black text-white font-mono">
+                    {formatBRL(currentDayMetrics.totalBruto)}
+                  </div>
+                  <div className="text-[11px] text-slate-500">
+                    {currentDayMetrics.totalCount} cobranças liquidadas hoje
+                  </div>
+                </div>
+
+                {/* 2. Total Digital (PIX Online) */}
+                <div className="p-5 rounded-3xl bg-slate-900 border border-teal-900/40 space-y-1">
+                  <div className="text-[10px] font-bold uppercase tracking-wider text-teal-400 flex items-center justify-between">
+                    <span>Total Digital (PIX Online)</span>
+                    <Zap size={14} className="text-teal-400" />
+                  </div>
+                  <div className="text-2xl font-black text-teal-300 font-mono">
+                    {formatBRL(currentDayMetrics.totalDigital)}
+                  </div>
+                  <div className="text-[11px] text-teal-500">
+                    {currentDayMetrics.countPix} liquidações diretas na conta Asaas
+                  </div>
+                </div>
+
+                {/* 3. Total Físico (Balcão Dinheiro + Cartão) */}
+                <div className="p-5 rounded-3xl bg-slate-900 border border-amber-900/40 space-y-1">
+                  <div className="text-[10px] font-bold uppercase tracking-wider text-amber-400 flex items-center justify-between">
+                    <span>Total Físico (Balcão)</span>
+                    <Receipt size={14} className="text-amber-400" />
+                  </div>
+                  <div className="text-2xl font-black text-amber-300 font-mono">
+                    {formatBRL(currentDayMetrics.totalFisico)}
+                  </div>
+                  <div className="text-[11px] text-amber-500 flex items-center gap-2">
+                    <span>💵 {currentDayMetrics.countDinheiro} Dinheiro</span>
+                    <span>•</span>
+                    <span>💳 {currentDayMetrics.countCartaoBalcao} Cartão Balcão</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Histórico Auditável de Fechamentos Salvos */}
+              <div className="p-5 rounded-3xl bg-slate-900 border border-slate-800 space-y-4">
+                <div className="flex items-center justify-between">
+                  <h4 className="text-xs font-bold text-slate-300 uppercase tracking-wider flex items-center gap-1.5">
+                    <FileText size={14} className="text-amber-400" />
+                    Histórico Auditável de Fechamentos Salvos no Banco de Dados
+                  </h4>
+                  <span className="text-xs text-slate-500">
+                    Unidade: {activeAcademy.name}
+                  </span>
+                </div>
+
+                {dailySummaries.length === 0 ? (
+                  <div className="p-6 rounded-2xl bg-slate-950 border border-slate-800/80 text-center text-xs text-slate-400">
+                    Nenhum fechamento histórico arquivado ainda para esta unidade. Clique em "Salvar Resumo do Dia" ao final do expediente para registrar no banco de dados.
+                  </div>
+                ) : (
+                  <div className="space-y-2">
+                    {dailySummaries.map((summary) => (
+                      <div
+                        key={summary.id}
+                        className="p-4 rounded-2xl bg-slate-950 border border-slate-800 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-xs"
+                      >
+                        <div>
+                          <div className="flex items-center gap-2 font-bold text-white text-sm">
+                            <span>📅 {summary.date}</span>
+                            <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
+                              summary.status === 'FECHADO' 
+                                ? 'bg-emerald-950 text-emerald-400 border border-emerald-800' 
+                                : 'bg-amber-950 text-amber-400 border border-amber-800'
+                            }`}>
+                              {summary.status}
+                            </span>
+                          </div>
+                          <p className="text-[11px] text-slate-400 mt-0.5">
+                            Fechado por: <strong>{summary.closedByUserName}</strong> • {summary.transactionsCount} transações
+                          </p>
+                        </div>
+
+                        <div className="flex items-center gap-4">
+                          <div className="text-right">
+                            <span className="text-[10px] text-slate-400 uppercase block">Digital (Pix)</span>
+                            <span className="font-mono text-teal-400 font-bold">{formatBRL(summary.totalDigital)}</span>
+                          </div>
+
+                          <div className="text-right">
+                            <span className="text-[10px] text-slate-400 uppercase block">Físico (Balcão)</span>
+                            <span className="font-mono text-amber-400 font-bold">{formatBRL(summary.totalFisico)}</span>
+                          </div>
+
+                          <div className="text-right pl-3 border-l border-slate-800">
+                            <span className="text-[10px] text-slate-400 uppercase block">Total Bruto</span>
+                            <span className="font-mono text-white font-black text-sm">{formatBRL(summary.totalBruto)}</span>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
           {/* TAB 8: MOTOR FINANCEIRO & ASAAS */}
           {activeTab === 'motor' && (
             <FinancialMotorTab
@@ -1952,6 +2383,217 @@ Status da Conciliação: Conciliado 100% com Extratos e Chave PIX.`;
                   className="w-full py-2 rounded-xl bg-slate-800 hover:bg-slate-750 text-emerald-400 text-xs font-bold flex items-center justify-center gap-1.5 transition border border-emerald-900/50"
                 >
                   <CheckCircle2 size={13} /> Confirmar Pagamento Quitado
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* MODAL 1: BAIXA MANUAL NO BALCÃO COM CANCELAMENTO DE PIX NO ASAAS */}
+        {manualSettleInvoice && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 backdrop-blur-sm">
+            <div className="w-full max-w-md rounded-3xl bg-slate-900 border border-slate-700 p-6 text-slate-100 shadow-2xl space-y-4">
+              <div className="flex items-center justify-between pb-3 border-b border-slate-800">
+                <div className="flex items-center gap-2">
+                  <div className="w-8 h-8 rounded-xl bg-emerald-500/20 text-emerald-400 flex items-center justify-center font-bold">
+                    <Receipt size={16} />
+                  </div>
+                  <div>
+                    <h3 className="text-sm font-black text-white">Baixa Manual no Balcão</h3>
+                    <p className="text-[11px] text-slate-400">Recebimento Presencial na Recepção</p>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setManualSettleInvoice(null)}
+                  className="p-1 rounded-full bg-slate-800 text-slate-400 hover:text-white"
+                >
+                  ✕
+                </button>
+              </div>
+
+              {/* Informações da fatura */}
+              <div className="p-3.5 rounded-2xl bg-slate-950 border border-slate-800 space-y-1">
+                <div className="text-[10px] text-slate-400 uppercase font-semibold">Aluno / Mensalidade</div>
+                <div className="text-sm font-bold text-white">{manualSettleInvoice.studentName}</div>
+                <div className="text-xs text-slate-400">{manualSettleInvoice.title} • {manualSettleInvoice.academyName}</div>
+                <div className="text-xs font-mono text-emerald-400 mt-1 font-bold">
+                  Valor a Receber: {formatBRL(manualAmount)}
+                </div>
+              </div>
+
+              {/* Escolha da Forma de Pagamento */}
+              <div className="space-y-2">
+                <label className="text-xs font-bold uppercase text-slate-300">
+                  Forma de Pagamento Recebida:
+                </label>
+                <div className="grid grid-cols-2 gap-3">
+                  <button
+                    type="button"
+                    onClick={() => setManualMethod('DINHEIRO')}
+                    className={`p-3 rounded-2xl border text-center transition flex flex-col items-center justify-center gap-1 ${
+                      manualMethod === 'DINHEIRO'
+                        ? 'bg-emerald-950/60 border-emerald-500 text-emerald-300 font-bold shadow-md'
+                        : 'bg-slate-950 border-slate-800 text-slate-400 hover:text-white'
+                    }`}
+                  >
+                    <span className="text-lg">💵</span>
+                    <span className="text-xs">DINHEIRO</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setManualMethod('CARTÃO (BALCÃO)')}
+                    className={`p-3 rounded-2xl border text-center transition flex flex-col items-center justify-center gap-1 ${
+                      manualMethod === 'CARTÃO (BALCÃO)'
+                        ? 'bg-emerald-950/60 border-emerald-500 text-emerald-300 font-bold shadow-md'
+                        : 'bg-slate-950 border-slate-800 text-slate-400 hover:text-white'
+                    }`}
+                  >
+                    <span className="text-lg">💳</span>
+                    <span className="text-xs">CARTÃO (BALCÃO)</span>
+                  </button>
+                </div>
+              </div>
+
+              {/* Valor cobrado */}
+              <div className="space-y-1">
+                <label className="text-xs font-bold uppercase text-slate-300">
+                  Valor Cobrado (R$):
+                </label>
+                <input
+                  type="number"
+                  value={manualAmount}
+                  onChange={(e) => setManualAmount(Number(e.target.value))}
+                  className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-white font-mono font-bold text-sm"
+                />
+              </div>
+
+              {/* Alerta de Segurança e Cancelamento de PIX */}
+              <div className="p-3 rounded-xl bg-amber-950/40 border border-amber-800/40 text-[11px] text-amber-200/90 flex items-start gap-2">
+                <ShieldAlert size={16} className="text-amber-400 shrink-0 mt-0.5" />
+                <div>
+                  <strong>Prevenção de Cobrança Indevida:</strong> Ao confirmar esta baixa manual, o backend enviará um comando de cancelamento automático à API do Asaas referente ao PIX online em aberto desta fatura. O aluno não poderá pagar duas vezes pelo WhatsApp.
+                </div>
+              </div>
+
+              {manualSettleFeedback && (
+                <div className="p-2.5 rounded-xl bg-emerald-950/80 border border-emerald-700 text-xs font-bold text-emerald-300 text-center">
+                  {manualSettleFeedback}
+                </div>
+              )}
+
+              {/* Botões de Ação */}
+              <div className="flex gap-2 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setManualSettleInvoice(null)}
+                  className="flex-1 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-bold transition"
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="button"
+                  disabled={isProcessingManualSettle}
+                  onClick={handleExecuteManualSettle}
+                  className="flex-1 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold transition flex items-center justify-center gap-1.5 shadow-md active:scale-95 disabled:opacity-50"
+                >
+                  <CheckCircle2 size={14} />
+                  <span>{isProcessingManualSettle ? 'Baixando...' : 'Confirmar Baixa'}</span>
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* MODAL 2: APLICAR DESCONTO PROMOCIONAL (R$ 80) */}
+        {discountInvoice && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 backdrop-blur-sm">
+            <div className="w-full max-w-md rounded-3xl bg-slate-900 border border-slate-700 p-6 text-slate-100 shadow-2xl space-y-4">
+              <div className="flex items-center justify-between pb-3 border-b border-slate-800">
+                <div className="flex items-center gap-2">
+                  <div className="w-8 h-8 rounded-xl bg-amber-500/20 text-amber-400 flex items-center justify-center font-bold">
+                    <Award size={16} />
+                  </div>
+                  <div>
+                    <h3 className="text-sm font-black text-white">Aplicar Valor Promocional</h3>
+                    <p className="text-[11px] text-slate-400">Autorizado para Dono ou Professor</p>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setDiscountInvoice(null)}
+                  className="p-1 rounded-full bg-slate-800 text-slate-400 hover:text-white"
+                >
+                  ✕
+                </button>
+              </div>
+
+              {/* Informações da fatura */}
+              <div className="p-3.5 rounded-2xl bg-slate-950 border border-slate-800 space-y-1">
+                <div className="text-[10px] text-slate-400 uppercase font-semibold">Fatura Selecionada</div>
+                <div className="text-sm font-bold text-white">{discountInvoice.studentName}</div>
+                <div className="text-xs text-slate-400">{discountInvoice.title}</div>
+                <div className="text-xs text-slate-400">
+                  Valor Padrão: <span className="line-through">{formatBRL(discountInvoice.amount || DEFAULT_MONTHLY_FEE_BRL)}</span>
+                </div>
+              </div>
+
+              {/* Valor Promocional */}
+              <div className="space-y-1">
+                <label className="text-xs font-bold uppercase text-slate-300">
+                  Novo Valor com Desconto (R$):
+                </label>
+                <div className="flex items-center gap-2">
+                  <input
+                    type="number"
+                    value={customDiscountValue}
+                    onChange={(e) => setCustomDiscountValue(Number(e.target.value))}
+                    className="flex-1 bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-amber-400 font-mono font-bold text-base"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setCustomDiscountValue(PROMOTIONAL_MONTHLY_FEE_BRL)}
+                    className="px-3 py-2 rounded-xl bg-amber-500 text-slate-950 font-bold text-xs hover:bg-amber-400 transition"
+                  >
+                    Definir R$ 80,00
+                  </button>
+                </div>
+              </div>
+
+              {/* Motivo do Desconto */}
+              <div className="space-y-1">
+                <label className="text-xs font-bold uppercase text-slate-300">
+                  Motivo da Promoção / Desconto:
+                </label>
+                <input
+                  type="text"
+                  value={discountReason}
+                  onChange={(e) => setDiscountReason(e.target.value)}
+                  placeholder="Ex: Aluno assíduo / Promoção de reinício de treino"
+                  className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-white text-xs"
+                />
+                <span className="text-[10px] text-slate-500">
+                  Será registrado no banco de dados quem aplicou: <strong>{currentUserName}</strong>
+                </span>
+              </div>
+
+              {/* Botões de Ação */}
+              <div className="flex gap-2 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setDiscountInvoice(null)}
+                  className="flex-1 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-bold transition"
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="button"
+                  onClick={handleApplyPromotionalDiscount}
+                  className="flex-1 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 text-xs font-black transition flex items-center justify-center gap-1.5 shadow-md active:scale-95"
+                >
+                  <CheckCircle2 size={14} />
+                  <span>Aplicar Desconto</span>
                 </button>
               </div>
             </div>

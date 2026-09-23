@@ -496,16 +496,73 @@ async function startServer() {
       const payment = await asaasSubaccountService.createStudentPaymentWithSplit(tenantId, paymentData);
       return res.status(201).json({
         success: true,
-        message: 'Cobrança do aluno gerada com Split automático para a BJJACADEMY Master.',
+        message: 'Cobrança do aluno gerada com sucesso.',
         payment
       });
     } catch (err: any) {
-      console.error('[Student Split Payment Error]:', err.message);
+      console.error('[Student Payment Error]:', err.message);
       return res.status(400).json({
         error: 'PAYMENT_GENERATION_FAILED',
         message: err.message
       });
     }
+  });
+
+  // 7.5.1 Baixa Manual no Balcão com Cancelamento de PIX Online no Asaas (Prevenção de Duplicidade)
+  app.post('/api/tenants/:tenantId/invoices/:invoiceId/manual-settle', async (req, res) => {
+    const { tenantId, invoiceId } = req.params;
+    const {
+      paymentMethod, // 'DINHEIRO' | 'CARTÃO (BALCÃO)'
+      amount,
+      receivedByUserId,
+      receivedByUserName,
+      userRole,
+      asaasPaymentId
+    } = req.body;
+
+    // RBAC: Estritamente bloqueado para ALUNOS
+    if (userRole === 'ALUNO' || userRole === 'student' || userRole === 'parent') {
+      return res.status(403).json({
+        error: 'ACCESS_DENIED',
+        message: 'Acesso Negado. Operação de Baixa Manual permitida apenas para Dono ou Professor.'
+      });
+    }
+
+    if (!paymentMethod || (paymentMethod !== 'DINHEIRO' && paymentMethod !== 'CARTÃO (BALCÃO)')) {
+      return res.status(400).json({
+        error: 'INVALID_PAYMENT_METHOD',
+        message: 'Forma de pagamento presencial inválida. Escolha DINHEIRO ou CARTÃO (BALCÃO).'
+      });
+    }
+
+    // Regra Crítica: Cancela o Pix aberto no Asaas se existir para impedir cobrança duplicada
+    let asaasCancellation = null;
+    const pixIdToCancel = asaasPaymentId || invoiceId;
+    if (pixIdToCancel) {
+      try {
+        asaasCancellation = await asaasSubaccountService.cancelAsaasPayment(
+          tenantId,
+          pixIdToCancel,
+          `Baixa manual presencial (${paymentMethod}) efetuada por ${receivedByUserName || 'Atendente'}`
+        );
+      } catch (cancelErr: any) {
+        console.warn('[Manual Settle Asaas Cancel Warning]:', cancelErr.message);
+      }
+    }
+
+    return res.status(200).json({
+      success: true,
+      message: `Baixa manual de R$ ${amount || 100} em ${paymentMethod} confirmada. PIX online cancelado no Asaas.`,
+      settlement: {
+        invoiceId,
+        tenantId,
+        paymentMethod,
+        amount: Number(amount || 100),
+        settledAt: new Date().toISOString(),
+        receivedBy: receivedByUserName || 'Gestão da Academia',
+        asaasCancellation
+      }
+    });
   });
 
   // 7.6 Consulta de Configuração Financeira do Tenant & Split

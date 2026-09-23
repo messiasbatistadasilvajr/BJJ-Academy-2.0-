@@ -31,7 +31,8 @@ export const RespectfulBillingModal: React.FC<RespectfulBillingModalProps> = ({
   const activeInvoice = selectedInvoice || invoices[0];
   const matchedStudent = students.find(s => s.id === activeInvoice?.studentId);
   const studentName = matchedStudent?.name || activeInvoice?.studentName || 'Aluno do Tatame';
-  const pixKey = 'pix@bjjacademy.com.br';
+  const invoiceAmount = activeInvoice?.amount || 100;
+  const pixKey = activeInvoice?.pixCode || `pix-${academyName.toLowerCase().replace(/\s+/g, '')}@bjjacademy.com.br`;
 
   const isLate = activeInvoice ? new Date(activeInvoice.dueDate) < new Date() : false;
   const billingType = isLate ? 'polite_late' : 'preventive';
@@ -40,7 +41,7 @@ export const RespectfulBillingModal: React.FC<RespectfulBillingModalProps> = ({
     billingType,
     studentName,
     academyName,
-    activeInvoice?.amount || 150,
+    invoiceAmount,
     activeInvoice?.dueDate || '20/09/2026',
     pixKey
   );

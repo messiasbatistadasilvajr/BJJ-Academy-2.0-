@@ -43,6 +43,37 @@ export function isSuperAdminOrCeoRole(role?: UserRole | string | null): boolean 
   );
 }
 
+/**
+ * Helper de Autorização RBAC:
+ * Verifica se o usuário é Dono/Gestor da Academia ou Professor (ou Super Admin/CEO)
+ * Permite emitir baixa manual, aplicar desconto promocional de R$ 80 e visualizar fechamentos de caixa.
+ * Usuários com perfil exclusivo de ALUNO / student / parent são estritamente bloqueados.
+ */
+export function canManageFinancesOrDiscounts(role?: UserRole | string | null): boolean {
+  if (!role) return false;
+  if (isSuperAdminOrCeoRole(role)) return true;
+  return (
+    role === 'ADMIN_ACADEMIA' ||
+    role === 'manager' ||
+    role === 'PROFESSOR' ||
+    role === 'teacher' ||
+    role === RoleEnum.ADMIN_ACADEMIA ||
+    role === RoleEnum.PROFESSOR
+  );
+}
+
+/**
+ * 🚩 CONFIGURAÇÃO DE CONTROLE SAAS (STANDBY ARCHITECTURE FLAG)
+ * - MODO_SAAS_ATIVO = false: Modo Aplicativo Próprio. Cobranças online (PIX) ignoram o objeto 'split'
+ *   e enviam o valor integral diretamente para a conta da própria academia.
+ * - MODO_SAAS_ATIVO = true: Ativa o split nativo de R$ 1,50 para a carteira master da plataforma BJJ Academy.
+ */
+export const MODO_SAAS_ATIVO: boolean = false;
+
+// Preços e Regras de Mensalidade
+export const DEFAULT_MONTHLY_FEE_BRL = 100.00;
+export const PROMOTIONAL_MONTHLY_FEE_BRL = 80.00;
+
 export type BeltColor = 
   // Branca (Kids e Adulto)
   | 'white'
@@ -231,7 +262,7 @@ export interface Invoice {
   refundDate?: string;
   refundAmount?: number;
   pixCode?: string;
-  paymentMethod?: 'pix' | 'credit_card' | 'boleto';
+  paymentMethod?: 'pix' | 'credit_card' | 'boleto' | 'DINHEIRO' | 'CARTÃO (BALCÃO)';
   invoiceNumber: string;
   // Multi-Tenant & Academy Isolation
   academyId: string;
@@ -247,6 +278,17 @@ export interface Invoice {
   calculatedFine?: number;
   calculatedInterest?: number;
   totalUpdatedAmount?: number;
+  // Baixa Manual no Balcão & Prevenção de Duplicidade
+  isManualReceived?: boolean;
+  manualPaymentMethod?: 'DINHEIRO' | 'CARTÃO (BALCÃO)';
+  manualReceivedByUserId?: string;
+  manualReceivedByUserName?: string;
+  canceledAsaasPixId?: string;
+  // Promoções & Descontos (ex: R$ 80 aplicado por Professor/Dono)
+  discountAppliedByUserId?: string;
+  discountAppliedByUserName?: string;
+  discountReason?: string;
+  discountAppliedAt?: string;
   // Integração Asaas & Conciliação
   asaasPaymentId?: string;
   asaasInvoiceUrl?: string;
@@ -254,6 +296,25 @@ export interface Invoice {
   asaasBillingType?: 'PIX' | 'BOLETO' | 'CREDIT_CARD';
   lastWebhookEvent?: string;
   lastWebhookProcessedAt?: string;
+}
+
+// Resumo do Dia / Fechamento de Caixa Diário
+export interface DailyCashSummary {
+  id: string;
+  date: string; // Formato YYYY-MM-DD
+  formattedDate: string; // Ex: 23/09/2026
+  academyId: string;
+  academyName: string;
+  totalGross: number; // Total Bruto
+  totalDigital: number; // Pix Online / Asaas
+  totalPhysical: number; // Dinheiro + Cartão Balcão
+  totalCash: number; // Dinheiro em espécie
+  totalCardCounter: number; // Cartão de débito/crédito na maquininha do balcão
+  invoicesCount: number;
+  closedAt: string;
+  closedByUserId?: string;
+  closedByUserName?: string;
+  notes?: string;
 }
 
 // -------------------------------------------------------------

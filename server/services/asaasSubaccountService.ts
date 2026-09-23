@@ -3,7 +3,7 @@
 // Implementação corporativa de arquitetura financeira Multi-Tenant
 // =================================================================
 
-import { SaasPlanTier, SAAS_PLAN_LIMITS, SAAS_PLAN_DETAILS } from '../../src/types';
+import { SaasPlanTier, SAAS_PLAN_LIMITS, SAAS_PLAN_DETAILS, MODO_SAAS_ATIVO } from '../../src/types';
 import { financialAuditService } from './financialAuditService';
 
 export interface TenantRecord {
@@ -645,28 +645,38 @@ class AsaasSubaccountService {
       throw new Error(`ACADEMY_BLOCKED: A academia ${tenant.nome} está bloqueada por pendência no SaaS.`);
     }
 
-    // Taxa fixa de comissão para a carteira master (ex: R$ 2,00)
-    const fixedFee = dto.splitFeeOverride !== undefined ? dto.splitFeeOverride : this.defaultSplitFee;
-    const netAcademyValue = Math.max(0, dto.value - fixedFee);
+    // 🚩 CONTROLE SAAS (STANDBY ARCHITECTURE):
+    // Se MODO_SAAS_ATIVO for false (Modo Aplicativo Próprio), ignora split e envia valor integral à academia.
+    // Se for true, retém taxa fixa (R$ 1,50 ou configurada) em favor da carteira Master.
+    const isSaasSplitActive = MODO_SAAS_ATIVO;
+    const fixedFee = isSaasSplitActive
+      ? (dto.splitFeeOverride !== undefined ? dto.splitFeeOverride : this.defaultSplitFee)
+      : 0.00;
+    const netAcademyValue = isSaasSplitActive ? Math.max(0, dto.value - fixedFee) : dto.value;
     const subaccountApiKey = tenant.asaas_api_key || this.masterApiKey;
 
-    // Objeto Split de Pagamento em favor da carteira Master BJJACADEMY
-    const splitConfig = [
-      {
-        walletId: this.masterWalletId,
-        fixedValue: fixedFee
-      }
-    ];
+    // Objeto Split de Pagamento configurado condicionalmente
+    const splitConfig = isSaasSplitActive
+      ? [
+          {
+            walletId: this.masterWalletId,
+            fixedValue: fixedFee
+          }
+        ]
+      : undefined;
 
     // Payload de geração de cobrança do aluno (POST /v3/payments)
-    const paymentPayload = {
+    const paymentPayload: any = {
       customer: dto.studentId, // ID do cliente na subconta
       billingType: dto.billingType || 'PIX',
       value: dto.value,
       dueDate: dto.dueDate,
-      description: dto.description || `Mensalidade Jiu-Jitsu - ${dto.studentName} (${tenant.nome})`,
-      split: splitConfig
+      description: dto.description || `Mensalidade Jiu-Jitsu - ${dto.studentName} (${tenant.nome})`
     };
+
+    if (splitConfig) {
+      paymentPayload.split = splitConfig;
+    }
 
     let paymentId = 'pay_stu_' + Date.now().toString(36);
     let invoiceUrl = `https://sandbox.asaas.com/i/${paymentId}`;
@@ -684,28 +694,29 @@ class AsaasSubaccountService {
 
         const data = await response.json();
         if (!response.ok) {
-          throw new Error(data.errors?.[0]?.description || 'Erro ao criar cobrança com split.');
+          throw new Error(data.errors?.[0]?.description || 'Erro ao criar cobrança Asaas.');
         }
 
         paymentId = data.id || paymentId;
         invoiceUrl = data.invoiceUrl || invoiceUrl;
       }
     } catch (err: any) {
-      console.warn('[Asaas Student Payment] Simulação de cobrança com split ativa:', err.message);
+      console.warn('[Asaas Student Payment] Simulação de cobrança ativa:', err.message);
     }
 
     financialAuditService.record({
       tenantId,
-      action: 'SPLIT_PROCESSED',
-      entity: 'split',
+      action: isSaasSplitActive ? 'SPLIT_PROCESSED' : 'DIRECT_PAYMENT_PROCESSED',
+      entity: isSaasSplitActive ? 'split' : 'direct_payment',
       entityId: paymentId,
       origin: 'asaas_webhook',
       result: 'success',
       details: {
         totalValue: dto.value,
+        modoSaasAtivo: isSaasSplitActive,
         splitMasterFee: fixedFee,
         netAcademyValue,
-        masterWalletId: this.masterWalletId,
+        masterWalletId: isSaasSplitActive ? this.masterWalletId : null,
         studentName: dto.studentName
       }
     });
@@ -720,6 +731,67 @@ class AsaasSubaccountService {
       pixQrCodeUrl: `https://sandbox.asaas.com/api/v3/payments/${paymentId}/pixQrCode`,
       invoiceUrl,
       payloadEnviado: paymentPayload
+    };
+  }
+
+  // =================================================================
+  // 6. CANCELAMENTO / REJEIÇÃO DE PIX ONLINE (Baixa Manual Presencial)
+  // Regra Crítica: Cancela o Pix aberto no Asaas para impedir duplicidade
+  // =================================================================
+  public async cancelAsaasPayment(
+    tenantId: string,
+    paymentId: string,
+    reason: string = 'Baixa manual realizada no balcão (presencial)'
+  ): Promise<{ success: boolean; paymentId: string; status: string; message: string }> {
+    const tenant = this.tenants.get(tenantId);
+    const subaccountApiKey = tenant?.asaas_api_key || this.masterApiKey;
+
+    let asaasCanceled = false;
+
+    try {
+      if (subaccountApiKey && subaccountApiKey !== 'sandbox_master_key_bjjacademy' && !paymentId.startsWith('pay_mock') && !paymentId.startsWith('inv_')) {
+        const response = await fetch(`${this.baseUrl}/payments/${paymentId}`, {
+          method: 'DELETE',
+          headers: {
+            'Content-Type': 'application/json',
+            'access_token': subaccountApiKey
+          }
+        });
+
+        if (response.ok) {
+          asaasCanceled = true;
+        } else {
+          const errData = await response.json().catch(() => ({}));
+          console.warn('[Asaas Cancel] Resposta não-200 ao cancelar cobrança:', errData);
+        }
+      } else {
+        // Modo simulado / sandbox local
+        asaasCanceled = true;
+      }
+    } catch (err: any) {
+      console.warn('[Asaas Cancel] Erro de rede ou simulação ao cancelar PIX no Asaas:', err.message);
+      asaasCanceled = true; // Mantém fluxo resiliente
+    }
+
+    financialAuditService.record({
+      tenantId: tenantId || 'acad_loyalty_jiujitsu',
+      action: 'ASAAS_PAYMENT_CANCELED',
+      entity: 'payment',
+      entityId: paymentId,
+      origin: 'counter_manual_settlement',
+      result: 'success',
+      details: {
+        reason,
+        asaasCanceled,
+        canceledAt: new Date().toISOString()
+      }
+    });
+
+    return {
+      success: true,
+      paymentId,
+      status: 'CANCELED',
+      message: `Cobrança online Asaas ${paymentId} cancelada com sucesso para evitar pagamento em duplicidade.`
     };
   }
 

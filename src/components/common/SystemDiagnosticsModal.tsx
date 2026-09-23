@@ -52,7 +52,7 @@ export const SystemDiagnosticsModal: React.FC<SystemDiagnosticsModalProps> = ({
                 </span>
               </div>
               <p className="text-xs text-slate-400">
-                Validação automatizada dos 7 pilares arquiteturais do BJJACADEMY
+                Validação automatizada dos 8 pilares: Baixa Manual Balcão, Cancelamento PIX Asaas, Fechamento de Caixa, RBAC e Mensageria
               </p>
             </div>
           </div>

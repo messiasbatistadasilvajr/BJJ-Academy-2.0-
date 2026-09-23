@@ -1121,6 +1121,9 @@ export default function App() {
         academies={academies}
         invoices={invoices}
         activeAcademy={activeAcademy}
+        currentUserRole={activeRole}
+        currentUserId={student.id}
+        currentUserName={activeRole === 'student' ? student.name : 'Professor / Dono'}
         isGeneralManager={isSuperAdminOrCEO}
         onUpdateInvoices={(updated) => {
           setInvoices(updated);

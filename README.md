@@ -209,6 +209,19 @@ O **BJJ Academy Mobile** é uma aplicação completa com arquitetura híbrida (F
    npm start
    ```
 
+### 3. 🛡️ Baixa Manual no Balcão, Prevenção de Duplicidade PIX e Resumo do Dia
+* **Flag `MODO_SAAS_ATIVO = false`**:
+  - Em modo Aplicativo Próprio da Academia (`false`), as cobranças online ignoram a divisão (split) de taxas de R$ 1,50 e direcionam o valor integral diretamente para a conta Asaas da própria academia. A arquitetura de Split permanece intacta e isolada em standby para quando a flag for ativada (`true`).
+* **Baixa Manual no Balcão (`DINHEIRO` / `CARTÃO BALCÃO`)**:
+  - Recebimento presencial na recepção da academia para mensalidades padrão (R$ 100,00) ou promocionais (R$ 80,00).
+  - **Cancelamento Imediato do PIX Asaas**: No exato momento em que o atendente confirma a baixa manual, o backend executa `POST /api/tenants/:tenantId/invoices/:invoiceId/manual-settle`, que emite ordem de cancelamento/expiração à API do Asaas para o PIX aberto. Isso impede que o aluno pague em duplicidade via WhatsApp.
+* **Resumo do Dia (Fechamento de Caixa Auditável)**:
+  - Persistência na coleção `daily_cash_summaries` com segregação de **Total Bruto**, **Total Digital (PIX Online)** e **Total Físico (Dinheiro + Cartão Balcão)**, registrando o ID e nome do responsável pelo fechamento.
+* **Controle de Acesso RBAC**:
+  - Bloqueio estrito para o perfil `ALUNO` em baixas manuais, concessão de descontos e fechamentos de caixa. Apenas `DONO`, `PROFESSOR`, `ADMIN_ACADEMIA` e `SUPER_ADMIN` têm permissão.
+* **Totem de Autoatendimento com Síntese de Voz Inteligente**:
+  - Saudações vocais e sonoras diferenciadas no check-in do tatame: liberação motivacional para alunos em dia e aviso sonoro discreto direcionando à recepção para alunos com mensalidade pendente.
+
 ---
 
 ## ☁️ Banco de Dados e Serviços em Nuvem
@@ -219,6 +232,7 @@ O **BJJ Academy Mobile** é uma aplicação completa com arquitetura híbrida (F
 | `academies` | Filiais cadastradas, gestores responsáveis, dados bancários e mensalidades base. |
 | `classes` | Grade horária de aulas, professores responsáveis e controle de presenças. |
 | `invoices` | Faturas com recálculo automático de multas/juros e liquidação instantânea via webhook. |
+| `daily_cash_summaries` | Histórico auditável de fechamentos de caixa diários (Total Bruto, Digital e Balcão). |
 | `sparringSessions` | Registros do diário de treino e rolas de cada praticante. |
 | `birthdays` | Base de aniversariantes para ações de retenção e engajamento comunitário. |
 | **Firebase Storage** | Bucket com isolamento para `/avatars`, `/certificates` oficiais e `/receipts`. |

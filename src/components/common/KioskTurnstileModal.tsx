@@ -6,6 +6,7 @@ import {
 import { bjjAudio } from '../../utils/audio';
 import { mockStudent } from '../../data/mockData';
 import { BeltBadge } from './BeltBadge';
+import { academyVoiceEngine } from '../../utils/voiceNotification';
 
 interface KioskTurnstileModalProps {
   isOpen: boolean;
@@ -74,9 +75,34 @@ export const KioskTurnstileModal: React.FC<KioskTurnstileModalProps> = ({
     setRecognizedStudent(null);
   };
 
+  const [pendingNoticeStudent, setPendingNoticeStudent] = useState<any>(null);
+
   const verifyPin = (code: string) => {
+    // Código de teste de pendência financeira: '9999' ou '0000'
+    const isPendingDemo = code === '9999' || code === '0000';
+
+    if (isPendingDemo) {
+      // Aluno com mensalidade pendente -> Aviso sonoro discreto direcionando à recepção
+      bjjAudio.playBeep(440, 0.15);
+      academyVoiceEngine.announceKioskCheckin('Lucas Gabriel', false, academyName);
+      setStatus('denied');
+      setPendingNoticeStudent({
+        name: 'Lucas Gabriel',
+        status: 'Mensalidade Pendente',
+        message: 'Por gentileza, dirija-se à recepção para regularização.'
+      });
+      setTimeout(() => {
+        setPin('');
+        setStatus('idle');
+        setPendingNoticeStudent(null);
+      }, 4000);
+      return;
+    }
+
     if (code === '1024' || code === '1234' || code === '2024' || code.length === 4) {
+      // Mensalidade em dia (pago) -> Libera o treino com saudação vocal positiva
       bjjAudio.playAccessGranted();
+      academyVoiceEngine.announceKioskCheckin(mockStudent.name, true, academyName);
       setStatus('success');
       setAttendanceCount(prev => prev + 1);
       setRecognizedStudent({
@@ -213,13 +239,20 @@ export const KioskTurnstileModal: React.FC<KioskTurnstileModalProps> = ({
           )}
 
           {status === 'denied' && (
-            <div className="bg-slate-900 border border-red-500/50 rounded-2xl p-5 w-full max-w-sm shadow-xl flex flex-col items-center animate-fadeIn text-slate-100">
-              <div className="w-12 h-12 rounded-xl bg-red-950/60 border border-red-800/60 text-red-400 flex items-center justify-center mb-2">
+            <div className="bg-slate-900 border border-amber-500/50 rounded-2xl p-5 w-full max-w-sm shadow-xl flex flex-col items-center animate-fadeIn text-slate-100">
+              <div className="w-12 h-12 rounded-xl bg-amber-950/60 border border-amber-800/60 text-amber-400 flex items-center justify-center mb-2">
                 <AlertTriangle size={24} />
               </div>
-              <h3 className="text-sm font-bold text-white">Matrícula não localizada</h3>
-              <p className="text-xs text-slate-400 mt-1 text-center">
-                Verifique os números digitados ou dirija-se à recepção da academia.
+              <h3 className="text-sm font-bold text-white">
+                {pendingNoticeStudent ? pendingNoticeStudent.name : 'Matrícula não localizada'}
+              </h3>
+              <div className="text-[11px] font-bold text-amber-400 mt-0.5">
+                {pendingNoticeStudent ? pendingNoticeStudent.status : 'Acesso Pendente'}
+              </div>
+              <p className="text-xs text-slate-400 mt-1.5 text-center">
+                {pendingNoticeStudent
+                  ? pendingNoticeStudent.message
+                  : 'Verifique os números digitados ou dirija-se à recepção da academia.'}
               </p>
             </div>
           )}
