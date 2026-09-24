@@ -39,6 +39,8 @@ interface DeviceFrameProps {
   isCloudSynced?: boolean;
   onOpenCEOProfile?: () => void;
   onOpenCEOLogin?: () => void;
+  onOpenManagerLogin?: () => void;
+  onOpenTeacherLogin?: () => void;
   academies?: RegisteredAcademy[];
   activeAcademyId?: string;
   onSelectAcademy?: (academyId: string) => void;
@@ -75,6 +77,8 @@ export const DeviceFrame: React.FC<DeviceFrameProps> = ({
   isCloudSynced = true,
   onOpenCEOProfile,
   onOpenCEOLogin,
+  onOpenManagerLogin,
+  onOpenTeacherLogin,
   academies,
   activeAcademyId,
   onSelectAcademy,
@@ -609,6 +613,40 @@ export const DeviceFrame: React.FC<DeviceFrameProps> = ({
                   </button>
                 )}
 
+                {/* Manager Login (Senha 6 Dígitos) */}
+                {onOpenManagerLogin && (
+                  <button
+                    onClick={() => {
+                      setIsMobileMenuOpen(false);
+                      onOpenManagerLogin();
+                    }}
+                    className="w-full flex items-center justify-between p-3 rounded-2xl bg-slate-950/60 border border-cyan-500/30 text-cyan-300 text-xs font-bold"
+                  >
+                    <div className="flex items-center gap-2.5">
+                      <Briefcase className="w-4 h-4 text-cyan-400" />
+                      <span>Login Dono / Gestor (PIN 6 Dígitos)</span>
+                    </div>
+                    <ArrowRight className="w-4 h-4" />
+                  </button>
+                )}
+
+                {/* Teacher Login & Aula Início */}
+                {onOpenTeacherLogin && (
+                  <button
+                    onClick={() => {
+                      setIsMobileMenuOpen(false);
+                      onOpenTeacherLogin();
+                    }}
+                    className="w-full flex items-center justify-between p-3 rounded-2xl bg-slate-950/60 border border-emerald-500/30 text-emerald-300 text-xs font-bold"
+                  >
+                    <div className="flex items-center gap-2.5">
+                      <GraduationCap className="w-4 h-4 text-emerald-400" />
+                      <span>Login Professor & Início de Aula</span>
+                    </div>
+                    <ArrowRight className="w-4 h-4" />
+                  </button>
+                )}
+
                 {/* CEO Profile */}
                 {onOpenCEOProfile && (
                   <button
@@ -774,6 +812,30 @@ export const DeviceFrame: React.FC<DeviceFrameProps> = ({
             >
               <Key className="w-3.5 h-3.5 text-amber-400" />
               <span className="hidden sm:inline">Login CEO</span>
+            </button>
+          )}
+
+          {/* Dono / Gestor Login (PIN 6 Dígitos) */}
+          {onOpenManagerLogin && (
+            <button
+              onClick={onOpenManagerLogin}
+              className="px-2.5 py-1.5 rounded-xl bg-slate-900 hover:bg-slate-800 border border-cyan-500/40 text-cyan-300 hover:text-cyan-200 text-xs font-bold flex items-center gap-1.5 transition shadow-sm"
+              title="Acesso do Dono / Gestor com Senha de 6 Dígitos"
+            >
+              <Briefcase className="w-3.5 h-3.5 text-cyan-400" />
+              <span className="hidden sm:inline">Dono (PIN 6)</span>
+            </button>
+          )}
+
+          {/* Professor Login & Início de Aula */}
+          {onOpenTeacherLogin && (
+            <button
+              onClick={onOpenTeacherLogin}
+              className="px-2.5 py-1.5 rounded-xl bg-slate-900 hover:bg-slate-800 border border-emerald-500/40 text-emerald-300 hover:text-emerald-200 text-xs font-bold flex items-center gap-1.5 transition shadow-sm"
+              title="Login do Professor e Identificação de Início de Aula"
+            >
+              <GraduationCap className="w-3.5 h-3.5 text-emerald-400" />
+              <span className="hidden sm:inline">Login Prof</span>
             </button>
           )}
 

@@ -1371,6 +1371,55 @@ export const mockRegisteredAcademies: RegisteredAcademy[] = [
     lgpdConsent: true,
     medicalResponsibilityWaiver: true,
     digitalSignatureProtocol: 'BJJ-TERMS-2026-0178-LOYALTY-OFFICIAL',
+    managerPin6: '123456', // Senha de 6 dígitos do Gestor / Dono da Academia
+    managerPasscode: 'Dono@2026',
+    staffUsers: [
+      {
+        id: 'prof_rodrigo_cavalo',
+        name: 'Mestre Rodrigo "Cavalo"',
+        email: 'rodrigo.cavalo@loyaltyjiujitsu.com.br',
+        role: 'PROFESSOR',
+        belt: 'black',
+        stripes: 3,
+        avatar: '/bjj_media/bjj_professor_mestre.jpg',
+        academyId: 'acad_loyalty_jiujitsu',
+        academyName: 'Loyalty Jiu-Jitsu',
+        password: 'Cavalo@tatame1',
+        pinCode: '333333',
+        activeClassId: 'class_02',
+        isClassActive: false
+      },
+      {
+        id: 'prof_beatriz_lima',
+        name: 'Profª Beatriz Lima',
+        email: 'beatriz.lima@loyaltyjiujitsu.com.br',
+        role: 'PROFESSOR',
+        belt: 'brown',
+        stripes: 1,
+        avatar: '/bjj_media/bjj_student_female.jpg',
+        academyId: 'acad_loyalty_jiujitsu',
+        academyName: 'Loyalty Jiu-Jitsu',
+        password: 'Beatriz@kids2',
+        pinCode: '222222',
+        activeClassId: 'class_01',
+        isClassActive: false
+      },
+      {
+        id: 'prof_alexandre_pecanha',
+        name: 'Prof. Alexandre Peçanha',
+        email: 'alexandre.pecanha@loyaltyjiujitsu.com.br',
+        role: 'PROFESSOR',
+        belt: 'black',
+        stripes: 1,
+        avatar: '/bjj_media/bjj_professor_mestre.jpg',
+        academyId: 'acad_loyalty_jiujitsu',
+        academyName: 'Loyalty Jiu-Jitsu',
+        password: 'Pecanha@bjj1',
+        pinCode: '111111',
+        activeClassId: 'class_03',
+        isClassActive: false
+      }
+    ],
     pricingPlans: [
       { id: 'plan_loyalty_mensal', name: 'Mensal Loyalty Black', periodMonths: 1, price: 290.00, monthlyEquivalent: 290.00, description: 'Acesso total aos tatames da Loyalty Jiu-Jitsu com metodologia de elite MM XXIII.', isPopular: true },
       { id: 'plan_loyalty_trimestral', name: 'Trimestral Loyalty Prime', periodMonths: 3, price: 780.00, monthlyEquivalent: 260.00, description: 'Condição especial para treino contínuo no tatame.' },

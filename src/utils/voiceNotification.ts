@@ -212,12 +212,18 @@ class AcademyVoiceNotificationEngine {
   // Construtor da mensagem de boas-vindas com chaveamento condicional
   // Regra 1 (Acesso Geral): "Oss! Seja bem-vindo ao BJJACADEMY."
   // Regra 2 (Acesso Específico): "Oss! Seja bem-vindo à academia [Nome da Academia]."
+  // Regra 3 (Página / Acesso do CEO Messias): "ola Sr. Messias seja bem vindo ao BJJACADEMY."
   public definirMensagemDeBoasVindas(
-    tipoDeAcesso: 'SISTEMA_GERAL' | 'PAGINA_ACADEMIA' | string,
+    tipoDeAcesso: 'SISTEMA_GERAL' | 'PAGINA_ACADEMIA' | 'PAGINA_CEO' | string,
     nomeDaAcademia?: string | null
   ): string {
     const tipo = (tipoDeAcesso || '').trim().toUpperCase();
     const nome = (nomeDaAcademia || '').trim();
+
+    // Regra Específica: Página / Acesso do CEO Messias
+    if (tipo === 'PAGINA_CEO' || tipo === 'CEO' || tipo.includes('MESSIAS')) {
+      return 'ola Sr. Messias seja bem vindo ao BJJACADEMY.';
+    }
 
     if (tipo === 'PAGINA_ACADEMIA' && nome && nome.toLowerCase() !== 'all') {
       return `Oss! Seja bem-vindo à academia ${nome}.`;
@@ -227,16 +233,50 @@ class AcademyVoiceNotificationEngine {
     return 'Oss! Seja bem-vindo ao BJJACADEMY.';
   }
 
+  // Reproduz a locução personalizada exclusiva para a página / perfil do CEO Messias
+  public async speakCEOWelcome(): Promise<void> {
+    const mensagem = 'ola Sr. Messias seja bem vindo ao BJJACADEMY.';
+    await this.playChime('chime_bright');
+
+    if (typeof window === 'undefined' || !('speechSynthesis' in window)) {
+      console.info('[VoiceNotification] SpeechSynthesis indisponível:', mensagem);
+      return;
+    }
+
+    try {
+      window.speechSynthesis.cancel();
+      const utterance = new SpeechSynthesisUtterance(mensagem);
+      utterance.lang = 'pt-BR';
+
+      const voice = this.getPreferredVoice();
+      if (voice) {
+        utterance.voice = voice;
+      }
+
+      utterance.pitch = 1.05;
+      utterance.rate = 1.0;
+
+      utterance.onstart = () => this.setSpeaking(true);
+      utterance.onend = () => this.setSpeaking(false);
+      utterance.onerror = () => this.setSpeaking(false);
+
+      window.speechSynthesis.speak(utterance);
+    } catch (err) {
+      console.warn('[VoiceNotification] Erro ao sintetizar boas-vindas do CEO:', err);
+      this.setSpeaking(false);
+    }
+  }
+
   // Reproduz a locução oficial de boas-vindas com o som jingle
   public async speakWelcomeAnnouncement(
-    tipoDeAcesso: 'SISTEMA_GERAL' | 'PAGINA_ACADEMIA',
+    tipoDeAcesso: 'SISTEMA_GERAL' | 'PAGINA_ACADEMIA' | 'PAGINA_CEO',
     academy?: RegisteredAcademy | null
   ): Promise<void> {
     const nomeAcademia = academy ? (academy.name || academy.shortName) : null;
     const mensagem = this.definirMensagemDeBoasVindas(tipoDeAcesso, nomeAcademia);
 
     // Toca o chime correspondente (ou padrão mercado livre / tatame bell)
-    const chime = academy?.chimeType || 'mercado_livre';
+    const chime = tipoDeAcesso === 'PAGINA_CEO' ? 'chime_bright' : (academy?.chimeType || 'mercado_livre');
     await this.playChime(chime);
 
     if (typeof window === 'undefined' || !('speechSynthesis' in window)) {

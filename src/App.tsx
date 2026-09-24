@@ -37,6 +37,8 @@ import { StudentManagementModal } from './components/common/StudentManagementMod
 import { CloudDatabaseStatusModal } from './components/common/CloudDatabaseStatusModal';
 import { CEOProfileModal } from './components/common/CEOProfileModal';
 import { CEOLoginModal } from './components/common/CEOLoginModal';
+import { ManagerLoginModal } from './components/common/ManagerLoginModal';
+import { TeacherLoginModal } from './components/common/TeacherLoginModal';
 import { AcademyOperatingHoursModal } from './components/common/AcademyOperatingHoursModal';
 import { DataIntegrityModal } from './components/common/DataIntegrityModal';
 import { SystemDiagnosticsModal } from './components/common/SystemDiagnosticsModal';
@@ -83,9 +85,10 @@ export default function App() {
   const handleSelectRole = (newRole: UserRole) => {
     setActiveRole(newRole);
     if (isCeoRole(newRole)) {
+      academyVoiceEngine.speakCEOWelcome();
       triggerPushNotification(
-        '👑 Olá, CEO Messias! Oss. 🥋',
-        'Acesso Master Total Ativado. Visão global de todas as academias (Multi-Tenant), Split Asaas e Churn por IA liberados.',
+        '👑 Olá, Sr. Messias!',
+        'Acesso Master Total Ativado. Seja bem-vindo ao BJJACADEMY.',
         'announcement'
       );
     }
@@ -208,6 +211,11 @@ export default function App() {
   // Platform General Manager & CEO Profile (Messias Batista da Silva junior)
   const [isCEOProfileOpen, setIsCEOProfileOpen] = useState(false);
   const [isCEOLoginOpen, setIsCEOLoginOpen] = useState(false);
+  const [isManagerLoginOpen, setIsManagerLoginOpen] = useState(false);
+  const [isTeacherLoginOpen, setIsTeacherLoginOpen] = useState(false);
+  const [activeInstructor, setActiveInstructor] = useState<import('./types').AcademyStaffUser | null>(() => {
+    return safeLocalStorageGet<import('./types').AcademyStaffUser | null>('bjj_active_instructor', null);
+  });
   const [generalManager, setGeneralManager] = useState<PlatformGeneralManager>(() => {
     const saved = safeLocalStorageGet<PlatformGeneralManager>('bjj_general_manager', defaultPlatformGeneralManager);
     const updatedGM: PlatformGeneralManager = {
@@ -737,6 +745,8 @@ export default function App() {
       isCloudSynced={isCloudSynced}
       onOpenCEOProfile={() => setIsCEOProfileOpen(true)}
       onOpenCEOLogin={() => setIsCEOLoginOpen(true)}
+      onOpenManagerLogin={() => setIsManagerLoginOpen(true)}
+      onOpenTeacherLogin={() => setIsTeacherLoginOpen(true)}
       academies={academies}
       activeAcademyId={activeAcademyId}
       onSelectAcademy={(id) => {
@@ -866,6 +876,8 @@ export default function App() {
           onOpenSparringMatchmaker={() => setIsSparringMatchmakerOpen(true)}
           todayBirthdaysCount={todayBirthdaysCount}
           academyName={activeAcademy.shortName || activeAcademy.name}
+          activeInstructor={activeInstructor}
+          onOpenTeacherLogin={() => setIsTeacherLoginOpen(true)}
           onAddClass={(newClass) => {
             setClasses((prev) => [newClass, ...prev]);
             localStorage.setItem('bjj_classes', JSON.stringify([newClass, ...classes]));
@@ -1456,10 +1468,48 @@ export default function App() {
         savedPassword={generalManager.password || 'Familia@jk4'}
         onSuccessLogin={() => {
           setActiveRole('ceo');
+          academyVoiceEngine.speakCEOWelcome();
           triggerPushNotification(
             '👑 Acesso Master Autenticado!',
-            'Bem-vindo, CEO Messias Batista (messiasbjunior@yahoo.com.br). Todas as filiais e faturamento liberados.',
+            'Olá Sr. Messias, seja bem-vindo ao BJJACADEMY.',
             'announcement'
+          );
+        }}
+      />
+
+      {/* 🏢 Dono / Gestor da Academia Login Modal (PIN 6 Dígitos) */}
+      <ManagerLoginModal
+        isOpen={isManagerLoginOpen}
+        onClose={() => setIsManagerLoginOpen(false)}
+        academy={activeAcademy}
+        onSuccessLogin={() => {
+          setActiveRole('manager');
+          triggerPushNotification(
+            '🏢 Gestão da Academia Autenticada!',
+            `Acesso do Dono / Gestor liberado com sucesso para ${activeAcademy.name}.`
+          );
+        }}
+        onUpdateAcademy={(updated) => {
+          setAcademies(prev => prev.map(a => a.id === updated.id ? updated : a));
+          saveAcademyToFirestore(updated).catch(err => console.warn('Sync academy PIN error:', err));
+        }}
+      />
+
+      {/* 🥋 Professor Login & Início de Aula Modal */}
+      <TeacherLoginModal
+        isOpen={isTeacherLoginOpen}
+        onClose={() => setIsTeacherLoginOpen(false)}
+        academy={activeAcademy}
+        classes={classes}
+        onSuccessLogin={(instructor, activeCls) => {
+          setActiveInstructor(instructor);
+          safeLocalStorageSet('bjj_active_instructor', instructor);
+          setActiveRole('teacher');
+          triggerPushNotification(
+            `🥋 Olá, ${instructor.name}!`,
+            instructor.isClassActive && activeCls 
+              ? `Aula "${activeCls.name}" iniciada no tatame às ${activeCls.time}. Bom treino e oss!` 
+              : 'Acesso do tatame liberado para chamada e graduações.'
           );
         }}
       />

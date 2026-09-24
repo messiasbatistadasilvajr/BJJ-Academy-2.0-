@@ -34,6 +34,8 @@ interface TeacherViewProps {
   onOpenBeltGuide?: () => void;
   onOpenCBJJGraduation?: () => void;
   onOpenSparringMatchmaker?: () => void;
+  activeInstructor?: import('../../types').AcademyStaffUser | null;
+  onOpenTeacherLogin?: () => void;
   // Teacher actions requested by user:
   onAddClass?: (newClass: ClassSession) => void;
   onSendClassAnnouncement?: (title: string, content: string, priority: 'urgent' | 'normal', target: string) => void;
@@ -68,6 +70,8 @@ export const TeacherView: React.FC<TeacherViewProps> = ({
   onOpenBeltGuide,
   onOpenCBJJGraduation,
   onOpenSparringMatchmaker,
+  activeInstructor,
+  onOpenTeacherLogin,
   onAddClass,
   onSendClassAnnouncement,
   onAddTournamentReminder,
@@ -352,19 +356,50 @@ export const TeacherView: React.FC<TeacherViewProps> = ({
 
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2.5">
-            <div className="w-9 h-9 rounded-2xl bg-red-600/20 border border-red-500/40 flex items-center justify-center text-red-500 font-black">
-              🥋
+            <div className="w-9 h-9 rounded-2xl bg-red-600/20 border border-red-500/40 flex items-center justify-center text-red-500 font-black overflow-hidden">
+              {activeInstructor?.avatar ? (
+                <img src={activeInstructor.avatar} alt="Professor" className="w-full h-full object-cover" />
+              ) : (
+                '🥋'
+              )}
             </div>
             <div>
-              <span className="text-[10px] font-bold text-red-400 uppercase tracking-wider">
-                Tatame Operacional • Professor
-              </span>
-              <h2 className="text-sm font-bold text-white">Mestre Rodrigo "Cavalo" (3º Grau)</h2>
+              <div className="flex items-center gap-2">
+                <span className="text-[10px] font-bold text-red-400 uppercase tracking-wider">
+                  Tatame Operacional • {activeInstructor?.role || 'Professor'}
+                </span>
+                {activeInstructor?.isClassActive && (
+                  <span className="inline-flex items-center gap-1 text-[9px] font-bold px-1.5 py-0.2 rounded-full bg-emerald-500/20 border border-emerald-500/40 text-emerald-300">
+                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                    Aula Iniciada
+                  </span>
+                )}
+              </div>
+              <h2 className="text-sm font-bold text-white flex items-center gap-2">
+                <span>{activeInstructor?.name || 'Mestre Rodrigo "Cavalo" (3º Grau)'}</span>
+                {activeInstructor?.belt && (
+                  <span className="text-[10px] text-slate-400 font-normal">
+                    (Faixa {activeInstructor.belt})
+                  </span>
+                )}
+              </h2>
             </div>
           </div>
-          <span className="text-[10px] bg-red-950 border border-red-800 text-red-300 px-2 py-0.5 rounded-full font-bold">
-            MODO TREINO
-          </span>
+          <div className="flex items-center gap-1.5">
+            {onOpenTeacherLogin && (
+              <button
+                type="button"
+                onClick={onOpenTeacherLogin}
+                className="text-[10px] bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-300 px-2 py-1 rounded-xl font-bold flex items-center gap-1 transition"
+                title="Trocar professor identificado ou iniciar nova aula"
+              >
+                <span>Trocar</span>
+              </button>
+            )}
+            <span className="text-[10px] bg-red-950 border border-red-800 text-red-300 px-2 py-0.5 rounded-full font-bold">
+              MODO TREINO
+            </span>
+          </div>
         </div>
 
         {/* Teacher Responsibilities Quick Actions Bar */}

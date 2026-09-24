@@ -760,6 +760,24 @@ export interface AcademyOperatingDay {
   slots: string[]; // e.g. ['07:00–08:00', '12:00–13:00', '16:00–21:30']
 }
 
+export interface AcademyStaffUser {
+  id: string;
+  name: string;
+  email: string;
+  phone?: string;
+  role: 'PROFESSOR' | 'ADMIN_ACADEMIA';
+  belt?: BeltColor;
+  stripes?: number;
+  avatar?: string;
+  academyId: string;
+  academyName?: string;
+  password?: string; // Para login com e-mail/senha
+  pinCode?: string; // PIN de 6 dígitos para acesso rápido no tatame
+  activeClassId?: string; // ID da aula atualmente em andamento ministrada por este professor
+  isClassActive?: boolean; // Se a aula foi iniciada oficialmente
+  classStartedAt?: string; // Data e hora do início da aula
+}
+
 export interface RegisteredAcademy {
   id: string;
   name: string;
@@ -804,6 +822,9 @@ export interface RegisteredAcademy {
   platformFeeStatus?: 'paid' | 'pending' | 'overdue';
   lastPlatformPaymentDate?: string;
   // Legal, Compliance & Security for Both Parties
+  managerPasscode?: string; // Senha textual do Gestor/Dono da Academia
+  managerPin6?: string; // Senha PIN numérica de 6 dígitos exclusiva do Dono/Gestor da Filial
+  staffUsers?: AcademyStaffUser[]; // Professores e instrutores vinculados com login e senhas individuais
   legalRepresentativeName?: string;
   legalRepresentativeCpf?: string;
   legalRepresentativeRole?: string;

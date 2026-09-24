@@ -9,6 +9,8 @@ import { PlatformGeneralManager, RegisteredAcademy } from '../../types';
 import { formatBRL } from '../../utils/financialCalculations';
 import { saveGeneralManagerToFirestore } from '../../firebase/firestoreService';
 import { triggerNativeHaptic } from '../../utils/nativeApp';
+import { academyVoiceEngine } from '../../utils/voiceNotification';
+import { Volume2 } from 'lucide-react';
 
 interface CEOProfileModalProps {
   isOpen: boolean;
@@ -53,6 +55,13 @@ export const CEOProfileModal: React.FC<CEOProfileModalProps> = ({
       accessPassword: generalManager.accessPassword || 'Familia@jk4',
     });
   }, [generalManager]);
+
+  // Reproduz a voz do CEO ao abrir a tela oficial do CEO Messias
+  useEffect(() => {
+    if (isOpen) {
+      academyVoiceEngine.speakCEOWelcome();
+    }
+  }, [isOpen]);
 
   if (!isOpen) return null;
 
@@ -136,12 +145,27 @@ export const CEOProfileModal: React.FC<CEOProfileModalProps> = ({
             </div>
           </div>
 
-          <button
-            onClick={onClose}
-            className="p-2 rounded-xl bg-slate-800/80 hover:bg-slate-700 text-slate-400 hover:text-white transition"
-          >
-            <X className="w-5 h-5" />
-          </button>
+          <div className="flex items-center gap-1.5">
+            <button
+              type="button"
+              onClick={() => {
+                triggerNativeHaptic('medium');
+                academyVoiceEngine.speakCEOWelcome();
+              }}
+              className="p-2 rounded-xl bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/30 text-amber-300 hover:text-amber-200 transition flex items-center gap-1.5 text-xs font-bold"
+              title="Ouvir mensagem de voz oficial do CEO Messias"
+            >
+              <Volume2 className="w-4 h-4 text-amber-400 animate-pulse" />
+              <span className="hidden sm:inline">Ouvir Voz</span>
+            </button>
+
+            <button
+              onClick={onClose}
+              className="p-2 rounded-xl bg-slate-800/80 hover:bg-slate-700 text-slate-400 hover:text-white transition"
+            >
+              <X className="w-5 h-5" />
+            </button>
+          </div>
         </div>
 
         {/* Navigation Tabs */}
