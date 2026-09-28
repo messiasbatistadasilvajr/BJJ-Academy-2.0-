@@ -3,14 +3,13 @@ import {
   Crown, ShieldCheck, Mail, Phone, MapPin, Building2, 
   CreditCard, Copy, Check, QrCode, Edit3, Save, X, 
   DollarSign, Users, Award, ExternalLink, Sparkles, CheckCircle2,
-  Key, Lock, Eye, EyeOff
+  Key, Lock, Eye, EyeOff, Code2, Volume2
 } from 'lucide-react';
 import { PlatformGeneralManager, RegisteredAcademy } from '../../types';
 import { formatBRL } from '../../utils/financialCalculations';
 import { saveGeneralManagerToFirestore } from '../../firebase/firestoreService';
 import { triggerNativeHaptic } from '../../utils/nativeApp';
 import { academyVoiceEngine } from '../../utils/voiceNotification';
-import { Volume2 } from 'lucide-react';
 
 interface CEOProfileModalProps {
   isOpen: boolean;
@@ -382,6 +381,49 @@ export const CEOProfileModal: React.FC<CEOProfileModalProps> = ({
                 <div className="text-[10px] text-slate-400 flex items-center gap-1.5 px-1">
                   <Sparkles className="w-3 h-3 text-amber-400 shrink-0" />
                   <span>Sincronizado na nuvem (Google Cloud Firestore) com persistência offline ativa.</span>
+                </div>
+              </div>
+
+              {/* Autoria & Engenharia de Software (50% Programador / 50% IA) */}
+              <div className="p-4 rounded-3xl bg-slate-950 border border-slate-800 space-y-2.5 shadow-md">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2.5">
+                    <div className="w-8 h-8 rounded-xl bg-cyan-500/10 border border-cyan-500/30 flex items-center justify-center text-cyan-400">
+                      <Code2 className="w-4 h-4" />
+                    </div>
+                    <div>
+                      <h4 className="text-xs font-black text-white flex items-center gap-1.5">
+                        <span>Engenharia & Desenvolvimento do Software</span>
+                        <span className="text-[9px] bg-cyan-500/20 text-cyan-300 font-bold px-1.5 py-0.5 rounded border border-cyan-500/40 uppercase">
+                          50% Dev + 50% IA
+                        </span>
+                      </h4>
+                      <p className="text-[10px] text-slate-400">
+                        Criado por Programador de Software com 50% de apoio de Inteligência Artificial
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-1 text-xs">
+                  <div className="p-2.5 rounded-2xl bg-slate-900/80 border border-slate-800">
+                    <div className="text-[10px] text-cyan-300 font-bold uppercase flex items-center gap-1.5">
+                      <span className="w-2 h-2 rounded-full bg-cyan-400" />
+                      50% Programador (Humano)
+                    </div>
+                    <p className="text-[11px] text-slate-300 mt-1 leading-snug">
+                      Arquitetura de microsserviços, regras de Jiu-Jitsu CBJJ/IBJJF, segurança RBAC, conciliação PIX Asaas e banco de dados.
+                    </p>
+                  </div>
+                  <div className="p-2.5 rounded-2xl bg-slate-900/80 border border-slate-800">
+                    <div className="text-[10px] text-indigo-300 font-bold uppercase flex items-center gap-1.5">
+                      <span className="w-2 h-2 rounded-full bg-indigo-400" />
+                      50% Inteligência Artificial
+                    </div>
+                    <p className="text-[11px] text-slate-300 mt-1 leading-snug">
+                      Aceleração na geração de rotinas, visão computacional para chamada facial e co-piloto tático para professores.
+                    </p>
+                  </div>
                 </div>
               </div>
 
@@ -783,7 +825,7 @@ export const CEOProfileModal: React.FC<CEOProfileModalProps> = ({
 
         {/* Footer */}
         <div className="p-3.5 bg-slate-950 border-t border-slate-800 flex items-center justify-between text-[11px] text-slate-500">
-          <span>BJJ Academy Mobile 2.0 • Painel da Presidência</span>
+          <span>BJJ Academy Mobile 2.0 • Desenvolvido por Programador (50% IA Assist)</span>
           <span className="font-mono text-amber-400/80">ID: {formData.id}</span>
         </div>
 

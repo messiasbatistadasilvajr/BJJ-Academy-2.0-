@@ -2206,6 +2206,19 @@ export const ManagerView: React.FC<ManagerViewProps> = ({
             </div>
           </div>
         )}
+
+        {/* Rodapé de Engenharia do Software */}
+        <div className="pt-3 pb-6 flex flex-col sm:flex-row items-center justify-between text-[11px] text-slate-500 gap-1.5 border-t border-slate-900 px-1">
+          <div className="flex items-center gap-1.5">
+            <span className="w-1.5 h-1.5 rounded-full bg-cyan-400" />
+            <span className="text-slate-400 font-medium">BJJ Academy Mobile 2.0</span>
+            <span>•</span>
+            <span className="text-slate-400">Desenvolvido por Programador de Software com 50% de apoio de IA</span>
+          </div>
+          <span className="text-[10px] text-slate-400 font-mono">
+            50% Engenharia Humana • 50% Co-pilotado por IA
+          </span>
+        </div>
       </div>
 
       {/* MODAL: EDITAR GESTOR GERAL (MESSIAS BATISTA DA SILVA JUNIOR) */}

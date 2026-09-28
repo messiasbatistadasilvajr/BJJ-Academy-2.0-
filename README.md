@@ -1,6 +1,8 @@
 # 🥋 BJJ Academy Mobile 2.0 (Full-Stack & Cloud Architecture)
 
 > **Plataforma Completa de Gestão de Tatame, Graduações Oficiais (CBJJ/IBJJF), Motor Financeiro Automatizado, Notificações Push e Multi-Acesso em Nuvem.**
+>
+> 👨‍💻 **Engenharia de Software:** Sistema desenvolvido por Programador de Software Full-Stack com 50% de auxílio de Inteligência Artificial aplicada na aceleração e em módulos cognitivos (Visão Computacional e Assistente Tático).
 
 O **BJJ Academy Mobile** é uma aplicação completa com arquitetura híbrida (Frontend PWA/Mobile em React 19 + Backend Node.js/Express de Alta Performance), projetada para academias de Jiu-Jitsu Brasileiro, redes e franquias. Oferece portais especializados com alternância em tempo real entre diferentes papéis (**Aluno**, **Responsável/Kids**, **Professor**, **Gestor da Unidade**, **Gestor Geral Multi-Academias/CEO** e **Totem de Presença no Tatame**), integrando banco de dados em nuvem **Google Firebase Firestore**, **Firebase Cloud Storage**, motor assíncrono de pagamentos e conformidade com a **LGPD**.
 
@@ -260,6 +262,12 @@ O pacote assinado pronto para upload no Google Play Console será gerado em:
 `android/app/build/outputs/bundle/release/app-release.aab`
 
 ---
+
+## 👨‍💻 Autoria & Engenharia do Sistema
+* **Desenvolvimento e Arquitetura**: Criado por Programador de Software Full-Stack com 50% de apoio e co-pilotagem de Inteligência Artificial para aceleração de código, modelos de visão e inteligência preditiva.
+* **Divisão de Esforço**:
+  - **50% Engenharia Humana**: Regras de negócio de Jiu-Jitsu (IBJJF/CBJJ), arquitetura multi-tenant, segurança RBAC, auditoria contábil, reconciliação PIX Asaas, Webhooks idempotentes e persistência Firestore.
+  - **50% Inteligência Artificial**: Assistência na estruturação de componentes, visão computacional facial para chamadas e copiloto de treinos táticos.
 
 ## 📄 Licença
 

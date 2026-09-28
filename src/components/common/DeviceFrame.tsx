@@ -3,7 +3,7 @@ import {
   Smartphone, Monitor, Layers, Download, Wifi, 
   RotateCcw, Sparkles, Shield, User, Users, GraduationCap, Briefcase, Crown,
   Timer, BookOpen, Tablet, Award, ShoppingBag, FileText, Trophy, Volume2, DollarSign, Building2,
-  Database, Cloud, Key, ChevronDown, Menu, X, Check, ArrowRight, Maximize2, Minimize2, SlidersHorizontal
+  Database, Cloud, Key, ChevronDown, Menu, X, Check, ArrowRight, Maximize2, Minimize2, SlidersHorizontal, Code
 } from 'lucide-react';
 import { UserRole, isCeoRole, isSuperAdminOrCeoRole, RegisteredAcademy } from '../../types';
 import { NativeStatusBar } from './NativeStatusBar';
@@ -581,7 +581,7 @@ export const DeviceFrame: React.FC<DeviceFrameProps> = ({
                           : 'bg-slate-900 border-slate-700 text-slate-300'
                       }`}
                     >
-                      📱 Tela Cheia Móvel (100%)
+                      📱 Tela Cheia Móvel
                     </button>
                     <button
                       onClick={() => {
@@ -729,6 +729,20 @@ export const DeviceFrame: React.FC<DeviceFrameProps> = ({
                   </div>
                   <ArrowRight className="w-4 h-4" />
                 </button>
+
+                {/* Autoria & Engenharia */}
+                <div className="p-3 rounded-2xl bg-slate-950/80 border border-slate-800 text-[11px] text-slate-400 space-y-1">
+                  <div className="flex items-center gap-1.5 text-cyan-400 font-bold text-xs">
+                    <Code className="w-3.5 h-3.5" />
+                    <span>Engenharia do Software</span>
+                    <span className="text-[9px] bg-cyan-950 px-1.5 py-0.5 rounded border border-cyan-800 text-cyan-300 ml-auto font-mono">
+                      50% Dev + 50% IA
+                    </span>
+                  </div>
+                  <p className="text-[10px] text-slate-400 leading-tight">
+                    Desenvolvido por Programador de Software com 50% de apoio de Inteligência Artificial.
+                  </p>
+                </div>
               </div>
             </div>
           </div>
@@ -760,9 +774,13 @@ export const DeviceFrame: React.FC<DeviceFrameProps> = ({
               <span className="hidden sm:inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-slate-800 text-slate-300 border border-slate-700">
                 Capacitor + PWA
               </span>
+              <span className="hidden md:inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-cyan-950/60 text-cyan-300 border border-cyan-800/60" title="Desenvolvido por Programador de Software com 50% de apoio de IA">
+                <Code className="w-3 h-3 text-cyan-400" />
+                <span>50% Dev + 50% IA</span>
+              </span>
             </div>
             <p className="text-[10px] text-slate-400 hidden sm:block">
-              Web • PWA • Android (Google Play) • iOS (App Store)
+              Web • PWA • Android • iOS • Desenvolvido por Programador (50% IA Assist)
             </p>
           </div>
         </div>
@@ -885,10 +903,10 @@ export const DeviceFrame: React.FC<DeviceFrameProps> = ({
           <button
             onClick={() => setForceMobileFullscreen(true)}
             className="px-2.5 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-300 hover:text-cyan-400 text-xs font-semibold flex items-center gap-1.5 transition"
-            title="Abrir em formato 100% tela móvel nativa"
+            title="Abrir em formato tela móvel nativa"
           >
             <Smartphone className="w-3.5 h-3.5 text-cyan-400" />
-            <span className="hidden sm:inline">100% Mobile</span>
+            <span className="hidden sm:inline">Tela Cheia</span>
           </button>
 
           {/* Desktop/Mobile Toggle */}
@@ -1067,7 +1085,7 @@ export const DeviceFrame: React.FC<DeviceFrameProps> = ({
                 </span>
               </div>
               <span className="text-[10px] text-slate-400">
-                Visualização Computador • Gestão Integral
+                Visualização Computador • Gestão Integral • 50% Dev + 50% IA
               </span>
             </div>
             <div className="flex-1 overflow-hidden relative flex flex-col">
@@ -1089,7 +1107,7 @@ export const DeviceFrame: React.FC<DeviceFrameProps> = ({
                 className="px-3 py-1 rounded-full bg-slate-900 hover:bg-slate-800 border border-slate-700 text-[11px] text-slate-300 hover:text-cyan-300 flex items-center gap-1.5 transition shadow-sm"
               >
                 <Maximize2 className="w-3 h-3 text-cyan-400" />
-                <span>Ver em Tela Cheia Móvel (100% da tela)</span>
+                <span>Ver em Tela Cheia Móvel</span>
               </button>
             </div>
 
@@ -1122,6 +1140,18 @@ export const DeviceFrame: React.FC<DeviceFrameProps> = ({
           </div>
         )}
       </main>
+
+      {/* Rodapé Oficial da Aplicação */}
+      <footer className="w-full max-w-5xl py-2 mt-auto flex flex-col sm:flex-row items-center justify-between text-[11px] text-slate-500 gap-1 border-t border-slate-900/80 px-2 relative z-10">
+        <div className="flex items-center gap-2">
+          <span className="font-semibold text-slate-400">BJJ ACADEMY MOBILE 2.0</span>
+          <span>•</span>
+          <span className="text-slate-400">Desenvolvido por Programador de Software com 50% de apoio de IA</span>
+        </div>
+        <div className="text-[10px] text-slate-400 font-mono">
+          50% Engenharia Humana • 50% Co-pilotado por IA
+        </div>
+      </footer>
     </div>
   );
 };

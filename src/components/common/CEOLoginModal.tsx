@@ -200,9 +200,12 @@ export const CEOLoginModal: React.FC<CEOLoginModalProps> = ({
                 <ArrowRight className="w-3.5 h-3.5" />
               </button>
 
-              <div className="text-center">
-                <span className="text-[10px] text-slate-500 font-mono">
+              <div className="text-center space-y-0.5">
+                <span className="text-[10px] text-slate-500 font-mono block">
                   Sessão Criptografada • BJJ Academy Master RBAC
+                </span>
+                <span className="text-[9px] text-slate-500/80 block">
+                  Desenvolvido por Programador de Software com 50% de apoio de IA
                 </span>
               </div>
             </form>

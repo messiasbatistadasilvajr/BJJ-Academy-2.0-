@@ -764,6 +764,11 @@ export const StudentView: React.FC<StudentViewProps> = ({
             </div>
           </div>
         )}
+
+        {/* Rodapé Oficial com Autoria */}
+        <div className="pt-2 pb-4 text-center text-[10px] text-slate-500 font-medium">
+          BJJ Academy 2.0 • Desenvolvido por Programador de Software (50% IA Assist)
+        </div>
       </div>
 
       {/* Modal de Horários Gerais da Academia */}
