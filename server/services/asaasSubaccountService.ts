@@ -775,7 +775,7 @@ class AsaasSubaccountService {
 
     financialAuditService.record({
       tenantId: tenantId || 'acad_loyalty_jiujitsu',
-      action: 'ASAAS_PAYMENT_CANCELED',
+      action: 'PAYMENT_CANCELED',
       entity: 'payment',
       entityId: paymentId,
       origin: 'counter_manual_settlement',

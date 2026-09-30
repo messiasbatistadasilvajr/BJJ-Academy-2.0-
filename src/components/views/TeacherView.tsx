@@ -403,7 +403,7 @@ export const TeacherView: React.FC<TeacherViewProps> = ({
         </div>
 
         {/* Teacher Responsibilities Quick Actions Bar */}
-        <div className="grid grid-cols-4 sm:grid-cols-4 md:grid-cols-8 gap-1.5 pt-1">
+        <div className="grid grid-cols-5 sm:grid-cols-5 md:grid-cols-10 gap-1.5 pt-1">
           <button
             type="button"
             onClick={() => setIsCreateClassModalOpen(true)}

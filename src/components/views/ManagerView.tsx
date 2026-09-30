@@ -431,16 +431,16 @@ export const ManagerView: React.FC<ManagerViewProps> = ({
           </div>
         )}
 
-        <div className="flex items-center justify-between mb-3">
-          <div className="flex items-center gap-2.5">
-            <div className={`w-10 h-10 rounded-2xl border flex items-center justify-center font-black shadow-lg ${
+        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3 mb-3">
+          <div className="flex items-center gap-2.5 min-w-0">
+            <div className={`w-10 h-10 rounded-2xl border flex items-center justify-center font-black shadow-lg shrink-0 ${
               isGeneralManager
                 ? 'bg-amber-500/20 border-amber-500/40 text-amber-400'
                 : 'bg-cyan-500/20 border-cyan-500/40 text-cyan-400'
             }`}>
               {isGeneralManager ? '👑' : '🏢'}
             </div>
-            <div>
+            <div className="min-w-0 flex-1">
               <div className="flex items-center gap-1.5 flex-wrap">
                 <span className={`text-[10px] font-black uppercase tracking-wider ${
                   isGeneralManager ? 'text-amber-400' : 'text-cyan-400'
@@ -465,7 +465,7 @@ export const ManagerView: React.FC<ManagerViewProps> = ({
                   </button>
                 )}
               </div>
-              <h2 className="text-sm font-black text-white leading-snug">
+              <h2 className="text-sm font-black text-white leading-snug truncate">
                 {isGeneralManager ? gmData.name : activeAcademyName}
               </h2>
               {isGeneralManager ? (
@@ -485,19 +485,20 @@ export const ManagerView: React.FC<ManagerViewProps> = ({
                   </button>
                 </div>
               ) : (
-                <div className="text-[10px] text-cyan-200/80 flex items-center gap-1 mt-0.5">
+                <div className="text-[10px] text-cyan-200/80 flex items-center gap-1 mt-0.5 truncate">
                   <span>Gestão Financeira & Operacional restrita a esta unidade</span>
                 </div>
               )}
             </div>
           </div>
 
-          <div className="flex items-center gap-1.5">
+          {/* Quick Actions & Platform Switcher in a smooth horizontal scroll on mobile, flex on desktop */}
+          <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar pb-1 lg:pb-0 w-full lg:w-auto shrink-0">
             {/* Radar Anti-Evasão Quick Indicator Button */}
             {onOpenRetentionRadar && (
               <button
                 onClick={onOpenRetentionRadar}
-                className="px-2.5 py-1.5 rounded-xl border text-[11px] font-bold flex items-center gap-1 transition shadow-sm bg-red-950/60 hover:bg-red-900/80 border-red-500/60 text-red-300 ring-1 ring-red-500/30"
+                className="px-2.5 py-1.5 rounded-xl border text-[11px] font-bold flex items-center gap-1 transition shadow-sm bg-red-950/60 hover:bg-red-900/80 border-red-500/60 text-red-300 ring-1 ring-red-500/30 shrink-0"
                 title="Radar Anti-Evasão: Alunos com risco de abandono"
               >
                 <ShieldAlert className="w-3.5 h-3.5 text-red-400 animate-pulse" />
@@ -514,7 +515,7 @@ export const ManagerView: React.FC<ManagerViewProps> = ({
             {onOpenBirthdayAlert && (
               <button
                 onClick={onOpenBirthdayAlert}
-                className="px-2.5 py-1.5 rounded-xl border text-[11px] font-bold flex items-center gap-1 transition shadow-sm bg-amber-950/60 hover:bg-amber-900/80 border-amber-500/60 text-amber-300 ring-1 ring-amber-500/30"
+                className="px-2.5 py-1.5 rounded-xl border text-[11px] font-bold flex items-center gap-1 transition shadow-sm bg-amber-950/60 hover:bg-amber-900/80 border-amber-500/60 text-amber-300 ring-1 ring-amber-500/30 shrink-0"
                 title="Aniversariantes: Felicitações com o nome oficial da academia"
               >
                 <Cake className="w-3.5 h-3.5 text-amber-400" />
@@ -530,29 +531,28 @@ export const ManagerView: React.FC<ManagerViewProps> = ({
             {/* Smart Due Alerts Indicator Button */}
             <button
               onClick={() => setIsDueAlertsOpen(true)}
-              className={`px-2.5 py-1.5 rounded-xl border text-[11px] font-bold flex items-center gap-1 transition shadow-sm ${
+              className={`px-2.5 py-1.5 rounded-xl border text-[11px] font-bold flex items-center gap-1 transition shadow-sm shrink-0 ${
                 overdueInvoicesCount > 0
                   ? 'bg-amber-950/60 hover:bg-amber-900/80 border-amber-500/60 text-amber-300 ring-1 ring-amber-500/30'
                   : 'bg-slate-800 hover:bg-slate-700 border-slate-700 text-slate-300'
               }`}
-              title="Alertas Inteligentes de Vencimento e Cobrança Rápida"
+              title="Alertas Inteligentes de Vencimento e Lembretes Automáticos WhatsApp D-3"
             >
               <AlertCircle className={`w-3.5 h-3.5 ${overdueInvoicesCount > 0 ? 'text-amber-400' : 'text-slate-400'}`} />
-              <span>{overdueInvoicesCount > 0 ? `${overdueInvoicesCount} Vencidos` : 'Faturas'}</span>
+              <span>{overdueInvoicesCount > 0 ? `${overdueInvoicesCount} Vencidos` : 'Faturas • D-3'}</span>
             </button>
 
             {/* New Academy Quick Button */}
             <button
               onClick={onOpenAcademyRegistration}
-              className="px-2.5 py-1.5 rounded-xl bg-gradient-to-r from-red-600/30 to-amber-600/30 hover:from-red-600/50 hover:to-amber-600/50 border border-amber-500/40 text-amber-300 text-[11px] font-bold flex items-center gap-1 transition shadow-sm"
+              className="px-2.5 py-1.5 rounded-xl bg-gradient-to-r from-red-600/30 to-amber-600/30 hover:from-red-600/50 hover:to-amber-600/50 border border-amber-500/40 text-amber-300 text-[11px] font-bold flex items-center gap-1 transition shadow-sm shrink-0"
               title="Cadastrar Nova Academia ou Filial"
             >
               <Building2 className="w-3.5 h-3.5 text-amber-400" />
-              <span className="hidden sm:inline">+ Cadastrar Academia</span>
-              <span className="sm:hidden">+ Academia</span>
+              <span>+ Academia</span>
             </button>
 
-            {/* Standard Button: Cadastrar Novo Aluno (Adulto ou Kids) */}
+            {/* Standard Button: Cadastrar Novo Aluno */}
             <StudentEnrollmentButton
               academy={activeRegisteredAcademy || { id: activeAcademyId, name: activeAcademyName }}
               onOpenEnrollment={(acad) => {
@@ -563,26 +563,26 @@ export const ManagerView: React.FC<ManagerViewProps> = ({
                 }
               }}
               variant="header"
-              label="+ Cadastrar Aluno"
+              label="+ Aluno"
             />
 
             {/* View Mode Toggle Button */}
             <button
               onClick={onToggleDesktopLayout}
-              className={`p-1.5 rounded-xl border text-xs font-semibold flex items-center gap-1.5 transition ${
+              className={`p-1.5 px-2.5 rounded-xl border text-xs font-bold flex items-center gap-1.5 transition shrink-0 ${
                 isDesktopLayout
-                  ? 'bg-red-600 border-red-500 text-white'
-                  : 'bg-slate-800 border-slate-700 text-slate-300 hover:text-white'
+                  ? 'bg-red-600 border-red-500 text-white shadow-md'
+                  : 'bg-slate-800 border-slate-700 text-cyan-300 hover:text-white'
               }`}
-              title={isDesktopLayout ? 'Voltar para Modo Celular' : 'Expandir para Modo Computador (Desktop)'}
+              title={isDesktopLayout ? 'Alternar para Plataforma Mobile (PWA / Celular)' : 'Alternar para Painel Desktop (PC)'}
             >
               {isDesktopLayout ? <Smartphone className="w-3.5 h-3.5" /> : <Monitor className="w-3.5 h-3.5" />}
-              <span className="text-[10px]">{isDesktopLayout ? 'Celular' : 'Painel PC'}</span>
+              <span className="text-[10px] font-bold">{isDesktopLayout ? '📱 Modo Mobile' : '💻 Modo Desktop'}</span>
             </button>
 
             <button
               onClick={onOpenCapacitorDocs}
-              className="p-1.5 rounded-xl bg-slate-800 border border-slate-700 text-slate-300 hover:text-red-400 transition"
+              className="p-1.5 rounded-xl bg-slate-800 border border-slate-700 text-slate-300 hover:text-red-400 transition shrink-0"
               title="Ver Arquitetura Capacitor & Multiplataforma"
             >
               <Layers className="w-3.5 h-3.5" />
@@ -2395,6 +2395,7 @@ export const ManagerView: React.FC<ManagerViewProps> = ({
         onClose={() => setIsDueAlertsOpen(false)}
         invoices={invoices}
         activeAcademyName={activeAcademyName}
+        pixKey={gmData?.pixKey || '58087630378'}
       />
 
       {/* Modal de Horários de Funcionamento da Academia Ativa */}

@@ -262,7 +262,7 @@ export interface Invoice {
   refundDate?: string;
   refundAmount?: number;
   pixCode?: string;
-  paymentMethod?: 'pix' | 'credit_card' | 'boleto' | 'DINHEIRO' | 'CARTÃO (BALCÃO)';
+  paymentMethod?: 'pix' | 'credit_card' | 'boleto' | 'DINHEIRO' | 'CARTÃO (BALCÃO)' | 'dinheiro' | 'cartao_balcao' | 'cartao';
   invoiceNumber: string;
   // Multi-Tenant & Academy Isolation
   academyId: string;
@@ -283,8 +283,13 @@ export interface Invoice {
   manualPaymentMethod?: 'DINHEIRO' | 'CARTÃO (BALCÃO)';
   manualReceivedByUserId?: string;
   manualReceivedByUserName?: string;
+  settledBy?: string;
+  settlementChannel?: string;
+  asaasPixCancelled?: boolean;
+  isPromotional?: boolean;
   canceledAsaasPixId?: string;
   // Promoções & Descontos (ex: R$ 80 aplicado por Professor/Dono)
+  discountAppliedBy?: string;
   discountAppliedByUserId?: string;
   discountAppliedByUserName?: string;
   discountReason?: string;
@@ -302,19 +307,28 @@ export interface Invoice {
 export interface DailyCashSummary {
   id: string;
   date: string; // Formato YYYY-MM-DD
-  formattedDate: string; // Ex: 23/09/2026
+  formattedDate?: string; // Ex: 23/09/2026
   academyId: string;
   academyName: string;
-  totalGross: number; // Total Bruto
-  totalDigital: number; // Pix Online / Asaas
-  totalPhysical: number; // Dinheiro + Cartão Balcão
-  totalCash: number; // Dinheiro em espécie
-  totalCardCounter: number; // Cartão de débito/crédito na maquininha do balcão
-  invoicesCount: number;
-  closedAt: string;
+  totalGross?: number; // Total Bruto
+  totalDigital?: number; // Pix Online / Asaas
+  totalPhysical?: number; // Dinheiro + Cartão Balcão
+  totalCash?: number; // Dinheiro em espécie
+  totalCardCounter?: number; // Cartão de débito/crédito na maquininha do balcão
+  invoicesCount?: number;
+  closedAt?: string;
   closedByUserId?: string;
   closedByUserName?: string;
   notes?: string;
+  // Compatibilidade com visualizadores e relatórios legados
+  totalBruto?: number;
+  totalFisico?: number;
+  totalDinheiro?: number;
+  totalCartaoBalcao?: number;
+  totalPixOnline?: number;
+  transactionsCount?: number;
+  status?: 'FECHADO' | 'ABERTO' | 'CONCILIADO' | string;
+  lastUpdatedAt?: string;
 }
 
 // -------------------------------------------------------------
@@ -408,11 +422,13 @@ export interface FinancialAuditLog {
     | 'STUDENT_ENROLLMENT_INACTIVE_BYPASS'
     | 'STUDENT_ENROLLMENT_BLOCKED_LIMIT_REACHED'
     | 'STUDENT_ENROLLMENT_APPROVED'
-    | 'TENANT_PLAN_UPGRADED';
-  entity: 'invoice' | 'webhook' | 'expense' | 'student' | 'split' | 'financial_metric' | 'tenant_subscription';
+    | 'TENANT_PLAN_UPGRADED'
+    | 'REMINDER_3_DAYS_SENT'
+    | 'DIRECT_PAYMENT_PROCESSED';
+  entity: 'invoice' | 'webhook' | 'expense' | 'student' | 'split' | 'financial_metric' | 'tenant_subscription' | 'payment' | 'direct_payment';
   entityId: string;
   timestamp: string;
-  origin: 'asaas_webhook' | 'financial_worker' | 'manager_ui' | 'system_cron' | 'sansao_ai' | 'database_tier_rule' | 'saas_billing' | 'gateway_webhook' | 'financial_worker_dlq';
+  origin: 'asaas_webhook' | 'financial_worker' | 'manager_ui' | 'system_cron' | 'sansao_ai' | 'database_tier_rule' | 'saas_billing' | 'gateway_webhook' | 'financial_worker_dlq' | 'counter_manual_settlement';
   result: 'success' | 'failed' | 'ignored_duplicate' | 'blocked';
   details?: Record<string, any>;
 }
@@ -1117,6 +1133,30 @@ export interface RespectfulBillingTemplate {
   title: string;
   body: string;
   pixKeyText: string;
+}
+
+export interface AutomatedWhatsAppReminderConfig {
+  enabled: boolean;
+  daysAhead: number; // Padrão: 3 dias antes
+  scheduleTime: string; // Ex: '02:00' (Cron diário)
+  includePixKey: boolean;
+  includePaymentLink: boolean;
+  lastRunTimestamp?: string | null;
+  totalRemindersSent: number;
+}
+
+export interface WhatsAppScheduledReminderResult {
+  invoiceId: string;
+  studentId: string;
+  studentName: string;
+  studentPhone: string;
+  dueDate: string;
+  amount: number;
+  daysUntilDue: number;
+  sent: boolean;
+  messageId?: string;
+  timestamp: string;
+  skippedReason?: string;
 }
 
 // -------------------------------------------------------------

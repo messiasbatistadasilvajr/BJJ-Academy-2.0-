@@ -101,7 +101,8 @@ export const DeviceFrame: React.FC<DeviceFrameProps> = ({
   const [isMobileBranchOpen, setIsMobileBranchOpen] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
-  // User override for mockup vs full screen mobile view
+  // Presentation mode for mobile platform on desktop: 'fluid' (100% responsive) or 'mockup' (device bezel)
+  const [mobilePresentation, setMobilePresentation] = useState<'fluid' | 'mockup'>('fluid');
   const [forceMobileFullscreen, setForceMobileFullscreen] = useState<boolean>(false);
 
   useEffect(() => {
@@ -130,89 +131,115 @@ export const DeviceFrame: React.FC<DeviceFrameProps> = ({
   // Selected academy object
   const currentAcademy = academies?.find(a => a.id === activeAcademyId) || academies?.[0];
 
-  // Determine if we should render in pure full mobile screen (native app feel)
-  // Whenever on an actual mobile device (screen < 768) and not explicitly in desktop view, OR if user forced fullscreen
-  const shouldUseMobileNative = !isDesktopView && (isMobileScreen || forceMobileFullscreen);
+  // Whenever !isDesktopView, the user explicitly selected the Mobile Platform!
+  // If user explicitly chose 'mockup' on a large screen, show the calibrated smartphone shell.
+  // Otherwise, render the 100% responsive fluid Mobile Platform view!
+  const shouldUseMobileMockup = !isDesktopView && !isMobileScreen && mobilePresentation === 'mockup' && !forceMobileFullscreen;
+  const shouldUseMobileNative = !isDesktopView && !shouldUseMobileMockup;
 
   // =========================================================================
-  // 1. NATIVE MOBILE FULLSCREEN VIEW (Perfeito para celulares e telas móveis)
+  // 1. NATIVE RESPONSIVE MOBILE PLATFORM (Fluido, 100% Responsivo e sem quebras)
   // =========================================================================
   if (shouldUseMobileNative) {
     return (
-      <div className="fixed inset-0 w-full h-[100dvh] bg-slate-950 text-slate-100 flex flex-col overflow-hidden font-sans select-none z-10">
+      <div className="fixed inset-0 w-full h-[100dvh] bg-slate-950 text-slate-100 flex flex-col items-center justify-start overflow-hidden font-sans select-none z-10">
         {/* Imagem Fixa Global de Fundo: Dois Lutadores de Jiu-Jitsu */}
         <BJJFixedBackground opacity={0.28} className="fixed" />
 
-        {/* Compact Mobile Top App Bar (Altura enxuta de 48px, não polui a tela do celular) */}
-        <header className="h-12 shrink-0 px-3 bg-slate-900/95 border-b border-slate-800/80 backdrop-blur-md flex items-center justify-between gap-2 z-30 shadow-md">
-          {/* Logo + Academy selector pill */}
-          <div className="flex items-center gap-1.5 min-w-0">
-            <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-red-600 to-red-800 p-0.5 shadow flex items-center justify-center font-black text-[11px] text-white shrink-0">
-              BJJ
+        {/* Responsive Mobile Container: 100% width on phone, neatly centered on tablet/desktop */}
+        <div className="w-full max-w-lg h-full flex flex-col relative z-20 overflow-hidden shadow-2xl bg-slate-950/80 sm:border-x sm:border-slate-800/80">
+          {/* Compact Mobile Top App Bar */}
+          <header className="h-12 shrink-0 px-2.5 sm:px-3 bg-slate-900/95 border-b border-slate-800/80 backdrop-blur-md flex items-center justify-between gap-1.5 z-30 shadow-md">
+            {/* Logo + Academy selector pill */}
+            <div className="flex items-center gap-1.5 min-w-0">
+              <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-red-600 to-red-800 p-0.5 shadow flex items-center justify-center font-black text-[11px] text-white shrink-0">
+                BJJ
+              </div>
+              <button
+                onClick={() => setIsMobileBranchOpen(true)}
+                className="flex items-center gap-1 px-2 py-1 rounded-lg bg-slate-800/90 hover:bg-slate-800 border border-slate-700/70 text-slate-200 text-xs font-semibold truncate max-w-[105px] sm:max-w-[140px] transition"
+                title="Alternar academia ou filial"
+              >
+                <span className="truncate">{currentAcademy?.shortName || currentAcademy?.name || activeAcademyName || 'BJJ Academy'}</span>
+                <ChevronDown className="w-3 h-3 text-slate-400 shrink-0" />
+              </button>
             </div>
+
+            {/* Center Role Switcher Pill */}
             <button
-              onClick={() => setIsMobileBranchOpen(true)}
-              className="flex items-center gap-1 px-2 py-1 rounded-lg bg-slate-800/90 hover:bg-slate-800 border border-slate-700/70 text-slate-200 text-xs font-semibold truncate max-w-[120px] sm:max-w-[160px] transition"
-              title="Alternar academia ou filial"
+              onClick={() => setIsMobileRolesOpen(true)}
+              className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-slate-800/90 hover:bg-slate-700 border border-slate-700 text-xs font-bold transition shadow-sm truncate max-w-[110px] sm:max-w-[130px]"
+              title="Alternar Perfil de Acesso"
             >
-              <span className="truncate">{currentAcademy?.shortName || currentAcademy?.name || activeAcademyName || 'BJJ Academy'}</span>
+              <CurrentRoleIcon className={`w-3.5 h-3.5 ${currentRoleObj.color} shrink-0`} />
+              <span className="truncate text-white text-[11px] sm:text-xs">{currentRoleObj.label.replace('👑 ', '').replace('🥋 ', '')}</span>
               <ChevronDown className="w-3 h-3 text-slate-400 shrink-0" />
             </button>
-          </div>
 
-          {/* Center Role Switcher Pill */}
-          <button
-            onClick={() => setIsMobileRolesOpen(true)}
-            className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-slate-800/90 hover:bg-slate-700 border border-slate-700 text-xs font-bold transition shadow-sm"
-            title="Alternar Perfil de Acesso"
-          >
-            <CurrentRoleIcon className={`w-3.5 h-3.5 ${currentRoleObj.color}`} />
-            <span className="truncate max-w-[90px] text-white">{currentRoleObj.label.replace('👑 ', '').replace('🥋 ', '')}</span>
-            <ChevronDown className="w-3 h-3 text-slate-400 shrink-0" />
-          </button>
+            {/* Right Action Icons: Direct Desktop Switcher, Modules & More Menu */}
+            <div className="flex items-center gap-1 shrink-0">
+              {/* Instant 1-tap Desktop Toggle */}
+              <button
+                onClick={onToggleDesktopView}
+                className="px-2 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 border border-slate-700 text-cyan-300 hover:text-white text-xs font-bold flex items-center gap-1 transition shadow-sm"
+                title="Alternar para Painel Desktop (Computador)"
+              >
+                <Monitor className="w-3.5 h-3.5 text-cyan-400" />
+                <span className="text-[10px] font-bold hidden xs:inline">PC</span>
+              </button>
 
-          {/* Right Action Icons: Modules & More Menu */}
-          <div className="flex items-center gap-1">
-            <button
-              onClick={() => setIsMobileModulesOpen(true)}
-              className="p-1.5 rounded-lg bg-gradient-to-r from-red-600/30 to-amber-600/20 hover:bg-red-600/40 border border-red-500/40 text-amber-300 text-xs font-bold flex items-center gap-1 transition"
-              title="Abrir Módulos do Tatame"
-            >
-              <Sparkles className="w-3.5 h-3.5 text-amber-400" />
-              <span className="text-[11px] font-bold">Módulos</span>
-            </button>
+              {/* Toggle to smartphone shell mockup if on desktop */}
+              {!isMobileScreen && (
+                <button
+                  onClick={() => setMobilePresentation('mockup')}
+                  className="p-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-300 hover:text-white text-xs transition"
+                  title="Ver com Moldura de Celular (Simulador)"
+                >
+                  <Tablet className="w-3.5 h-3.5" />
+                </button>
+              )}
 
-            <button
-              onClick={() => setIsMobileMenuOpen(true)}
-              className="p-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-300 transition"
-              title="Menu e ferramentas adicionais"
-            >
-              <Menu className="w-4 h-4" />
-            </button>
-          </div>
-        </header>
+              <button
+                onClick={() => setIsMobileModulesOpen(true)}
+                className="p-1.5 rounded-lg bg-gradient-to-r from-red-600/30 to-amber-600/20 hover:bg-red-600/40 border border-red-500/40 text-amber-300 text-xs font-bold flex items-center gap-1 transition"
+                title="Abrir Módulos do Tatame"
+              >
+                <Sparkles className="w-3.5 h-3.5 text-amber-400" />
+                <span className="text-[11px] font-bold hidden sm:inline">Módulos</span>
+              </button>
 
-        {/* Offline Alert if disconnected */}
-        {!isOnline && (
-          <div className="w-full shrink-0 px-3 py-1 bg-amber-500/20 border-b border-amber-500/40 text-amber-300 text-[11px] text-center font-medium">
-            Modo Offline PWA ativo — dados locais e histórico preservados
-          </div>
-        )}
+              <button
+                onClick={() => setIsMobileMenuOpen(true)}
+                className="p-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-300 transition"
+                title="Menu e ferramentas adicionais"
+              >
+                <Menu className="w-4 h-4" />
+              </button>
+            </div>
+          </header>
 
-        {/* Dynamic Island Banner Notice if active */}
-        {dynamicIslandNotice && (
-          <div className="w-full shrink-0 px-3 py-1.5 bg-slate-900/95 border-b border-red-500/40 text-red-300 text-xs text-center font-bold flex items-center justify-center gap-2 animate-pulse">
-            <span className="w-2 h-2 rounded-full bg-red-500" />
-            <span>{dynamicIslandNotice}</span>
-          </div>
-        )}
+          {/* Offline Alert if disconnected */}
+          {!isOnline && (
+            <div className="w-full shrink-0 px-3 py-1 bg-amber-500/20 border-b border-amber-500/40 text-amber-300 text-[11px] text-center font-medium">
+              Modo Offline PWA ativo — dados locais e histórico preservados
+            </div>
+          )}
 
-        {/* Fullscreen Mobile Viewport Content */}
-        <main className="flex-1 w-full h-full min-h-0 overflow-hidden relative flex flex-col">
-          <div className="relative z-10 flex-1 h-full overflow-hidden flex flex-col">
-            {children}
-          </div>
-        </main>
+          {/* Dynamic Island Banner Notice if active */}
+          {dynamicIslandNotice && (
+            <div className="w-full shrink-0 px-3 py-1.5 bg-slate-900/95 border-b border-red-500/40 text-red-300 text-xs text-center font-bold flex items-center justify-center gap-2 animate-pulse">
+              <span className="w-2 h-2 rounded-full bg-red-500" />
+              <span>{dynamicIslandNotice}</span>
+            </div>
+          )}
+
+          {/* Fullscreen Mobile Viewport Content */}
+          <main className="flex-1 w-full h-full min-h-0 overflow-hidden relative flex flex-col">
+            <div className="relative z-10 flex-1 h-full overflow-hidden flex flex-col">
+              {children}
+            </div>
+          </main>
+        </div>
 
         {/* ========================================================================= */}
         {/* MOBILE BOTTOM SHEET: SELEÇÃO DE PERFIL / PAPEL                           */}
@@ -563,35 +590,47 @@ export const DeviceFrame: React.FC<DeviceFrameProps> = ({
               </div>
 
               <div className="space-y-2">
-                {/* Formato de Visualização da Tela */}
+                {/* Formato de Visualização da Plataforma */}
                 <div className="p-3 rounded-2xl bg-slate-950/60 border border-slate-800">
                   <div className="text-xs font-bold text-slate-300 mb-2 flex items-center gap-1.5">
                     <Smartphone className="w-4 h-4 text-cyan-400" />
-                    <span>Formato e Tamanho da Tela:</span>
+                    <span>Plataforma & Modo de Visualização:</span>
                   </div>
-                  <div className="grid grid-cols-2 gap-2">
+                  <div className="grid grid-cols-3 gap-1.5">
                     <button
                       onClick={() => {
-                        setForceMobileFullscreen(true);
+                        setMobilePresentation('fluid');
                         setIsMobileMenuOpen(false);
                       }}
-                      className={`p-2 rounded-xl text-[11px] font-bold border transition ${
-                        shouldUseMobileNative
+                      className={`p-2 rounded-xl text-[10px] font-bold border transition text-center ${
+                        mobilePresentation === 'fluid'
                           ? 'bg-red-600 border-red-500 text-white'
                           : 'bg-slate-900 border-slate-700 text-slate-300'
                       }`}
                     >
-                      📱 Tela Cheia Móvel
+                      📱 Mobile Fluido
                     </button>
                     <button
                       onClick={() => {
-                        setForceMobileFullscreen(false);
+                        setMobilePresentation('mockup');
                         setIsMobileMenuOpen(false);
-                        onToggleDesktopView();
                       }}
-                      className="p-2 rounded-xl text-[11px] font-bold border border-slate-700 bg-slate-900 text-slate-300 hover:text-white transition"
+                      className={`p-2 rounded-xl text-[10px] font-bold border transition text-center ${
+                        mobilePresentation === 'mockup'
+                          ? 'bg-red-600 border-red-500 text-white'
+                          : 'bg-slate-900 border-slate-700 text-slate-300'
+                      }`}
                     >
-                      💻 Modo Desktop
+                      🖼️ Moldura
+                    </button>
+                    <button
+                      onClick={() => {
+                        onToggleDesktopView();
+                        setIsMobileMenuOpen(false);
+                      }}
+                      className="p-2 rounded-xl text-[10px] font-bold border border-slate-700 bg-slate-900 text-cyan-300 hover:text-white transition text-center"
+                    >
+                      💻 Desktop
                     </button>
                   </div>
                 </div>
@@ -899,28 +938,19 @@ export const DeviceFrame: React.FC<DeviceFrameProps> = ({
             <span className="text-[10px] font-bold uppercase">{os}</span>
           </button>
 
-          {/* Alternar para Tela Cheia Móvel */}
-          <button
-            onClick={() => setForceMobileFullscreen(true)}
-            className="px-2.5 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-300 hover:text-cyan-400 text-xs font-semibold flex items-center gap-1.5 transition"
-            title="Abrir em formato tela móvel nativa"
-          >
-            <Smartphone className="w-3.5 h-3.5 text-cyan-400" />
-            <span className="hidden sm:inline">Tela Cheia</span>
-          </button>
-
-          {/* Desktop/Mobile Toggle */}
+          {/* Platform Switcher to Mobile */}
           <button
             onClick={onToggleDesktopView}
-            className={`px-2.5 py-1.5 rounded-xl border text-xs font-semibold flex items-center gap-1.5 transition ${
+            className={`px-3 py-1.5 rounded-xl border text-xs font-bold flex items-center gap-1.5 transition shadow-sm ${
               isDesktopView
-                ? 'bg-red-600 border-red-500 text-white'
-                : 'bg-slate-800 border-slate-700 text-slate-300 hover:text-white'
+                ? 'bg-slate-800 hover:bg-slate-700 border-red-500/80 text-red-400 hover:text-white'
+                : 'bg-red-600 border-red-500 text-white'
             }`}
-            title="Alternar entre visualização de moldura e desktop"
+            title="Alternar para Plataforma Mobile (PWA / Celular 100% Responsivo)"
           >
-            {isDesktopView ? <Monitor className="w-3.5 h-3.5" /> : <Smartphone className="w-3.5 h-3.5" />}
-            <span className="hidden sm:inline">{isDesktopView ? 'Desktop' : 'Moldura'}</span>
+            <Smartphone className="w-3.5 h-3.5 text-red-400" />
+            <span className="hidden sm:inline">📱 Plataforma Mobile</span>
+            <span className="sm:hidden">📱 Mobile</span>
           </button>
 
           {/* Capacitor Guide Button */}
@@ -1103,11 +1133,18 @@ export const DeviceFrame: React.FC<DeviceFrameProps> = ({
             {/* Top Switcher Helper */}
             <div className="flex items-center gap-2 mb-2">
               <button
-                onClick={() => setForceMobileFullscreen(true)}
+                onClick={() => setMobilePresentation('fluid')}
                 className="px-3 py-1 rounded-full bg-slate-900 hover:bg-slate-800 border border-slate-700 text-[11px] text-slate-300 hover:text-cyan-300 flex items-center gap-1.5 transition shadow-sm"
               >
-                <Maximize2 className="w-3 h-3 text-cyan-400" />
-                <span>Ver em Tela Cheia Móvel</span>
+                <Smartphone className="w-3 h-3 text-cyan-400" />
+                <span>📱 Modo Mobile Fluido</span>
+              </button>
+              <button
+                onClick={onToggleDesktopView}
+                className="px-3 py-1 rounded-full bg-slate-900 hover:bg-slate-800 border border-slate-700 text-[11px] text-slate-300 hover:text-white flex items-center gap-1.5 transition shadow-sm"
+              >
+                <Monitor className="w-3 h-3 text-slate-400" />
+                <span>💻 Painel Desktop</span>
               </button>
             </div>
 

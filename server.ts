@@ -14,6 +14,7 @@ import { scheduledTasksService } from './server/services/scheduledTasksService';
 import { paymentGatewayWebhookService } from './server/services/paymentGatewayWebhookService';
 import { fcmNotificationService } from './server/services/fcmNotificationService';
 import { lgpdComplianceService } from './server/services/lgpdComplianceService';
+import { requireAuth, requireManagerOrCeo, requireCeoOnly, enforceTenantIsolation } from './server/services/authServerMiddleware';
 
 const PORT = 3000;
 
@@ -155,7 +156,7 @@ async function startServer() {
   // -----------------------------------------------------------------
   // 3. MULTI-TENANT FINANCIAL AUDIT LOGS
   // -----------------------------------------------------------------
-  app.get('/api/financial/audits', (req, res) => {
+  app.get('/api/financial/audits', requireManagerOrCeo, (req, res) => {
     const tenantId = (req.query.tenantId as string) || 'all';
     const limit = parseInt((req.query.limit as string) || '50', 10);
     const action = req.query.action as string | undefined;
@@ -320,8 +321,8 @@ async function startServer() {
     res.json(status);
   });
 
-  // Endpoint de Upgrade de Plano SaaS (Liberando vagas instantaneamente)
-  app.post('/api/tenants/:tenantId/upgrade-plan', (req, res) => {
+  // Endpoint de Upgrade de Plano SaaS (Liberando vagas instantaneamente - Restrito ao CEO)
+  app.post('/api/tenants/:tenantId/upgrade-plan', requireCeoOnly, (req, res) => {
     const { tenantId } = req.params;
     const { newPlanTier } = req.body;
 
@@ -354,7 +355,7 @@ async function startServer() {
   // -----------------------------------------------------------------
 
   // 7.1 Cadastrar Aluno com Validação Estrita no Backend (cadastrarAluno)
-  app.post('/api/tenants/:tenantId/students/enroll', async (req, res) => {
+  app.post('/api/tenants/:tenantId/students/enroll', enforceTenantIsolation, async (req, res) => {
     const { tenantId } = req.params;
     const dadosAluno = req.body;
 
@@ -481,7 +482,7 @@ async function startServer() {
 
   // 7.5 Cobrança de Aluno com Split para a Carteira Master (POST /v3/payments)
   // Cai direto na subconta da academia retendo a taxa fixa da BJJACADEMY Master
-  app.post('/api/tenants/:tenantId/students/charge-with-split', async (req, res) => {
+  app.post('/api/tenants/:tenantId/students/charge-with-split', enforceTenantIsolation, async (req, res) => {
     const { tenantId } = req.params;
     const paymentData = req.body;
 
@@ -509,7 +510,7 @@ async function startServer() {
   });
 
   // 7.5.1 Baixa Manual no Balcão com Cancelamento de PIX Online no Asaas (Prevenção de Duplicidade)
-  app.post('/api/tenants/:tenantId/invoices/:invoiceId/manual-settle', async (req, res) => {
+  app.post('/api/tenants/:tenantId/invoices/:invoiceId/manual-settle', requireManagerOrCeo, enforceTenantIsolation, async (req, res) => {
     const { tenantId, invoiceId } = req.params;
     const {
       paymentMethod, // 'DINHEIRO' | 'CARTÃO (BALCÃO)'
@@ -630,6 +631,75 @@ async function startServer() {
       success: true,
       logs: whatsappService.getRecentLogs()
     });
+  });
+
+  // 7.7.1 Execução da Rotina de Lembretes Automáticos WhatsApp (3 dias antes - D-3)
+  app.post('/api/whatsapp/scheduled-reminders/run', async (req, res) => {
+    try {
+      const { invoices = [], students = [], daysAhead = 3, academyName, defaultPixKey } = req.body;
+      const result = await scheduledTasksService.executeAdvanceWhatsAppReminderRoutine(
+        invoices,
+        students,
+        { daysAhead, academyName, defaultPixKey }
+      );
+      return res.status(200).json({
+        success: true,
+        message: `Rotina de lembretes D-${daysAhead} executada com sucesso.`,
+        data: result
+      });
+    } catch (err: any) {
+      console.error('[WhatsApp Scheduled Reminders Error]:', err);
+      return res.status(500).json({ error: 'SCHEDULED_REMINDER_FAILED', message: err.message });
+    }
+  });
+
+  // 7.7.2 Status e Estatísticas dos Lembretes Agendados
+  app.get('/api/whatsapp/scheduled-reminders/status', (req, res) => {
+    return res.json({
+      success: true,
+      schedulerActive: true,
+      cronSchedule: '02:00 Diário (Automático)',
+      advanceDays: 3,
+      totalAdvanceRemindersSent: whatsappService.getNotifiedAdvanceCount(),
+      recentLogs: whatsappService.getRecentLogs()
+    });
+  });
+
+  // 7.7.3 Disparo Manual de Lembrete Preventivo (3 dias antes)
+  app.post('/api/whatsapp/send-advance-reminder', async (req, res) => {
+    const { alunoNome, alunoTelefone, academiaNome, valor, dataVencimento, diasParaVencer = 3, chavePix, linkPagamento, tenantId, alunoId, invoiceId } = req.body;
+
+    if (!alunoNome || !alunoTelefone) {
+      return res.status(400).json({
+        error: 'BAD_REQUEST',
+        message: 'Campos alunoNome e alunoTelefone são obrigatórios.'
+      });
+    }
+
+    try {
+      const result = await whatsappService.enviarLembretePreventivo3Dias({
+        alunoId,
+        alunoNome,
+        alunoTelefone,
+        academiaNome: academiaNome || 'Loyalty Jiu-Jitsu',
+        valor: valor || 100,
+        dataVencimento: dataVencimento || new Date().toISOString().split('T')[0],
+        diasParaVencer,
+        chavePix,
+        linkPagamento,
+        tenantId: tenantId || 'acad_loyalty_jiujitsu',
+        invoiceId
+      });
+
+      return res.status(200).json({
+        success: true,
+        message: `Lembrete preventivo D-${diasParaVencer} disparado para ${alunoNome}.`,
+        result
+      });
+    } catch (err: any) {
+      console.error('[WhatsApp Advance Route Error]:', err);
+      return res.status(500).json({ error: 'WHATSAPP_ADVANCE_FAILED', message: err.message });
+    }
   });
 
   // -----------------------------------------------------------------

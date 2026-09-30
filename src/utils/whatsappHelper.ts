@@ -68,6 +68,36 @@ _Nos vemos no tatame! Oss!_`;
 }
 
 /**
+ * Dispara lembrete amigável específico com antecedência de 3 dias (D-3)
+ */
+export function sendAdvance3DaysReminderViaWhatsApp(
+  invoice: Invoice,
+  studentPhone?: string,
+  academyName: string = 'BJJ Academy',
+  pixKey?: string
+) {
+  const amountFormatted = invoice.amount.toFixed(2).replace('.', ',');
+  const pix = pixKey || invoice.pixCode || '58087630378';
+  const phoneParam = studentPhone ? `phone=${studentPhone.replace(/\D/g, '')}&` : '';
+
+  const text =
+`🥋 *LEMBRETE ANTECIPADO (3 DIAS) • ${academyName.toUpperCase()}*
+
+Oss, *${invoice.studentName}*! Tudo bem? 🥋
+Passando para avisar com antecedência que a sua mensalidade do tatame (*"${invoice.title}"*) vence em *3 dias* (${invoice.dueDate}).
+
+💰 *Valor:* R$ ${amountFormatted}
+🔑 *Chave PIX Oficial:* \`${pix}\`
+
+Manter seu plano em dia nos ajuda a manter a melhor estrutura, tatame limpo e ambiente propício para a sua evolução rumo aos próximos graus! 🔥
+
+_Caso já tenha realizado o PIX pelo app, desconsidere esta mensagem. Nos vemos no tatame! Oss!_`;
+
+  const url = `https://api.whatsapp.com/send?${phoneParam}text=${encodeURIComponent(text)}`;
+  window.open(url, '_blank');
+}
+
+/**
  * Creates a notification when a student misses training.
  */
 export function sendMissedClassWhatsApp(studentName: string, className: string, academyName: string = 'BJJ Academy') {
