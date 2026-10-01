@@ -135,6 +135,23 @@ export function requireCeoOnly(req: AuthenticatedRequest, res: Response, next: N
 }
 
 /**
+ * Middleware: Exige estritamente perfil de Super Admin (Criador do Software SaaS)
+ * Rota Altamente Protegida: Donos de academias e usuários comuns são estritamente barrados.
+ */
+export function requireSuperAdminOnly(req: AuthenticatedRequest, res: Response, next: NextFunction) {
+  const user = authenticateServerUser(req);
+  if (!user || (!user.isCeo && user.role !== 'CEO' && user.role !== 'SUPER_ADMIN')) {
+    return res.status(403).json({
+      error: 'FORBIDDEN_SUPER_ADMIN_ONLY',
+      message: 'Acesso negado. Esta rota é restrita ao Super Admin / Criador da plataforma SaaS BJJACADEMY.'
+    });
+  }
+
+  req.user = user;
+  next();
+}
+
+/**
  * Middleware: Blindagem Multi-Tenant
  * Impede que o Gestor da Academia A acerte endpoints da Academia B.
  * O CEO tem acesso irrestrito a todas as academias.

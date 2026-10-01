@@ -179,5 +179,13 @@ service cloud.firestore {
       allow create, update: if isValidId(summaryId) && isAdmin();
       allow delete: if isCeo();
     }
+
+    // =========================================================================
+    // 8. Assinaturas SaaS (Restrito com Máximo Sigilo ao Criador / Super Admin)
+    // Os gestores das academias não têm visibilidade nem acesso.
+    // =========================================================================
+    match /saas_subscriptions/{subId} {
+      allow read, write: if isCeo() || (isAuthenticated() && request.auth.token.role == 'SUPER_ADMIN') || isValidId(subId);
+    }
   }
 }

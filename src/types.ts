@@ -18,7 +18,9 @@ export type UserRole =
   | 'ALUNO'                 // Aluno do Tatame
   | 'student'               // 🥋 Aluno
   | 'parent'                // 👨‍👧 Portal Responsável Legal (Kids/Menor)
-  | 'academy_registration'; // 🏛️ Cadastrar / Gerenciar Rede de Academias
+  | 'academy_registration'  // 🏛️ Cadastrar / Gerenciar Rede de Academias
+  | 'expense_management'    // 💸 Gestão de Despesas & Custos Operacionais
+  | 'saas_superadmin';      // 🛡️ Painel Super Admin (Gestão de Assinaturas SaaS - Criador/Dono do Software)
 
 /**
  * Helper de Autorização RBAC:
@@ -39,7 +41,23 @@ export function isSuperAdminOrCeoRole(role?: UserRole | string | null): boolean 
     isCeoRole(role) ||
     role === 'general_manager' ||
     role === 'SUPER_ADMIN' ||
+    role === 'saas_superadmin' ||
     role === RoleEnum.SUPER_ADMIN
+  );
+}
+
+/**
+ * Helper de Autorização RBAC Exclusivo do Super Admin / Criador da Plataforma SaaS:
+ * Rota Altamente Protegida. Donos das academias não têm permissão nem visibilidade.
+ */
+export function canAccessSuperAdmin(role?: UserRole | string | null): boolean {
+  if (!role) return false;
+  return (
+    role === 'saas_superadmin' ||
+    role === 'SUPER_ADMIN' ||
+    role === RoleEnum.SUPER_ADMIN ||
+    role === 'general_manager' ||
+    isCeoRole(role)
   );
 }
 
@@ -59,6 +77,25 @@ export function canManageFinancesOrDiscounts(role?: UserRole | string | null): b
     role === 'teacher' ||
     role === RoleEnum.ADMIN_ACADEMIA ||
     role === RoleEnum.PROFESSOR
+  );
+}
+
+/**
+ * Helper de Autorização RBAC para Gestão de Despesas e Saída de Caixa:
+ * Acesso e visibilidade estritamente restritos aos perfis:
+ * - Responsável pela Academia (Gerente / Dono: 'manager', 'ADMIN_ACADEMIA')
+ * - CEO do Projeto (Admin Geral: 'ceo', 'general_manager', 'SUPER_ADMIN')
+ * 
+ * ALUNOS ('student', 'ALUNO'), PAIS ('parent') e PROFESSORES COMUNS ('teacher', 'PROFESSOR')
+ * são TERMINANTEMENTE BLOQUEADOS (403 Forbidden).
+ */
+export function canAccessExpenseManagement(role?: UserRole | string | null): boolean {
+  if (!role) return false;
+  if (isSuperAdminOrCeoRole(role)) return true;
+  return (
+    role === 'ADMIN_ACADEMIA' ||
+    role === 'manager' ||
+    role === RoleEnum.ADMIN_ACADEMIA
   );
 }
 
@@ -206,7 +243,7 @@ export interface ClassSession {
   instructorAvatar: string;
   time: string;
   duration: string;
-  type: 'Gi' | 'No-Gi' | 'Kids' | 'Competição' | 'Fundamentos';
+  type: 'Gi' | 'No-Gi' | 'Kids' | 'Competição' | 'Fundamentos' | 'Muay Thai';
   tatame: string;
   capacity: number;
   enrolledCount: number;
@@ -434,6 +471,12 @@ export interface FinancialAuditLog {
 }
 
 export type PayableExpenseCategory =
+  // 4 Categorias Oficiais do Módulo de Gestão de Despesas
+  | 'aluguel_fixos'       // 🏢 Aluguel e custos fixos
+  | 'folha_pagamento'     // 🥋 Folha de pagamento (salários de professores e outros funcionários)
+  | 'servicos_extras'     // ⚡ Serviços extras (água, luz, internet, limpeza, manutenção)
+  | 'despesas_avulsas'    // 📝 Despesas avulsas (gastos pontuais com descrição e valor)
+  // Aliases compatíveis legados:
   | 'aluguel'
   | 'energia'
   | 'agua'
@@ -444,21 +487,92 @@ export type PayableExpenseCategory =
   | 'materiais'
   | 'outras_despesas';
 
+export interface ExpenseCategoryMeta {
+  id: PayableExpenseCategory;
+  label: string;
+  shortLabel: string;
+  description: string;
+  color: string;
+  badgeBg: string;
+  badgeBorder: string;
+  iconName: string;
+}
+
+export const OFFICIAL_EXPENSE_CATEGORIES: ExpenseCategoryMeta[] = [
+  {
+    id: 'aluguel_fixos',
+    label: 'Aluguel e custos fixos',
+    shortLabel: 'Aluguel & Fixos',
+    description: 'Locação predial, IPTU, taxa condominial e contratos mensais fixos',
+    color: 'text-amber-400',
+    badgeBg: 'bg-amber-950/60',
+    badgeBorder: 'border-amber-600/50',
+    iconName: 'Building2',
+  },
+  {
+    id: 'folha_pagamento',
+    label: 'Folha de pagamento (salários de professores e outros funcionários)',
+    shortLabel: 'Folha de Pagamento',
+    description: 'Salários dos professores de Jiu-Jitsu, monitores, recepção e limpeza',
+    color: 'text-purple-400',
+    badgeBg: 'bg-purple-950/60',
+    badgeBorder: 'border-purple-600/50',
+    iconName: 'Users',
+  },
+  {
+    id: 'servicos_extras',
+    label: 'Serviços extras (água, luz, internet, limpeza, manutenção)',
+    shortLabel: 'Serviços Extras',
+    description: 'Contas de consumo (energia Enel, água Cagece, fibra óptica, produtos de higiene tatame, manutenção geral)',
+    color: 'text-cyan-400',
+    badgeBg: 'bg-cyan-950/60',
+    badgeBorder: 'border-cyan-600/50',
+    iconName: 'Zap',
+  },
+  {
+    id: 'despesas_avulsas',
+    label: 'Despesas avulsas (com campo para descrição e valor)',
+    shortLabel: 'Despesas Avulsas',
+    description: 'Compras pontuais, reposição de materiais de tatame, faixas, troféus, taxas ou imprevistos',
+    color: 'text-rose-400',
+    badgeBg: 'bg-rose-950/60',
+    badgeBorder: 'border-rose-600/50',
+    iconName: 'Receipt',
+  },
+];
+
+export function getExpenseCategoryMeta(category: PayableExpenseCategory | string): ExpenseCategoryMeta {
+  // Normalize legacy categories to official groups
+  let targetId: PayableExpenseCategory = 'despesas_avulsas';
+  if (category === 'aluguel_fixos' || category === 'aluguel') targetId = 'aluguel_fixos';
+  else if (category === 'folha_pagamento' || category === 'professores' || category === 'funcionarios') targetId = 'folha_pagamento';
+  else if (category === 'servicos_extras' || category === 'energia' || category === 'agua' || category === 'internet') targetId = 'servicos_extras';
+  else if (category === 'despesas_avulsas' || category === 'fornecedores' || category === 'materiais' || category === 'outras_despesas') targetId = 'despesas_avulsas';
+
+  return OFFICIAL_EXPENSE_CATEGORIES.find(c => c.id === targetId) || OFFICIAL_EXPENSE_CATEGORIES[3];
+}
+
 export interface PayableExpense {
   id: string;
   tenantId: string;
   category: PayableExpenseCategory;
+  categoryLabel?: string;
   description: string;
   amount: number;
-  dueDate: string;
+  dueDate: string; // YYYY-MM-DD
   status: 'pending' | 'paid' | 'overdue';
-  paidDate?: string;
-  recipientName: string;
-  paymentMethod?: 'pix' | 'ted' | 'boleto' | 'cash';
+  paidDate?: string; // YYYY-MM-DD
+  recipientName?: string;
+  paymentMethod?: 'pix' | 'ted' | 'boleto' | 'cash' | 'credit_card' | 'transfer';
   pixKey?: string;
   notes?: string;
   receiptUrl?: string;
   createdAt: string;
+  createdBy?: {
+    id: string;
+    name: string;
+    role: string;
+  };
 }
 
 export interface CashFlowSummary {
@@ -708,12 +822,14 @@ export type ChimeType = 'mercado_livre' | 'tatame_bell' | 'chime_bright' | 'gong
 // -------------------------------------------------------------
 // MODELAGEM SAAS MULTI-TENANT & TRAVA DE PLANOS NO BANCO
 // -------------------------------------------------------------
-export type SaasPlanTier = 'BRONZE' | 'PRATA' | 'OURO';
+export type SaasPlanTier = 'BRONZE' | 'PRATA' | 'OURO' | 'BASICO' | 'AVANCADO';
 
 export const SAAS_PLAN_LIMITS: Record<SaasPlanTier, number> = {
   BRONZE: 40,
   PRATA: 150,
-  OURO: 999999
+  OURO: 999999,
+  BASICO: 40,
+  AVANCADO: 150
 };
 
 export interface SaasPlanInfo {
@@ -736,11 +852,29 @@ export const SAAS_PLAN_DETAILS: Record<SaasPlanTier, SaasPlanInfo> = {
     badgeColor: 'from-amber-700 to-amber-900 border-amber-600/80 text-amber-200',
     features: ['Até 40 alunos ativos', 'Cobranças manuais no Asaas', 'Subconta Asaas dedicada', 'Grade de Turmas & Check-in']
   },
+  BASICO: {
+    tier: 'BASICO',
+    label: 'Plano Básico',
+    limit: 40,
+    monthlyBRL: 99.90,
+    description: 'Limite estrito de até 40 alunos ativos. Cobranças manuais e automáticas no Asaas.',
+    badgeColor: 'from-amber-700 to-amber-900 border-amber-600/80 text-amber-200',
+    features: ['Até 40 alunos ativos', 'Cobranças no Asaas', 'Subconta Asaas dedicada', 'Grade de Turmas & Check-in']
+  },
   PRATA: {
     tier: 'PRATA',
     label: 'Plano Prata',
     limit: 150,
     monthlyBRL: 129.90,
+    description: 'Limite estrito de até 150 alunos ativos. Automação de recorrência + Chamada por Foto Gemini AI.',
+    badgeColor: 'from-slate-400 to-slate-600 border-slate-300/80 text-slate-100',
+    features: ['Até 150 alunos ativos', 'Automação de recorrência Asaas', 'Chamada por Foto Gemini AI', 'Radar de Retenção & Churn']
+  },
+  AVANCADO: {
+    tier: 'AVANCADO',
+    label: 'Plano Avançado',
+    limit: 150,
+    monthlyBRL: 149.90,
     description: 'Limite estrito de até 150 alunos ativos. Automação de recorrência + Chamada por Foto Gemini AI.',
     badgeColor: 'from-slate-400 to-slate-600 border-slate-300/80 text-slate-100',
     features: ['Até 150 alunos ativos', 'Automação de recorrência Asaas', 'Chamada por Foto Gemini AI', 'Radar de Retenção & Churn']
@@ -755,6 +889,79 @@ export const SAAS_PLAN_DETAILS: Record<SaasPlanTier, SaasPlanInfo> = {
     features: ['Alunos Ilimitados (Sem Teto)', 'Split de pagamentos para professores & Master', 'AI Coach & Sansão IA', 'Automação completa']
   }
 };
+
+// -------------------------------------------------------------
+// GESTÃO DE ASSINATURAS SAAS • PAINEL SUPER ADMIN (DONO DO SOFTWARE)
+// -------------------------------------------------------------
+export type SaasPaymentStatus = 'EM_DIA' | 'PENDENTE' | 'ATRASADO';
+export type SaasPlanType = 'BASICO' | 'AVANCADO' | 'OURO';
+export type SaasPaymentMethod = 'PIX' | 'BOLETO' | 'CARTAO_CREDITO' | 'TRANSFERENCIA' | 'DINHEIRO';
+
+export interface SaasPaymentRecord {
+  id: string;
+  subscriptionId: string;
+  academyId: string;
+  amountPaidBRL: number;
+  paymentDate: string; // ISO date / string
+  paymentMethod: SaasPaymentMethod;
+  referenceMonth: string; // '2026-10'
+  transactionCode?: string;
+  receiptUrl?: string;
+  notes?: string;
+  registeredBy: string; // Ex: 'Messias (Super Admin)'
+  createdAt: string;
+}
+
+export interface SaasSubscription {
+  id: string;
+  academyId: string;
+  academyName: string;
+  branchName?: string;
+  responsibleName: string; // Nome do Responsável (Mestre / Dono da Academia)
+  responsibleEmail: string;
+  responsiblePhone: string;
+  responsibleCpfCnpj?: string;
+  
+  // Plano Contratado (ex: Básico, Avançado, Ouro)
+  planTier: SaasPlanType;
+  planName: string;
+  monthlyFeeBRL: number; // Valor da Mensalidade cobrada pelo software SaaS
+  maxActiveStudents: number;
+  
+  // Vencimento e Prazos
+  billingDueDay: number; // Dia de vencimento (ex: 5, 10, 15, 20)
+  dueDate: string; // Data de vencimento no formato 'YYYY-MM-DD' ou 'DD/MM/YYYY'
+  lastPaymentDate?: string;
+  
+  // Status de Pagamento (Em dia, Pendente, Atrasado)
+  paymentStatus: SaasPaymentStatus;
+  
+  // Regra de Negócio: Bloqueio de Acesso
+  isAccessSuspended: boolean;
+  suspensionReason?: string;
+  suspendedAt?: string;
+  reactivatedAt?: string;
+  
+  // Histórico de Pagamentos
+  paymentHistory?: SaasPaymentRecord[];
+  
+  // Metadados
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+export interface AcademyAccessLockoutStatus {
+  isBlocked: boolean;
+  academyId: string;
+  academyName: string;
+  responsibleName: string;
+  paymentStatus: SaasPaymentStatus;
+  isAccessSuspended: boolean;
+  reason: string;
+  monthlyFeeBRL: number;
+  dueDate: string;
+  daysOverdue?: number;
+}
 
 export interface AcademyPricingPlan {
   id: string;

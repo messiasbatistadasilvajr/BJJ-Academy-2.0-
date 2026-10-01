@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { UserRole, RoleEnum, isCeoRole, isSuperAdminOrCeoRole, StudentProfile, DependentStudent, ClassSession, Invoice, Announcement, ChatMessage, PushNotification, BeltColor, RegisteredAcademy, PlatformGeneralManager, RetentionAlertItem, SparringSession, BirthdayPerson } from './types';
-import { mockStudent, mockDependents, mockClasses, mockInvoices, mockAnnouncements, mockChatMessages, mockRankings, mockPushNotifications, mockRegisteredAcademies, defaultPlatformGeneralManager, mockRetentionAlerts, mockSparringSessions, mockBirthdays, mockInitialStudents } from './data/mockData';
+import { UserRole, RoleEnum, isCeoRole, isSuperAdminOrCeoRole, StudentProfile, DependentStudent, ClassSession, Invoice, Announcement, ChatMessage, PushNotification, BeltColor, RegisteredAcademy, PlatformGeneralManager, RetentionAlertItem, SparringSession, BirthdayPerson, PayableExpense } from './types';
+import { mockStudent, mockDependents, mockClasses, mockInvoices, mockAnnouncements, mockChatMessages, mockRankings, mockPushNotifications, mockRegisteredAcademies, defaultPlatformGeneralManager, mockRetentionAlerts, mockSparringSessions, mockBirthdays, mockInitialStudents, mockPayableExpenses } from './data/mockData';
 import { DeviceFrame } from './components/common/DeviceFrame';
 import { StudentView } from './components/views/StudentView';
 import { ParentView } from './components/views/ParentView';
@@ -24,6 +24,12 @@ import { AcademyVoiceSettingsModal } from './components/common/AcademyVoiceSetti
 import { FinancialHubModal } from './components/common/FinancialHubModal';
 import { AcademyRegistrationModal } from './components/common/AcademyRegistrationModal';
 import { AcademyRegistrationView } from './components/views/AcademyRegistrationView';
+import { ExpenseManagementView } from './components/views/ExpenseManagementView';
+import { ProtectedExpenseRoute } from './components/common/ProtectedExpenseRoute';
+import { SuperAdminSaasView } from './components/views/SuperAdminSaasView';
+import { ProtectedSuperAdminRoute } from './components/common/ProtectedSuperAdminRoute';
+import { AcademySuspendedLockoutModal } from './components/common/AcademySuspendedLockoutModal';
+import { SaasSubscriptionService } from './services/saasSubscriptionService';
 import { SaaSSimulatorModal } from './components/common/SaaSSimulatorModal';
 import { MySaaSSubscriptionModal } from './components/common/MySaaSSubscriptionModal';
 import { PhotoAttendanceModal } from './components/common/PhotoAttendanceModal';
@@ -67,6 +73,9 @@ import {
   saveBirthdayToFirestore,
   subscribeToGeneralManager,
   saveGeneralManagerToFirestore,
+  subscribeToPayableExpenses,
+  savePayableExpenseToFirestore,
+  deletePayableExpenseFromFirestore,
   seedInitialFirestoreDataIfEmpty
 } from './firebase/firestoreService';
 
@@ -110,6 +119,44 @@ export default function App() {
   const [invoices, setInvoices] = useState<Invoice[]>(() => {
     return safeLocalStorageGet<Invoice[]>('bjj_invoices', mockInvoices);
   });
+
+  // 💸 Gestão de Despesas & Custos Operacionais (Multi-Tenant & Firestore Synced)
+  const [expenses, setExpenses] = useState<PayableExpense[]>(() => {
+    return safeLocalStorageGet<PayableExpense[]>('bjj_payable_expenses', mockPayableExpenses);
+  });
+
+  const handleAddExpense = (newExpense: PayableExpense) => {
+    setExpenses((prev) => {
+      const next = [newExpense, ...prev];
+      safeLocalStorageSet('bjj_payable_expenses', next);
+      return next;
+    });
+    savePayableExpenseToFirestore(newExpense).catch((err) => {
+      console.warn('Sync expense to Firestore error:', err);
+    });
+  };
+
+  const handleUpdateExpense = (updatedExpense: PayableExpense) => {
+    setExpenses((prev) => {
+      const next = prev.map((e) => (e.id === updatedExpense.id ? updatedExpense : e));
+      safeLocalStorageSet('bjj_payable_expenses', next);
+      return next;
+    });
+    savePayableExpenseToFirestore(updatedExpense).catch((err) => {
+      console.warn('Sync update expense to Firestore error:', err);
+    });
+  };
+
+  const handleDeleteExpense = (expenseId: string) => {
+    setExpenses((prev) => {
+      const next = prev.filter((e) => e.id !== expenseId);
+      safeLocalStorageSet('bjj_payable_expenses', next);
+      return next;
+    });
+    deletePayableExpenseFromFirestore(expenseId).catch((err) => {
+      console.warn('Sync delete expense from Firestore error:', err);
+    });
+  };
 
   const [announcements, setAnnouncements] = useState<Announcement[]>(mockAnnouncements);
   const [chatMessages, setChatMessages] = useState<ChatMessage[]>(mockChatMessages);
@@ -262,6 +309,18 @@ export default function App() {
   });
 
   const activeAcademy = academies.find((a) => a.id === activeAcademyId) || academies[0];
+
+  // Sincronização automática das academias com a base de dados de assinaturas SaaS
+  useEffect(() => {
+    if (academies && academies.length > 0) {
+      SaasSubscriptionService.syncWithAcademies(academies);
+    }
+  }, [academies]);
+
+  // Regra de Negócio Crítica (Bloqueio Automático por Inadimplência SaaS)
+  const currentAcademyLockout = SaasSubscriptionService.checkAcademyAccess(activeAcademy.id);
+  const isCurrentAcademyBlocked = activeAcademy.id !== 'all' && currentAcademyLockout.isBlocked;
+
   const [isOperatingHoursOpen, setIsOperatingHoursOpen] = useState(false);
   const [academyForHours, setAcademyForHours] = useState<RegisteredAcademy | null>(null);
 
@@ -348,6 +407,14 @@ export default function App() {
       }
     });
 
+    const unsubExpenses = subscribeToPayableExpenses((updatedExpenses) => {
+      if (updatedExpenses && updatedExpenses.length > 0) {
+        setExpenses(updatedExpenses);
+        safeLocalStorageSet('bjj_payable_expenses', updatedExpenses);
+        setIsCloudSynced(true);
+      }
+    });
+
     return () => {
       unsubStudents();
       unsubAcademies();
@@ -356,6 +423,7 @@ export default function App() {
       unsubSparring();
       unsubBirthdays();
       unsubGm();
+      unsubExpenses();
     };
   }, []);
 
@@ -778,6 +846,8 @@ export default function App() {
         setIsOperatingHoursOpen(true);
       }}
       onOpenStudentEnrollment={handleOpenStudentEnrollment}
+      onOpenExpenseManagement={() => setActiveRole('expense_management')}
+      onOpenSuperAdminSaas={() => setActiveRole('saas_superadmin')}
     >
       {/* Offline Mode Banner */}
       {!isOnline && (
@@ -800,8 +870,29 @@ export default function App() {
         }}
       />
 
-      {/* Role-Based Active View */}
-      {activeRole === 'student' && (
+      {/* ⚠️ BLOQUEIO AUTOMÁTICO DE ACESSO POR INADIMPLÊNCIA SAAS (ALUNOS & PROFESSORES) */}
+      {isCurrentAcademyBlocked && (activeRole === 'student' || activeRole === 'parent' || activeRole === 'teacher') ? (
+        <AcademySuspendedLockoutModal
+          lockoutStatus={currentAcademyLockout}
+          academies={academies}
+          onSelectAlternativeAcademy={(chosenId) => {
+            setActiveAcademyId(chosenId);
+            safeLocalStorageSet('bjj_active_academy_id', chosenId);
+          }}
+          onOpenManagerLogin={() => setIsManagerLoginOpen(true)}
+          onRefreshStatus={() => {
+            const fresh = SaasSubscriptionService.checkAcademyAccess(activeAcademy.id);
+            if (!fresh.isBlocked) {
+              triggerPushNotification('✅ Acesso Regularizado!', 'O acesso da sua academia foi liberado com sucesso.');
+            } else {
+              triggerPushNotification('⚠️ Mensalidade SaaS em Aberto', 'Esta unidade ainda consta com pendência financeira na assinatura.');
+            }
+          }}
+        />
+      ) : (
+        <>
+          {/* Role-Based Active View */}
+          {activeRole === 'student' && (
         <StudentView
           student={student}
           classes={classes}
@@ -916,6 +1007,8 @@ export default function App() {
           }}
         />
       )}
+        </>
+      )}
 
       {(activeRole === 'manager' || isSuperAdminOrCEO) && (
         <ManagerView
@@ -959,6 +1052,11 @@ export default function App() {
           onOpenRespectfulBilling={() => setIsRespectfulBillingOpen(true)}
           onOpenKidsBehavioralFeed={() => setIsKidsBehavioralFeedOpen(true)}
           onOpenTatameTV={() => setIsTatameTVOpen(true)}
+          expenses={expenses}
+          onAddExpense={handleAddExpense}
+          onUpdateExpense={handleUpdateExpense}
+          onDeleteExpense={handleDeleteExpense}
+          onOpenExpenseManagement={() => setActiveRole('expense_management')}
         />
       )}
 
@@ -1004,6 +1102,40 @@ export default function App() {
           onBackToManager={() => setActiveRole('manager')}
           onOpenStudentEnrollment={handleOpenStudentEnrollment}
         />
+      )}
+
+      {/* 💸 GESTÃO DE DESPESAS & CUSTOS OPERACIONAIS (ROTA PROTEGIDA RBAC) */}
+      {activeRole === 'expense_management' && (
+        <ProtectedExpenseRoute
+          currentUserRole={activeRole}
+          onUnauthorizedBack={() => setActiveRole(isSuperAdminOrCEO ? 'ceo' : 'manager')}
+        >
+          <ExpenseManagementView
+            expenses={expenses}
+            activeAcademy={activeAcademy}
+            academies={academies}
+            currentUserRole={activeRole}
+            currentUserId={student.id}
+            currentUserName={isSuperAdminOrCEO ? 'Messias Batista Jr (CEO)' : 'Gestor da Unidade'}
+            onAddExpense={handleAddExpense}
+            onUpdateExpense={handleUpdateExpense}
+            onDeleteExpense={handleDeleteExpense}
+            onBackToDashboard={() => setActiveRole(isSuperAdminOrCEO ? 'ceo' : 'manager')}
+          />
+        </ProtectedExpenseRoute>
+      )}
+
+      {/* 👑 PAINEL SUPER ADMIN (SAAS MULTI-TENANT) • ROTA ALTAMENTE PROTEGIDA */}
+      {activeRole === 'saas_superadmin' && (
+        <ProtectedSuperAdminRoute
+          currentUserRole={activeRole}
+          onUnauthorizedBack={() => setActiveRole(isSuperAdminOrCEO ? 'ceo' : 'manager')}
+        >
+          <SuperAdminSaasView
+            academies={academies}
+            onBackToApp={() => setActiveRole(isSuperAdminOrCEO ? 'ceo' : 'manager')}
+          />
+        </ProtectedSuperAdminRoute>
       )}
 
       {/* Global Modals */}
@@ -1146,6 +1278,7 @@ export default function App() {
         }}
         generalManager={generalManager}
         onUpdateGeneralManager={setGeneralManager}
+        onOpenExpenseManagement={() => setActiveRole('expense_management')}
       />
 
       {/* Academy Registration & Branch Management Modal */}

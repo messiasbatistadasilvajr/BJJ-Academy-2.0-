@@ -8,12 +8,12 @@ import {
   Tablet, ShoppingBag, Award, FileText, Trophy, Volume2,
   Lock, Unlock, Calculator, Building2, ShieldAlert, Copy, Check,
   QrCode, CheckCheck, Edit3, Sparkles, Download, AlertCircle, MessageCircle, Cake,
-  Database, Cloud, Crown, Clock, Swords, Star, Tv
+  Database, Cloud, Crown, Clock, Swords, Star, Tv, TrendingDown
 } from 'lucide-react';
 import { 
   ClassSession, Invoice, Announcement, PushNotification, 
   RegisteredAcademy, FinancialAccessProfile, PlatformGeneralManager, 
-  PlatformAcademyPayment, CRMLead, CRMLeadStage
+  PlatformAcademyPayment, CRMLead, CRMLeadStage, PayableExpense
 } from '../../types';
 import { defaultPlatformGeneralManager, mockPlatformAcademyPayments, mockCRMLeads } from '../../data/mockData';
 import { calculateLateFeeAndInterest, formatBRL, calculateSaasLicenseFee, SAAS_FIXED_FEE_BRL, SAAS_PER_STUDENT_FEE_BRL } from '../../utils/financialCalculations';
@@ -25,6 +25,7 @@ import { DataIntegrityModal } from '../common/DataIntegrityModal';
 import { safeLocalStorageGet, safeLocalStorageSet } from '../../utils/safeStorage';
 import { StudentEnrollmentButton } from '../common/StudentEnrollmentButton';
 import { saveCRMLeadToFirestore, subscribeToCRMLeads } from '../../firebase/firestoreService';
+import { ExpenseManagementView } from './ExpenseManagementView';
 
 interface ManagerViewProps {
   classes: ClassSession[];
@@ -67,6 +68,11 @@ interface ManagerViewProps {
   onOpenRespectfulBilling?: () => void;
   onOpenKidsBehavioralFeed?: () => void;
   onOpenTatameTV?: () => void;
+  expenses?: PayableExpense[];
+  onAddExpense?: (expense: PayableExpense) => void;
+  onUpdateExpense?: (expense: PayableExpense) => void;
+  onDeleteExpense?: (expenseId: string) => void;
+  onOpenExpenseManagement?: () => void;
 }
 
 export const ManagerView: React.FC<ManagerViewProps> = ({
@@ -110,8 +116,13 @@ export const ManagerView: React.FC<ManagerViewProps> = ({
   onOpenRespectfulBilling,
   onOpenKidsBehavioralFeed,
   onOpenTatameTV,
+  expenses = [],
+  onAddExpense = () => {},
+  onUpdateExpense = () => {},
+  onDeleteExpense = () => {},
+  onOpenExpenseManagement,
 }) => {
-  const [activeTab, setActiveTab] = useState<'dashboard' | 'financeiro' | 'crm' | 'push' | 'academies'>('dashboard');
+  const [activeTab, setActiveTab] = useState<'dashboard' | 'financeiro' | 'despesas' | 'crm' | 'push' | 'academies'>('dashboard');
 
   const activeRegisteredAcademy = useMemo(() => {
     return academies.find(a => a.id === activeAcademyId) || academies[0];
@@ -595,6 +606,7 @@ export const ManagerView: React.FC<ManagerViewProps> = ({
           {[
             { id: 'dashboard', label: 'Métricas & Tatame', icon: BarChart3 },
             { id: 'financeiro', label: 'Receita & Asaas', icon: DollarSign },
+            { id: 'despesas', label: 'Gestão de Despesas', icon: TrendingDown },
             { id: 'academies', label: `Cadastrar Academia (${academies.length})`, icon: Building2 },
             { id: 'crm', label: 'Novos Leads (CRM)', icon: UserPlus },
             { id: 'push', label: 'Push em Massa', icon: Bell },
@@ -1651,6 +1663,22 @@ export const ManagerView: React.FC<ManagerViewProps> = ({
               </div>
             </div>
           </div>
+        )}
+
+        {/* 2.5 GESTÃO DE DESPESAS OPERACIONAIS & SAÍDA DE CAIXA */}
+        {activeTab === 'despesas' && (
+          <ExpenseManagementView
+            expenses={expenses}
+            activeAcademy={activeRegisteredAcademy || { id: activeAcademyId, name: activeAcademyName } as any}
+            academies={academies}
+            currentUserRole={isGeneralManager ? 'ceo' : 'manager'}
+            currentUserId="mgr_active"
+            currentUserName={isGeneralManager ? 'Messias Batista Jr (CEO)' : 'Gestor da Unidade'}
+            onAddExpense={onAddExpense}
+            onUpdateExpense={onUpdateExpense}
+            onDeleteExpense={onDeleteExpense}
+            onBackToDashboard={() => setActiveTab('dashboard')}
+          />
         )}
 
         {/* 3. CRM FUNIL DE VENDAS KANBAN */}

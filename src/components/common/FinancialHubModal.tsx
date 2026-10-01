@@ -5,7 +5,7 @@ import {
   Clock, ShieldAlert, ShieldCheck, Lock, Unlock, Building2, 
   Receipt, ArrowUpRight, Copy, Check, MessageSquare, QrCode, 
   Calendar, RefreshCw, Plus, Filter, Sparkles, ChevronRight, Award, Sliders,
-  Edit3, Zap, FileSpreadsheet, Printer, Download, FileText
+  Edit3, Zap, FileSpreadsheet, Printer, Download, FileText, TrendingDown
 } from 'lucide-react';
 import { 
   Invoice, RegisteredAcademy, AcademyPricingPlan, FinancialAccessProfile, 
@@ -33,6 +33,7 @@ interface FinancialHubModalProps {
   generalManager?: PlatformGeneralManager;
   onUpdateGeneralManager?: (gm: PlatformGeneralManager) => void;
   isGeneralManager?: boolean;
+  onOpenExpenseManagement?: () => void;
 }
 
 export const FinancialHubModal: React.FC<FinancialHubModalProps> = ({
@@ -48,7 +49,8 @@ export const FinancialHubModal: React.FC<FinancialHubModalProps> = ({
   onOpenVoiceNotice,
   generalManager = defaultPlatformGeneralManager,
   onUpdateGeneralManager,
-  isGeneralManager = true
+  isGeneralManager = true,
+  onOpenExpenseManagement,
 }) => {
   // RBAC Permission Check
   const hasManagerPermission = canManageFinancesOrDiscounts(currentUserRole);
@@ -882,6 +884,21 @@ export const FinancialHubModal: React.FC<FinancialHubModalProps> = ({
             <Zap size={14} className={activeTab === 'motor' ? 'text-slate-950 fill-slate-950' : 'text-teal-400'} />
             <span>Motor Financeiro & Asaas</span>
           </button>
+
+          {/* BOTÃO ATALHO: GESTÃO DE DESPESAS & CUSTOS OPERACIONAIS */}
+          {onOpenExpenseManagement && (
+            <button
+              onClick={() => {
+                onClose();
+                onOpenExpenseManagement();
+              }}
+              className="px-3 py-1.5 rounded-xl font-bold flex items-center gap-1.5 whitespace-nowrap transition text-rose-300 hover:text-white bg-rose-950/60 hover:bg-rose-900 border border-rose-600/50"
+              title="Ir para o painel de Gestão de Despesas & Custos Operacionais"
+            >
+              <TrendingDown size={14} className="text-rose-400" />
+              <span>Gestão de Despesas</span>
+            </button>
+          )}
         </div>
 
         {/* BODY CONTENT SCROLLABLE */}

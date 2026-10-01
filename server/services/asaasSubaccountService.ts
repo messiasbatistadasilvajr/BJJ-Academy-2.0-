@@ -301,7 +301,9 @@ class AsaasSubaccountService {
     const planValues: Record<SaasPlanTier, number> = {
       BRONZE: 69.90,
       PRATA: 129.90,
-      OURO: 249.90
+      OURO: 249.90,
+      BASICO: 99.90,
+      AVANCADO: 149.90
     };
 
     const value = planValues[planTier] || 69.90;

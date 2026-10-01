@@ -1,7 +1,15 @@
 import React, { useState } from 'react';
-import { Clock, Calendar, CheckCircle2, XCircle, MapPin, Phone, ShieldCheck, Sparkles, X, Users, Sun, Moon, Coffee } from 'lucide-react';
+import { 
+  Clock, Calendar, CheckCircle2, XCircle, MapPin, Phone, 
+  Sparkles, X, Users, MessageCircle, Instagram, ShieldCheck, Share2, Layers
+} from 'lucide-react';
 import { RegisteredAcademy, AcademyOperatingDay } from '../../types';
-import { loyaltyOfficialScheduleGroups, loyaltyOfficialKidsSchedule, loyaltyOfficialOperatingHours } from '../../data/mockData';
+import { 
+  loyaltyOfficialAdultSchedule, 
+  loyaltyOfficialKidsTatame01, 
+  loyaltyOfficialKidsTatame02, 
+  loyaltyOfficialOperatingHours 
+} from '../../data/mockData';
 
 interface AcademyOperatingHoursModalProps {
   isOpen: boolean;
@@ -18,7 +26,7 @@ export const AcademyOperatingHoursModal: React.FC<AcademyOperatingHoursModalProp
   if (!isOpen) return null;
 
   const isLoyaltyAcademy = academy.id === 'acad_loyalty_jiujitsu' || academy.name?.toLowerCase().includes('loyalty');
-  const [activeTab, setActiveTab] = useState<'grade_oficial' | 'turmas_kids' | 'dia_a_dia'>('grade_oficial');
+  const [activeTab, setActiveTab] = useState<'adultos' | 'kids' | 'dia_a_dia'>('adultos');
 
   const hours: AcademyOperatingDay[] = isLoyaltyAcademy
     ? loyaltyOfficialOperatingHours
@@ -48,334 +56,451 @@ export const AcademyOperatingHoursModal: React.FC<AcademyOperatingHoursModalProp
   const todaySchedule = hours.find(h => h.dayOfWeek === todayKey);
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/85 backdrop-blur-md overflow-y-auto animate-fadeIn">
-      <div className="w-full max-w-xl rounded-3xl bg-slate-900 border border-amber-500/40 shadow-2xl overflow-hidden text-slate-100 flex flex-col max-h-[92vh]">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 bg-black/90 backdrop-blur-md overflow-y-auto animate-fadeIn select-none">
+      <div className="w-full max-w-2xl rounded-3xl bg-black border border-white/20 shadow-2xl overflow-hidden text-slate-100 flex flex-col max-h-[96vh]">
         
-        {/* Header */}
-        <div className="p-5 bg-gradient-to-r from-slate-950 via-slate-900 to-amber-950/40 border-b border-slate-800 flex items-start justify-between gap-3 shrink-0">
-          <div className="flex items-center gap-3">
-            <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-amber-500/20 to-red-600/20 border border-amber-500/40 flex items-center justify-center shadow-md">
-              <Clock className="w-6 h-6 text-amber-400 animate-pulse" />
+        {/* Navigation / Action Bar */}
+        <div className="px-4 py-3 bg-zinc-950 border-b border-zinc-800 flex items-center justify-between gap-2 shrink-0">
+          {/* Tabs */}
+          {isLoyaltyAcademy ? (
+            <div className="flex items-center gap-1 sm:gap-2 overflow-x-auto">
+              <button
+                onClick={() => setActiveTab('adultos')}
+                className={`px-3 py-1.5 rounded-xl text-xs font-black uppercase tracking-wider transition whitespace-nowrap flex items-center gap-1.5 ${
+                  activeTab === 'adultos'
+                    ? 'bg-white text-black shadow'
+                    : 'bg-zinc-900 text-zinc-300 hover:bg-zinc-800'
+                }`}
+              >
+                <span>🥋 Adultos</span>
+              </button>
+              <button
+                onClick={() => setActiveTab('kids')}
+                className={`px-3 py-1.5 rounded-xl text-xs font-black uppercase tracking-wider transition whitespace-nowrap flex items-center gap-1.5 ${
+                  activeTab === 'kids'
+                    ? 'bg-white text-black shadow'
+                    : 'bg-zinc-900 text-zinc-300 hover:bg-zinc-800'
+                }`}
+              >
+                <span>🧒 Kids (T1 & T2)</span>
+              </button>
+              <button
+                onClick={() => setActiveTab('dia_a_dia')}
+                className={`px-3 py-1.5 rounded-xl text-xs font-black uppercase tracking-wider transition whitespace-nowrap flex items-center gap-1.5 ${
+                  activeTab === 'dia_a_dia'
+                    ? 'bg-white text-black shadow'
+                    : 'bg-zinc-900 text-zinc-300 hover:bg-zinc-800'
+                }`}
+              >
+                <Calendar className="w-3.5 h-3.5" />
+                <span>Dia a Dia</span>
+              </button>
             </div>
-            <div>
-              <div className="flex items-center gap-2">
-                <span className="text-[10px] font-black uppercase tracking-wider text-amber-400 bg-amber-500/10 px-2 py-0.5 rounded-full border border-amber-500/30">
-                  {isLoyaltyAcademy ? 'Nova Grade Oficial Atualizada' : 'Horário Oficial de Treinos'}
-                </span>
-                <span className="text-[10px] text-slate-400 font-bold">MM XXIII</span>
-              </div>
-              <h2 className="text-lg font-black text-white leading-tight mt-0.5">
-                {academy.name}
-              </h2>
-              <p className="text-xs text-slate-400 flex items-center gap-1.5 mt-0.5">
-                <MapPin className="w-3 h-3 text-red-400 shrink-0" />
-                <span>{academy.branch || 'Matriz Oficial • CE'} • {academy.city}, {academy.state || 'CE'}</span>
-              </p>
+          ) : (
+            <div className="flex items-center gap-2">
+              <Clock className="w-4 h-4 text-amber-400" />
+              <span className="font-bold text-sm text-white">{academy.name}</span>
             </div>
-          </div>
-
-          <button
-            onClick={onClose}
-            className="p-2 rounded-xl bg-slate-800/80 hover:bg-slate-700 text-slate-400 hover:text-white transition"
-            title="Fechar"
-          >
-            <X className="w-5 h-5" />
-          </button>
-        </div>
-
-        {/* Current status banner */}
-        <div className="px-5 py-3 bg-slate-950 border-b border-slate-800/80 flex items-center justify-between shrink-0">
-          <div className="flex items-center gap-2">
-            <span className="relative flex h-2.5 w-2.5">
-              {todaySchedule?.isOpen ? (
-                <>
-                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-                  <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-500"></span>
-                </>
-              ) : (
-                <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-slate-500"></span>
-              )}
-            </span>
-            <span className="text-xs font-bold text-slate-200">
-              Hoje ({todaySchedule?.dayLabel}):{' '}
-              {todaySchedule?.isOpen ? (
-                <strong className="text-emerald-400">Tatame Aberto</strong>
-              ) : (
-                <span className="text-slate-400">Fechado</span>
-              )}
-            </span>
-          </div>
-
-          {todaySchedule?.isOpen && todaySchedule.slots.length > 0 && (
-            <span className="text-[11px] text-amber-300 font-mono font-semibold">
-              {todaySchedule.slots.length} horários hoje
-            </span>
           )}
-        </div>
 
-        {/* Tabs de navegação (Especialmente ricas para Loyalty Jiu-Jitsu) */}
-        {isLoyaltyAcademy && (
-          <div className="px-5 pt-3 pb-2 bg-slate-950/60 border-b border-slate-800/70 flex gap-2 overflow-x-auto shrink-0">
+          <div className="flex items-center gap-1">
             <button
-              onClick={() => setActiveTab('grade_oficial')}
-              className={`px-3 py-1.5 rounded-xl text-xs font-bold transition whitespace-nowrap flex items-center gap-1.5 ${
-                activeTab === 'grade_oficial'
-                  ? 'bg-amber-500 text-slate-950 shadow-md'
-                  : 'bg-slate-800/80 text-slate-300 hover:bg-slate-800'
-              }`}
+              onClick={onClose}
+              className="p-1.5 rounded-xl bg-zinc-900 hover:bg-zinc-800 text-zinc-400 hover:text-white transition"
+              title="Fechar"
             >
-              <Sparkles className="w-3.5 h-3.5" />
-              <span>Grade Oficial (Adulto & Kids)</span>
-            </button>
-            <button
-              onClick={() => setActiveTab('turmas_kids')}
-              className={`px-3 py-1.5 rounded-xl text-xs font-bold transition whitespace-nowrap flex items-center gap-1.5 ${
-                activeTab === 'turmas_kids'
-                  ? 'bg-amber-500 text-slate-950 shadow-md'
-                  : 'bg-slate-800/80 text-slate-300 hover:bg-slate-800'
-              }`}
-            >
-              <Users className="w-3.5 h-3.5" />
-              <span>Turmas Infantis (Kids)</span>
-            </button>
-            <button
-              onClick={() => setActiveTab('dia_a_dia')}
-              className={`px-3 py-1.5 rounded-xl text-xs font-bold transition whitespace-nowrap flex items-center gap-1.5 ${
-                activeTab === 'dia_a_dia'
-                  ? 'bg-amber-500 text-slate-950 shadow-md'
-                  : 'bg-slate-800/80 text-slate-300 hover:bg-slate-800'
-              }`}
-            >
-              <Calendar className="w-3.5 h-3.5" />
-              <span>Visão Dia a Dia</span>
+              <X className="w-5 h-5" />
             </button>
           </div>
-        )}
+        </div>
 
-        {/* Conteúdo Principal */}
-        <div className="p-5 space-y-4 overflow-y-auto flex-1">
-          {/* TAB 1: GRADE OFICIAL LOYALTY (ADULTO & KIDS) */}
-          {isLoyaltyAcademy && activeTab === 'grade_oficial' && (
-            <div className="space-y-4">
-              {loyaltyOfficialScheduleGroups.map((group, gIdx) => (
-                <div
-                  key={gIdx}
-                  className="rounded-2xl bg-slate-950/80 border border-slate-800/90 overflow-hidden shadow-sm"
-                >
-                  <div className="px-4 py-2.5 bg-gradient-to-r from-amber-950/40 to-slate-900 border-b border-slate-800 flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <span className="w-2 h-2 rounded-full bg-amber-400"></span>
-                      <h3 className="text-xs font-black text-amber-300 uppercase tracking-wider">
-                        {group.groupName}
-                      </h3>
-                    </div>
-                    <span className="text-[10px] font-bold text-slate-400 bg-slate-850 px-2 py-0.5 rounded-md border border-slate-750">
-                      {group.classes.length} aulas
+        {/* Scrollable Modal Content */}
+        <div className="overflow-y-auto flex-1 p-3 sm:p-6 bg-black relative">
+          
+          {/* Subtle smoke vignette background */}
+          <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-zinc-900/40 via-black to-black pointer-events-none" />
+
+          {/* ============================================================== */}
+          {/* 1. POSTER OFICIAL: GRADE DE TREINOS ADULTOS                    */}
+          {/* Idêntico à imagem IMG-20260930-WA0185.jpg                      */}
+          {/* ============================================================== */}
+          {isLoyaltyAcademy && activeTab === 'adultos' && (
+            <div className="relative z-10 max-w-lg mx-auto space-y-4 py-2">
+              {/* Header Logo */}
+              <div className="flex flex-col items-center justify-center text-center space-y-2">
+                <div className="w-20 h-20 rounded-full border-2 border-white flex items-center justify-center overflow-hidden bg-black p-1 shadow-lg shadow-white/5">
+                  <img
+                    src="/loyalty_logo.jpg"
+                    alt="Loyalty Jiu-Jitsu MM XXIII"
+                    className="w-full h-full object-cover rounded-full"
+                    onError={(e) => {
+                      // Fallback visual com estilização circular idêntica
+                      (e.target as HTMLElement).style.display = 'none';
+                    }}
+                  />
+                  <div className="text-[10px] font-black text-white text-center leading-tight">
+                    LOYALTY<br/>
+                    <span className="text-base font-black">LT</span><br/>
+                    MM XXIII
+                  </div>
+                </div>
+
+                {/* Title and Category */}
+                <div className="space-y-1">
+                  <h1 className="text-2xl sm:text-3xl font-black text-white tracking-[0.08em] uppercase">
+                    GRADE DE TREINOS
+                  </h1>
+                  <div className="flex items-center justify-center gap-3 pt-1">
+                    <div className="h-[1.5px] bg-white w-14 sm:w-20 opacity-80" />
+                    <span className="text-xs sm:text-sm font-black text-white tracking-[0.45em] uppercase">
+                      A D U L T O S
                     </span>
+                    <div className="h-[1.5px] bg-white w-14 sm:w-20 opacity-80" />
+                  </div>
+                </div>
+              </div>
+
+              {/* Adult Table */}
+              <div className="pt-2">
+                <div className="grid grid-cols-12 pb-2 border-b border-white text-white font-black text-[11px] sm:text-xs tracking-wider uppercase">
+                  <div className="col-span-3 text-left">HORÁRIO</div>
+                  <div className="col-span-6 text-left">MODALIDADE E NÍVEL</div>
+                  <div className="col-span-3 text-right">DIAS</div>
+                </div>
+
+                <div className="divide-y divide-white/20">
+                  {loyaltyOfficialAdultSchedule.map((row, idx) => (
+                    <div
+                      key={idx}
+                      className="grid grid-cols-12 py-3 sm:py-3.5 items-center hover:bg-white/[0.04] transition-colors"
+                    >
+                      {/* Horário */}
+                      <div className="col-span-3 text-left">
+                        <span className="text-lg sm:text-2xl font-black text-white font-mono tracking-tight">
+                          {row.time}
+                        </span>
+                      </div>
+
+                      {/* Modalidade e Nível */}
+                      <div className="col-span-6 text-left pr-2">
+                        <div className="text-sm sm:text-base font-black text-white leading-tight">
+                          {row.modality}
+                        </div>
+                        {row.level && (
+                          <div className="text-[11px] sm:text-xs text-slate-300 font-medium mt-0.5 leading-snug">
+                            {row.level}
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Dias */}
+                      <div className="col-span-3 text-right">
+                        <span className="text-[10px] sm:text-xs font-black text-white uppercase tracking-wider block">
+                          {row.days}
+                        </span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Poster Footer (WhatsApp & Instagram) */}
+              <div className="pt-4 border-t border-white/30 flex items-center justify-center gap-3 sm:gap-6 text-xs sm:text-sm text-white font-bold">
+                <a
+                  href="https://wa.me/5585991362789"
+                  target="_blank"
+                  rel="noreferrer"
+                  className="flex items-center gap-1.5 hover:text-emerald-400 transition-colors"
+                >
+                  <MessageCircle className="w-4 h-4 text-emerald-400" />
+                  <span>(85) 9-9136-2789</span>
+                </a>
+                <span className="text-white/40">|</span>
+                <a
+                  href="https://instagram.com/loyaltyjiujitsu"
+                  target="_blank"
+                  rel="noreferrer"
+                  className="flex items-center gap-1.5 hover:text-pink-400 transition-colors"
+                >
+                  <Instagram className="w-4 h-4 text-pink-400" />
+                  <span>@loyaltyjiujitsu</span>
+                </a>
+              </div>
+            </div>
+          )}
+
+          {/* ============================================================== */}
+          {/* 2. POSTER OFICIAL: GRADE DE TREINOS KIDS                       */}
+          {/* Idêntico à imagem IMG-20260930-WA0186.jpg                      */}
+          {/* ============================================================== */}
+          {isLoyaltyAcademy && activeTab === 'kids' && (
+            <div className="relative z-10 max-w-lg mx-auto space-y-4 py-2">
+              {/* Header Logo */}
+              <div className="flex flex-col items-center justify-center text-center space-y-2">
+                <div className="w-20 h-20 rounded-full border-2 border-white flex items-center justify-center overflow-hidden bg-black p-1 shadow-lg shadow-white/5">
+                  <img
+                    src="/loyalty_logo.jpg"
+                    alt="Loyalty Jiu-Jitsu MM XXIII"
+                    className="w-full h-full object-cover rounded-full"
+                    onError={(e) => {
+                      (e.target as HTMLElement).style.display = 'none';
+                    }}
+                  />
+                  <div className="text-[10px] font-black text-white text-center leading-tight">
+                    LOYALTY<br/>
+                    <span className="text-base font-black">LT</span><br/>
+                    MM XXIII
+                  </div>
+                </div>
+
+                {/* Title and Category */}
+                <div className="space-y-1">
+                  <h1 className="text-2xl sm:text-3xl font-black text-white tracking-[0.08em] uppercase">
+                    GRADE DE TREINOS
+                  </h1>
+                  <div className="flex items-center justify-center gap-3 pt-1">
+                    <div className="h-[1.5px] bg-white w-14 sm:w-20 opacity-80" />
+                    <span className="text-xs sm:text-sm font-black text-white tracking-[0.45em] uppercase">
+                      K I D S
+                    </span>
+                    <div className="h-[1.5px] bg-white w-14 sm:w-20 opacity-80" />
+                  </div>
+                </div>
+              </div>
+
+              {/* SEÇÃO 1: TATAME 01 */}
+              <div className="space-y-2 pt-1">
+                {/* Tatame 01 Header Divider */}
+                <div className="flex items-center justify-center gap-3 py-1">
+                  <div className="h-[1.5px] bg-white flex-1 max-w-[100px] sm:max-w-[130px]" />
+                  <span className="text-xs sm:text-sm font-black text-white tracking-[0.3em] uppercase">
+                    T A T A M E &nbsp; 0 1
+                  </span>
+                  <div className="h-[1.5px] bg-white flex-1 max-w-[100px] sm:max-w-[130px]" />
+                </div>
+
+                {/* Table Tatame 01 */}
+                <div>
+                  <div className="grid grid-cols-12 pb-2 border-b border-white text-white font-black text-[11px] sm:text-xs tracking-wider uppercase">
+                    <div className="col-span-3 text-left">HORÁRIO</div>
+                    <div className="col-span-6 text-left">TURMA / IDADE</div>
+                    <div className="col-span-3 text-right">DIAS</div>
                   </div>
 
-                  <div className="p-3 divide-y divide-slate-850/80">
-                    {group.classes.map((cls, cIdx) => (
+                  <div className="divide-y divide-white/20">
+                    {loyaltyOfficialKidsTatame01.map((row, idx) => (
                       <div
-                        key={cIdx}
-                        className="py-2 flex items-center justify-between gap-3 text-xs"
+                        key={idx}
+                        className="grid grid-cols-12 py-2.5 sm:py-3 items-center hover:bg-white/[0.04] transition-colors"
                       >
-                        <div className="flex items-center gap-2.5">
-                          <span className="px-2 py-1 rounded-lg bg-slate-900 border border-slate-750 font-mono text-xs font-black text-amber-400 min-w-[58px] text-center shadow-xs">
-                            {cls.time}
+                        {/* Horário */}
+                        <div className="col-span-3 text-left">
+                          <span className="text-lg sm:text-2xl font-black text-white font-mono tracking-tight">
+                            {row.time}
                           </span>
-                          <div>
-                            <span className="font-bold text-white block">
-                              {cls.title}
-                            </span>
-                            <span className="text-[11px] text-slate-400">
-                              {cls.modality}
-                            </span>
+                        </div>
+
+                        {/* Turma / Idade */}
+                        <div className="col-span-6 text-left pr-2">
+                          <div className="text-sm sm:text-base font-black text-white leading-tight">
+                            {row.turma}
+                          </div>
+                          <div className="text-[11px] sm:text-xs text-slate-300 font-medium mt-0.5">
+                            {row.ageGroup}
                           </div>
                         </div>
 
-                        {cls.tag && (
-                          <span
-                            className={`text-[10px] font-bold px-2 py-0.5 rounded-full border shrink-0 ${
-                              cls.tag === 'Infantil'
-                                ? 'bg-purple-950/80 text-purple-300 border-purple-800/60'
-                                : cls.tag === 'Horário de Almoço'
-                                ? 'bg-amber-950/80 text-amber-300 border-amber-800/60'
-                                : cls.tag === 'Noite'
-                                ? 'bg-blue-950/80 text-blue-300 border-blue-800/60'
-                                : 'bg-slate-850 text-slate-300 border-slate-700'
-                            }`}
-                          >
-                            {cls.tag}
+                        {/* Dias */}
+                        <div className="col-span-3 text-right">
+                          <span className="text-[10px] sm:text-xs font-black text-white uppercase tracking-wider block">
+                            {row.days}
                           </span>
-                        )}
+                        </div>
                       </div>
                     ))}
                   </div>
                 </div>
-              ))}
+              </div>
 
-              {/* Box Rápido de Turmas Infantis */}
-              <div className="p-3.5 rounded-2xl bg-purple-950/20 border border-purple-900/40 flex items-start gap-3">
-                <Users className="w-5 h-5 text-purple-400 shrink-0 mt-0.5" />
-                <div className="space-y-1 text-xs">
-                  <span className="font-black text-purple-300 uppercase text-[11px] tracking-wider block">
-                    Turmas Infantis (Kids)
+              {/* SEÇÃO 2: TATAME 02 */}
+              <div className="space-y-2 pt-3">
+                {/* Tatame 02 Header Divider */}
+                <div className="flex items-center justify-center gap-3 py-1">
+                  <div className="h-[1.5px] bg-white flex-1 max-w-[100px] sm:max-w-[130px]" />
+                  <span className="text-xs sm:text-sm font-black text-white tracking-[0.3em] uppercase">
+                    T A T A M E &nbsp; 0 2
                   </span>
-                  <div className="text-[11px] text-slate-300 space-y-0.5">
-                    <div>• <strong>Kids 1:</strong> Segunda e Quarta às 18:00</div>
-                    <div>• <strong>Kids 2:</strong> Terça, Quinta e Sexta às 18:00</div>
-                    <div>• <strong>Kids 3:</strong> Terça e Quinta às 19:00</div>
-                  </div>
+                  <div className="h-[1.5px] bg-white flex-1 max-w-[100px] sm:max-w-[130px]" />
                 </div>
-              </div>
-            </div>
-          )}
 
-          {/* TAB 2: TURMAS INFANTIS (KIDS) DETALHADAS */}
-          {isLoyaltyAcademy && activeTab === 'turmas_kids' && (
-            <div className="space-y-3">
-              <div className="p-3.5 rounded-2xl bg-gradient-to-r from-purple-950/40 via-slate-900 to-amber-950/30 border border-purple-900/50">
-                <span className="text-[10px] font-black uppercase text-purple-400 tracking-wider block">
-                  Metodologia Infantojuvenil Loyalty
-                </span>
-                <h3 className="text-sm font-black text-white mt-0.5">
-                  Turmas Infantis Divididas por Nível & Idade
-                </h3>
-                <p className="text-[11px] text-slate-400 mt-1">
-                  Desenvolvimento psicomotor, disciplina, combate ao bullying e respeito ao próximo dentro e fora do tatame.
-                </p>
-              </div>
+                {/* Table Tatame 02 */}
+                <div>
+                  <div className="grid grid-cols-12 pb-2 border-b border-white text-white font-black text-[11px] sm:text-xs tracking-wider uppercase">
+                    <div className="col-span-3 text-left">HORÁRIO</div>
+                    <div className="col-span-6 text-left">TURMA / IDADE</div>
+                    <div className="col-span-3 text-right">DIAS</div>
+                  </div>
 
-              {loyaltyOfficialKidsSchedule.map((kid, kIdx) => (
-                <div
-                  key={kIdx}
-                  className="p-4 rounded-2xl bg-slate-950/80 border border-slate-800 flex items-center justify-between gap-3 shadow-xs"
-                >
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-xl bg-purple-500/20 border border-purple-500/40 flex items-center justify-center font-black text-purple-300 text-sm">
-                      {kIdx + 1}
-                    </div>
-                    <div>
-                      <h4 className="text-sm font-black text-white flex items-center gap-2">
-                        <span>{kid.turma}</span>
-                        {kid.faixaEtaria && (
-                          <span className="text-[10px] font-normal text-slate-400 bg-slate-850 px-2 py-0.5 rounded-md border border-slate-750">
-                            {kid.faixaEtaria}
+                  <div className="divide-y divide-white/20">
+                    {loyaltyOfficialKidsTatame02.map((row, idx) => (
+                      <div
+                        key={idx}
+                        className="grid grid-cols-12 py-2.5 sm:py-3 items-center hover:bg-white/[0.04] transition-colors"
+                      >
+                        {/* Horário */}
+                        <div className="col-span-3 text-left">
+                          <span className="text-lg sm:text-2xl font-black text-white font-mono tracking-tight">
+                            {row.time}
                           </span>
-                        )}
-                      </h4>
-                      <p className="text-xs text-slate-400 mt-0.5">
-                        {kid.dias}
-                      </p>
-                    </div>
-                  </div>
+                        </div>
 
-                  <div className="text-right">
-                    <span className="px-3 py-1.5 rounded-xl bg-purple-900/40 border border-purple-700/60 font-mono text-xs font-black text-purple-300 inline-block shadow-xs">
-                      {kid.horario}
-                    </span>
+                        {/* Turma / Idade */}
+                        <div className="col-span-6 text-left pr-2">
+                          <div className="text-sm sm:text-base font-black text-white leading-tight">
+                            {row.turma}
+                          </div>
+                          <div className="text-[11px] sm:text-xs text-slate-300 font-medium mt-0.5">
+                            {row.ageGroup}
+                          </div>
+                          {row.isCompetitionTeam && (
+                            <div className="text-[9px] sm:text-[10px] font-black text-amber-400 tracking-wider uppercase mt-0.5">
+                              TIME DE COMPETIÇÃO
+                            </div>
+                          )}
+                        </div>
+
+                        {/* Dias */}
+                        <div className="col-span-3 text-right">
+                          <span className="text-[10px] sm:text-xs font-black text-white uppercase tracking-wider block">
+                            {row.days}
+                          </span>
+                        </div>
+                      </div>
+                    ))}
                   </div>
                 </div>
-              ))}
+              </div>
+
+              {/* Poster Footer (WhatsApp & Instagram) */}
+              <div className="pt-4 border-t border-white/30 flex items-center justify-center gap-3 sm:gap-6 text-xs sm:text-sm text-white font-bold">
+                <a
+                  href="https://wa.me/5585991362789"
+                  target="_blank"
+                  rel="noreferrer"
+                  className="flex items-center gap-1.5 hover:text-emerald-400 transition-colors"
+                >
+                  <MessageCircle className="w-4 h-4 text-emerald-400" />
+                  <span>(85) 9-9136-2789</span>
+                </a>
+                <span className="text-white/40">|</span>
+                <a
+                  href="https://instagram.com/loyaltyjiujitsu"
+                  target="_blank"
+                  rel="noreferrer"
+                  className="flex items-center gap-1.5 hover:text-pink-400 transition-colors"
+                >
+                  <Instagram className="w-4 h-4 text-pink-400" />
+                  <span>@loyaltyjiujitsu</span>
+                </a>
+              </div>
             </div>
           )}
 
-          {/* TAB 3 OU VIEW PADRÃO PARA OUTRAS ACADEMIAS: VISÃO DIA A DIA */}
+          {/* ============================================================== */}
+          {/* 3. VISÃO DIA A DIA (OU VISÃO PADRÃO PARA OUTRAS ACADEMIAS)      */}
+          {/* ============================================================== */}
           {(!isLoyaltyAcademy || activeTab === 'dia_a_dia') && (
-            <div className="space-y-2.5">
-              <div className="flex items-center justify-between text-xs text-slate-400 pb-1">
-                <span className="font-semibold uppercase text-[10px] tracking-wider">Dia da Semana</span>
-                <span className="font-semibold uppercase text-[10px] tracking-wider">Horários das Turmas</span>
+            <div className="space-y-3 max-w-lg mx-auto py-2">
+              <div className="text-center pb-2">
+                <span className="text-[10px] font-bold text-amber-400 uppercase tracking-widest block">
+                  Visão Consolidada por Dia
+                </span>
+                <h3 className="text-base font-black text-white">
+                  Funcionamento Semanal do Tatame
+                </h3>
               </div>
 
-              {hours.map((item) => {
-                const isToday = item.dayOfWeek === todayKey;
+              <div className="space-y-2">
+                {hours.map((item) => {
+                  const isToday = item.dayOfWeek === todayKey;
 
-                return (
-                  <div
-                    key={item.dayOfWeek}
-                    className={`p-3.5 rounded-2xl border transition flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 ${
-                      isToday
-                        ? 'bg-slate-850 border-amber-500/60 shadow-lg shadow-amber-950/20 ring-1 ring-amber-500/30'
-                        : 'bg-slate-950/70 border-slate-800/80 hover:border-slate-700'
-                    }`}
-                  >
-                    <div className="flex items-center gap-2.5 min-w-[130px]">
-                      {item.isOpen ? (
-                        <div className="w-6 h-6 rounded-full bg-emerald-500/15 border border-emerald-500/30 flex items-center justify-center shrink-0">
-                          <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
-                        </div>
-                      ) : (
-                        <div className="w-6 h-6 rounded-full bg-slate-800/60 border border-slate-700/60 flex items-center justify-center shrink-0">
-                          <XCircle className="w-3.5 h-3.5 text-slate-500" />
-                        </div>
-                      )}
+                  return (
+                    <div
+                      key={item.dayOfWeek}
+                      className={`p-3.5 rounded-2xl border transition flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 ${
+                        isToday
+                          ? 'bg-zinc-900 border-amber-500 shadow-lg shadow-amber-950/20 ring-1 ring-amber-500/40'
+                          : 'bg-zinc-950 border-zinc-800 hover:border-zinc-700'
+                      }`}
+                    >
+                      <div className="flex items-center gap-2.5 min-w-[130px]">
+                        {item.isOpen ? (
+                          <div className="w-6 h-6 rounded-full bg-emerald-500/15 border border-emerald-500/30 flex items-center justify-center shrink-0">
+                            <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
+                          </div>
+                        ) : (
+                          <div className="w-6 h-6 rounded-full bg-zinc-800/60 border border-zinc-700/60 flex items-center justify-center shrink-0">
+                            <XCircle className="w-3.5 h-3.5 text-zinc-500" />
+                          </div>
+                        )}
 
-                      <div>
-                        <span className={`text-xs font-black capitalize block leading-tight ${
-                          isToday ? 'text-amber-300' : 'text-slate-200'
-                        }`}>
-                          {item.dayLabel}
-                        </span>
-                        {isToday && (
-                          <span className="text-[9px] font-black uppercase text-amber-400 bg-amber-500/10 px-1 rounded">
-                            Hoje
+                        <div>
+                          <span className={`text-xs font-black capitalize block leading-tight ${
+                            isToday ? 'text-amber-300' : 'text-zinc-200'
+                          }`}>
+                            {item.dayLabel}
+                          </span>
+                          {isToday && (
+                            <span className="text-[9px] font-black uppercase text-amber-400 bg-amber-500/10 px-1 rounded">
+                              Hoje
+                            </span>
+                          )}
+                        </div>
+                      </div>
+
+                      <div className="flex-1 flex flex-wrap items-center justify-start sm:justify-end gap-1.5">
+                        {item.isOpen && item.slots.length > 0 ? (
+                          item.slots.map((slot, sIdx) => (
+                            <span
+                              key={sIdx}
+                              className="px-2.5 py-1 rounded-xl bg-black border border-zinc-800 text-white font-mono text-xs font-bold"
+                            >
+                              {slot}
+                            </span>
+                          ))
+                        ) : (
+                          <span className="text-xs font-bold text-zinc-500 italic px-2 py-0.5">
+                            Fechado
                           </span>
                         )}
                       </div>
                     </div>
+                  );
+                })}
+              </div>
 
-                    <div className="flex-1 flex flex-wrap items-center justify-start sm:justify-end gap-1.5">
-                      {item.isOpen && item.slots.length > 0 ? (
-                        item.slots.map((slot, sIdx) => (
-                          <span
-                            key={sIdx}
-                            className="px-2.5 py-1 rounded-xl bg-slate-900 border border-slate-750 text-white font-mono text-xs font-bold shadow-xs"
-                          >
-                            {slot}
-                          </span>
-                        ))
-                      ) : (
-                        <span className="text-xs font-bold text-slate-500 italic px-2 py-0.5">
-                          Fechado
-                        </span>
-                      )}
-                    </div>
-                  </div>
-                );
-              })}
+              {/* Contact Footer */}
+              <div className="p-3 rounded-2xl bg-zinc-950 border border-zinc-800 flex items-center justify-between text-xs text-zinc-400 mt-4">
+                <span>WhatsApp: <strong className="text-white">(85) 9-9136-2789</strong></span>
+                <span>Instagram: <strong className="text-white">@loyaltyjiujitsu</strong></span>
+              </div>
             </div>
           )}
 
-          {/* Quick info note */}
-          <div className="p-3.5 rounded-2xl bg-amber-500/10 border border-amber-500/20 flex items-start gap-2.5 text-xs text-slate-300">
-            <Sparkles className="w-4 h-4 text-amber-400 shrink-0 mt-0.5" />
-            <div className="space-y-0.5">
-              <span className="font-bold text-amber-300 block">
-                {isLoyaltyAcademy ? 'Grade Oficial Loyalty Jiu-Jitsu (MM XXIII)' : 'Horários Oficiais de Tatame'}
-              </span>
-              <p className="text-[11px] text-slate-400 leading-relaxed">
-                {isLoyaltyAcademy
-                  ? 'Grade balanceada entre No-Gi matinal e vespertino, Gi tradicional com kimono e turmas infantis direcionadas por faixa etária. Acesso liberado conforme plano ativo do aluno.'
-                  : 'Grade com aulas matinais, treino executivo ao meio-dia e período noturno para adultos e competição.'}
-              </p>
-            </div>
-          </div>
         </div>
 
-        {/* Footer */}
-        <div className="p-4 bg-slate-950 border-t border-slate-800 flex items-center justify-between gap-3 shrink-0">
-          <div className="text-[11px] text-slate-400 flex items-center gap-1">
-            <Phone className="w-3.5 h-3.5 text-slate-500" />
-            <span>Contato: <strong className="text-slate-300">{academy.phone || '(85) 98765-4321'}</strong></span>
+        {/* Modal Bottom Close Bar */}
+        <div className="p-3.5 bg-zinc-950 border-t border-zinc-800 flex items-center justify-between gap-3 shrink-0">
+          <div className="flex items-center gap-2 text-xs text-zinc-400">
+            <ShieldCheck className="w-4 h-4 text-emerald-400" />
+            <span>Grade Oficial Loyalty Jiu-Jitsu (MM XXIII)</span>
           </div>
 
           <button
             onClick={onClose}
-            className="px-4 py-2 rounded-xl bg-gradient-to-r from-red-600 to-amber-600 hover:from-red-500 hover:to-amber-500 text-white font-bold text-xs shadow-md transition"
+            className="px-5 py-2 rounded-xl bg-white hover:bg-zinc-200 text-black font-black text-xs shadow-md transition active:scale-95"
           >
-            Entendido, Oss!
+            Fechar
           </button>
         </div>
 
@@ -383,4 +508,3 @@ export const AcademyOperatingHoursModal: React.FC<AcademyOperatingHoursModalProp
     </div>
   );
 };
-

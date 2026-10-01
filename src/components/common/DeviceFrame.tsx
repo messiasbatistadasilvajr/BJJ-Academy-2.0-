@@ -3,9 +3,10 @@ import {
   Smartphone, Monitor, Layers, Download, Wifi, 
   RotateCcw, Sparkles, Shield, User, Users, GraduationCap, Briefcase, Crown,
   Timer, BookOpen, Tablet, Award, ShoppingBag, FileText, Trophy, Volume2, DollarSign, Building2,
-  Database, Cloud, Key, ChevronDown, Menu, X, Check, ArrowRight, Maximize2, Minimize2, SlidersHorizontal, Code
+  Database, Cloud, Key, ChevronDown, Menu, X, Check, ArrowRight, Maximize2, Minimize2, SlidersHorizontal, Code,
+  TrendingDown, ShieldCheck
 } from 'lucide-react';
-import { UserRole, isCeoRole, isSuperAdminOrCeoRole, RegisteredAcademy } from '../../types';
+import { UserRole, isCeoRole, isSuperAdminOrCeoRole, RegisteredAcademy, canAccessExpenseManagement, canAccessSuperAdmin } from '../../types';
 import { NativeStatusBar } from './NativeStatusBar';
 import { BJJFixedBackground } from './BJJFixedBackground';
 import { AcademyFilterBar } from './AcademyFilterBar';
@@ -31,6 +32,8 @@ interface DeviceFrameProps {
   onOpenTournaments?: () => void;
   onOpenVoiceSettings?: () => void;
   onOpenFinancial?: () => void;
+  onOpenExpenseManagement?: () => void;
+  onOpenSuperAdminSaas?: () => void;
   onOpenAcademyRegistration?: () => void;
   activeAcademyName?: string;
   onOpenCloudStatus?: () => void;
@@ -69,6 +72,8 @@ export const DeviceFrame: React.FC<DeviceFrameProps> = ({
   onOpenTournaments,
   onOpenVoiceSettings,
   onOpenFinancial,
+  onOpenExpenseManagement,
+  onOpenSuperAdminSaas,
   onOpenAcademyRegistration,
   activeAcademyName,
   onOpenCloudStatus,
@@ -115,15 +120,25 @@ export const DeviceFrame: React.FC<DeviceFrameProps> = ({
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
-  const roles: { id: UserRole; label: string; icon: React.FC<{ className?: string }>; color: string; badge?: string }[] = [
+  const allRoles: { id: UserRole; label: string; icon: React.FC<{ className?: string }>; color: string; badge?: string }[] = [
     { id: 'ceo', label: '👑 CEO Messias', icon: Crown, color: 'text-amber-400', badge: 'ACESSO TOTAL' },
     { id: 'general_manager', label: 'Super Admin', icon: Shield, color: 'text-amber-300', badge: 'MASTER' },
+    { id: 'saas_superadmin', label: 'SaaS Super Admin', icon: ShieldCheck, color: 'text-amber-300', badge: 'ASSINATURAS' },
     { id: 'manager', label: 'Gestor Filial', icon: Briefcase, color: 'text-cyan-400', badge: 'ACADEMIA' },
     { id: 'teacher', label: 'Professor Tatame', icon: GraduationCap, color: 'text-emerald-400' },
     { id: 'student', label: 'Aluno', icon: User, color: 'text-red-400' },
     { id: 'parent', label: 'Portal Responsável', icon: Users, color: 'text-blue-400' },
     { id: 'academy_registration', label: 'Cadastrar Academia', icon: Building2, color: 'text-amber-400', badge: 'FILIAIS' },
+    { id: 'expense_management', label: 'Gestão de Despesas', icon: TrendingDown, color: 'text-rose-400', badge: 'DESPESAS' },
   ];
+
+  // Regra de Sigilo Estrito: Os donos de academia e alunos NÃO podem sequer saber que a rota Super Admin SaaS existe
+  const roles = allRoles.filter(r => {
+    if (r.id === 'saas_superadmin') {
+      return canAccessSuperAdmin(activeRole);
+    }
+    return true;
+  });
 
   const currentRoleObj = roles.find(r => r.id === activeRole) || roles[4];
   const CurrentRoleIcon = currentRoleObj.icon;
@@ -443,6 +458,36 @@ export const DeviceFrame: React.FC<DeviceFrameProps> = ({
                     <DollarSign className="w-5 h-5 text-emerald-400" />
                     <span className="text-xs font-bold text-emerald-300">Financeiro & Split</span>
                     <span className="text-[10px] text-emerald-400/80">Gestão Asaas PIX</span>
+                  </button>
+                )}
+
+                {canAccessExpenseManagement(activeRole) && (
+                  <button
+                    onClick={() => {
+                      setIsMobileModulesOpen(false);
+                      onSelectRole('expense_management');
+                      if (onOpenExpenseManagement) onOpenExpenseManagement();
+                    }}
+                    className="p-3 rounded-2xl bg-rose-950/40 border border-rose-500/50 hover:border-rose-400 flex flex-col items-start gap-1.5 transition text-left"
+                  >
+                    <TrendingDown className="w-5 h-5 text-rose-400" />
+                    <span className="text-xs font-bold text-rose-300">Gestão de Despesas</span>
+                    <span className="text-[10px] text-rose-400/80">Custos operacionais</span>
+                  </button>
+                )}
+
+                {canAccessSuperAdmin(activeRole) && (
+                  <button
+                    onClick={() => {
+                      setIsMobileModulesOpen(false);
+                      onSelectRole('saas_superadmin');
+                      if (onOpenSuperAdminSaas) onOpenSuperAdminSaas();
+                    }}
+                    className="p-3 rounded-2xl bg-amber-950/50 border border-amber-500/60 hover:border-amber-400 flex flex-col items-start gap-1.5 transition text-left"
+                  >
+                    <ShieldCheck className="w-5 h-5 text-amber-400" />
+                    <span className="text-xs font-bold text-amber-300">SaaS Super Admin</span>
+                    <span className="text-[10px] text-amber-400/80">Gestão de Assinaturas</span>
                   </button>
                 )}
 
@@ -1059,6 +1104,34 @@ export const DeviceFrame: React.FC<DeviceFrameProps> = ({
             </button>
           )}
 
+          {canAccessExpenseManagement(activeRole) && (
+            <button
+              onClick={() => {
+                onSelectRole('expense_management');
+                if (onOpenExpenseManagement) onOpenExpenseManagement();
+              }}
+              className="flex items-center gap-1.5 px-3 py-1 rounded-lg bg-gradient-to-r from-rose-600/30 to-red-600/30 hover:from-rose-600/50 hover:to-red-600/50 text-rose-300 border border-rose-500/50 font-black text-[11px] whitespace-nowrap transition-all shadow-md"
+              title="Módulo de Gestão de Despesas e Custos Operacionais da Academia"
+            >
+              <TrendingDown className="w-3.5 h-3.5 text-rose-400 stroke-[3]" />
+              <span>Gestão de Despesas</span>
+            </button>
+          )}
+
+          {canAccessSuperAdmin(activeRole) && (
+            <button
+              onClick={() => {
+                onSelectRole('saas_superadmin');
+                if (onOpenSuperAdminSaas) onOpenSuperAdminSaas();
+              }}
+              className="flex items-center gap-1.5 px-3 py-1 rounded-lg bg-gradient-to-r from-amber-600/40 via-yellow-600/30 to-amber-500/40 hover:from-amber-600/60 hover:to-yellow-600/50 text-amber-200 border border-amber-500/60 font-black text-[11px] whitespace-nowrap transition-all shadow-md"
+              title="Painel Exclusivo do Dono do Software: Gestão de Assinaturas SaaS"
+            >
+              <ShieldCheck className="w-3.5 h-3.5 text-amber-400 stroke-[3]" />
+              <span>SaaS Super Admin</span>
+            </button>
+          )}
+
           <button
             onClick={() => {
               onSelectRole('academy_registration');
@@ -1115,7 +1188,7 @@ export const DeviceFrame: React.FC<DeviceFrameProps> = ({
                 </span>
               </div>
               <span className="text-[10px] text-slate-400">
-                Visualização Computador • Gestão Integral • 50% Dev + 50% IA
+                Visualização Computador • Gestão Integral do Tatame • BJJ ACADEMY
               </span>
             </div>
             <div className="flex-1 overflow-hidden relative flex flex-col">

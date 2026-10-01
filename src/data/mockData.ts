@@ -3,7 +3,8 @@ import {
   ChatMessage, PushNotification, RankingMember, TechniqueItem, 
   GraduationEligibility, ShopProduct, ContractWaiver, TournamentItem, TeamMedal,
   RegisteredAcademy, PlatformGeneralManager, PlatformAcademyPayment,
-  RetentionAlertItem, SparringSession, BirthdayPerson, AcademyOperatingDay
+  RetentionAlertItem, SparringSession, BirthdayPerson, AcademyOperatingDay,
+  PayableExpense
 } from '../types';
 
 export const mockStudent: StudentProfile = {
@@ -246,13 +247,13 @@ export const mockInitialStudents: StudentProfile[] = [
 export const mockClasses: ClassSession[] = [
   {
     id: 'class_01',
-    name: 'Jiu-Jitsu Kids (6 a 11 anos)',
+    name: 'Kids 01 (3 a 6 anos)',
     instructor: 'Profª Beatriz Lima - Faixa Marrom',
     instructorAvatar: '/bjj_media/bjj_student_female.jpg',
-    time: '17:30',
+    time: '18:00',
     duration: '50 min',
     type: 'Kids',
-    tatame: 'Tatame 2 (Acolchoado Especial)',
+    tatame: 'Tatame 1 (Seg/Qua) & Tatame 2 (Ter/Qui)',
     capacity: 20,
     enrolledCount: 16,
     checkedIn: true,
@@ -268,10 +269,10 @@ export const mockClasses: ClassSession[] = [
   },
   {
     id: 'class_02',
-    name: 'Jiu-Jitsu Fundamentos (Adulto)',
+    name: 'Jiu-Jitsu Gi (Intermediário / Avançado)',
     instructor: 'Mestre Rodrigo "Cavalo" - 3º Grau',
     instructorAvatar: '/bjj_media/bjj_professor_mestre.jpg',
-    time: '18:30',
+    time: '20:00',
     duration: '60 min',
     type: 'Fundamentos',
     tatame: 'Tatame 1 (Principal)',
@@ -309,11 +310,11 @@ export const mockClasses: ClassSession[] = [
   },
   {
     id: 'class_03',
-    name: 'Submission / No-Gi (Sem Kimono)',
+    name: 'Jiu-Jitsu No Gi (Iniciante / Intermediário)',
     instructor: 'Prof. Alexandre Peçanha - Faixa Preta',
     instructorAvatar: '/bjj_media/bjj_professor_mestre.jpg',
-    time: '20:00',
-    duration: '75 min',
+    time: '12:00',
+    duration: '60 min',
     type: 'No-Gi',
     tatame: 'Tatame 1 (Principal)',
     capacity: 30,
@@ -326,6 +327,40 @@ export const mockClasses: ClassSession[] = [
       { id: 'stu_7', name: 'Thiago Tavares', belt: 'brown', avatar: '/bjj_media/bjj_student_male.jpg', status: 'present' },
       { id: 'stu_8', name: 'Leonardo Salles', belt: 'purple', avatar: '/bjj_media/bjj_student_male.jpg', status: 'present' }
     ]
+  },
+  {
+    id: 'class_04',
+    name: 'Kids 03 (10 a 14 anos) • Time de Competição',
+    instructor: 'Mestre Rodrigo "Cavalo" - 3º Grau',
+    instructorAvatar: '/bjj_media/bjj_professor_mestre.jpg',
+    time: '17:00',
+    duration: '60 min',
+    type: 'Competição',
+    tatame: 'Tatame 2 (Competição Especial)',
+    capacity: 25,
+    enrolledCount: 18,
+    checkedIn: false,
+    tatameAreaM2: 60,
+    maxSafeSparringPairs: 8,
+    registeredStudents: [
+      { id: 'dep_pedro_01', name: 'Pedro Henrique Mendes', belt: 'grey', avatar: '/bjj_media/bjj_kid_student.jpg', status: 'present' }
+    ]
+  },
+  {
+    id: 'class_05',
+    name: 'Muay Thai Tradicional',
+    instructor: 'Prof. Alexandre Peçanha',
+    instructorAvatar: '/bjj_media/bjj_professor_mestre.jpg',
+    time: '19:00',
+    duration: '60 min',
+    type: 'Muay Thai',
+    tatame: 'Tatame 1 (Principal)',
+    capacity: 30,
+    enrolledCount: 20,
+    checkedIn: false,
+    tatameAreaM2: 80,
+    maxSafeSparringPairs: 10,
+    registeredStudents: []
   }
 ];
 
@@ -1173,6 +1208,23 @@ export const mockTeamMedals: TeamMedal[] = [
   }
 ];
 
+export interface LoyaltyAdultScheduleItem {
+  time: string;
+  modality: string;
+  level?: string;
+  days: string;
+  type: 'Gi' | 'No Gi' | 'Muay Thai';
+}
+
+export interface LoyaltyKidsScheduleItem {
+  time: string;
+  turma: string;
+  ageGroup: string;
+  days: string;
+  tatame: 'TATAME 01' | 'TATAME 02';
+  isCompetitionTeam?: boolean;
+}
+
 export interface LoyaltyScheduleGroup {
   groupName: string;
   days: string;
@@ -1191,40 +1243,81 @@ export interface LoyaltyKidsSchedule {
   faixaEtaria?: string;
 }
 
+// -------------------------------------------------------------
+// GRADE OFICIAL LOYALTY JIU-JITSU • ADULTOS (POSTER OFICIAL MM XXIII)
+// -------------------------------------------------------------
+export const loyaltyOfficialAdultSchedule: LoyaltyAdultScheduleItem[] = [
+  { time: '07:00', modality: 'No Gi', level: 'Iniciante / Intermediário', days: 'SEG A SEX', type: 'No Gi' },
+  { time: '08:00', modality: 'Gi', level: 'Iniciante', days: 'SEG A SEX', type: 'Gi' },
+  { time: '11:00', modality: 'Gi', level: 'Intermediário / Avançado', days: 'SEG A SEX', type: 'Gi' },
+  { time: '12:00', modality: 'No Gi', level: 'Iniciante / Intermediário', days: 'SEG A SEX', type: 'No Gi' },
+  { time: '15:00', modality: 'Gi', level: 'Intermediário', days: 'SEG, QUA E SEX', type: 'Gi' },
+  { time: '16:00', modality: 'No Gi', level: 'Iniciante / Intermediário', days: 'SEG A SEX', type: 'No Gi' },
+  { time: '19:00', modality: 'Gi', level: 'Iniciante', days: 'SEG, QUA E SEX', type: 'Gi' },
+  { time: '20:00', modality: 'Gi', level: 'Intermediário / Avançado', days: 'SEG A SEX', type: 'Gi' },
+  { time: '19:00', modality: 'Muay Thai', level: 'Todos os níveis', days: 'SEG, QUA E SEX', type: 'Muay Thai' }
+];
+
+// -------------------------------------------------------------
+// GRADE OFICIAL LOYALTY JIU-JITSU • KIDS (POSTER OFICIAL MM XXIII)
+// -------------------------------------------------------------
+export const loyaltyOfficialKidsTatame01: LoyaltyKidsScheduleItem[] = [
+  { time: '09:00', turma: 'Kids 02', ageGroup: '7 a 12 anos', days: 'TER E QUI', tatame: 'TATAME 01' },
+  { time: '15:00', turma: 'Kids 02', ageGroup: '7 a 12 anos', days: 'TER E QUI', tatame: 'TATAME 01' },
+  { time: '17:00', turma: 'Kids 03', ageGroup: '10 a 14 anos', days: 'SEG A SEX', tatame: 'TATAME 01' },
+  { time: '18:00', turma: 'Kids 01', ageGroup: '3 a 6 anos', days: 'SEG E QUA', tatame: 'TATAME 01' },
+  { time: '18:00', turma: 'Kids 02', ageGroup: '7 a 12 anos', days: 'TER, QUI E SEX', tatame: 'TATAME 01' },
+  { time: '19:00', turma: 'Kids 03', ageGroup: '10 a 14 anos', days: 'TER E QUI', tatame: 'TATAME 01' }
+];
+
+export const loyaltyOfficialKidsTatame02: LoyaltyKidsScheduleItem[] = [
+  { time: '17:00', turma: 'Kids 03', ageGroup: '10 a 14 anos', days: 'SEG, QUA E SEX', tatame: 'TATAME 02', isCompetitionTeam: true },
+  { time: '18:00', turma: 'Kids 01', ageGroup: '3 a 6 anos', days: 'TER E QUI', tatame: 'TATAME 02' },
+  { time: '19:00', turma: 'Muay Thai Kids', ageGroup: 'Kids 02 • 7 a 12 anos', days: 'TER E QUI', tatame: 'TATAME 02' }
+];
+
+// Grupos para compatibilidade
 export const loyaltyOfficialScheduleGroups: LoyaltyScheduleGroup[] = [
   {
-    groupName: 'Segunda, Quarta e Sexta (Adulto & Kids)',
-    days: 'Segunda, Quarta e Sexta',
-    classes: [
-      { time: '07:00', title: 'Jiu-Jitsu Adulto', modality: 'No-Gi / Sem Kimono', tag: 'Manhã' },
-      { time: '08:00', title: 'Jiu-Jitsu Adulto', modality: 'Gi / Com Kimono', tag: 'Manhã' },
-      { time: '11:00', title: 'Jiu-Jitsu Adulto', modality: 'Gi / Com Kimono', tag: 'Manhã' },
-      { time: '12:00', title: 'Jiu-Jitsu Adulto', modality: 'No-Gi / Sem Kimono', tag: 'Horário de Almoço' },
-      { time: '16:00', title: 'Jiu-Jitsu Adulto', modality: 'No-Gi / Sem Kimono', tag: 'Tarde' },
-      { time: '18:00', title: 'Jiu-Jitsu Kids 1 (Seg/Qua) & Kids 2 (Sex)', modality: 'Kids / Infantil', tag: 'Infantil' },
-      { time: '19:00', title: 'Jiu-Jitsu Adulto', modality: 'Gi / Com Kimono', tag: 'Noite' },
-      { time: '20:00', title: 'Jiu-Jitsu Adulto', modality: 'Gi / Com Kimono', tag: 'Noite' }
-    ]
+    groupName: 'Grade de Treinos Adultos (Gi, No Gi & Muay Thai)',
+    days: 'Segunda a Sexta',
+    classes: loyaltyOfficialAdultSchedule.map(item => ({
+      time: item.time,
+      title: `${item.modality}${item.level ? ` (${item.level})` : ''}`,
+      modality: item.type === 'No Gi' ? 'No-Gi / Sem Kimono' : item.type === 'Muay Thai' ? 'Muay Thai Tradicional' : 'Gi / Com Kimono',
+      tag: item.days
+    }))
   },
   {
-    groupName: 'Terça e Quinta (Adulto & Kids)',
-    days: 'Terça e Quinta',
+    groupName: 'Grade de Treinos Kids (Tatame 01 & 02)',
+    days: 'Segunda a Sexta',
     classes: [
-      { time: '07:00', title: 'Jiu-Jitsu Adulto', modality: 'No-Gi / Sem Kimono', tag: 'Manhã' },
-      { time: '11:00', title: 'Jiu-Jitsu Adulto', modality: 'Gi / Com Kimono', tag: 'Manhã' },
-      { time: '12:00', title: 'Jiu-Jitsu Adulto', modality: 'No-Gi / Sem Kimono', tag: 'Horário de Almoço' },
-      { time: '16:00', title: 'Jiu-Jitsu Adulto', modality: 'No-Gi / Sem Kimono', tag: 'Tarde' },
-      { time: '18:00', title: 'Jiu-Jitsu Kids 2', modality: 'Kids / Infantil', tag: 'Infantil' },
-      { time: '19:00', title: 'Jiu-Jitsu Kids 3', modality: 'Kids / Infantil', tag: 'Infantil' },
-      { time: '20:00', title: 'Jiu-Jitsu Adulto', modality: 'Gi / Com Kimono', tag: 'Noite' }
+      ...loyaltyOfficialKidsTatame01.map(k => ({
+        time: k.time,
+        title: `${k.turma} (${k.ageGroup}) • Tatame 01`,
+        modality: 'Jiu-Jitsu Infantil',
+        tag: k.days
+      })),
+      ...loyaltyOfficialKidsTatame02.map(k => ({
+        time: k.time,
+        title: `${k.turma} (${k.ageGroup})${k.isCompetitionTeam ? ' [TIME DE COMPETIÇÃO]' : ''} • Tatame 02`,
+        modality: k.turma.includes('Muay Thai') ? 'Muay Thai Kids' : 'Jiu-Jitsu Infantil Competição',
+        tag: k.days
+      }))
     ]
   }
 ];
 
 export const loyaltyOfficialKidsSchedule: LoyaltyKidsSchedule[] = [
-  { turma: 'Kids 1', dias: 'Segunda e Quarta', horario: '18:00', faixaEtaria: 'Iniciantes / Infantil' },
-  { turma: 'Kids 2', dias: 'Terça, Quinta e Sexta', horario: '18:00', faixaEtaria: 'Intermediário / Infantil' },
-  { turma: 'Kids 3', dias: 'Terça e Quinta', horario: '19:00', faixaEtaria: 'Avançado / Juvenil' }
+  { turma: 'Kids 01 (Tatame 01)', dias: 'Segunda e Quarta', horario: '18:00', faixaEtaria: '3 a 6 anos' },
+  { turma: 'Kids 01 (Tatame 02)', dias: 'Terça e Quinta', horario: '18:00', faixaEtaria: '3 a 6 anos' },
+  { turma: 'Kids 02 (Tatame 01)', dias: 'Terça e Quinta', horario: '09:00', faixaEtaria: '7 a 12 anos' },
+  { turma: 'Kids 02 (Tatame 01)', dias: 'Terça e Quinta', horario: '15:00', faixaEtaria: '7 a 12 anos' },
+  { turma: 'Kids 02 (Tatame 01)', dias: 'Terça, Quinta e Sexta', horario: '18:00', faixaEtaria: '7 a 12 anos' },
+  { turma: 'Kids 03 (Tatame 01)', dias: 'Segunda a Sexta', horario: '17:00', faixaEtaria: '10 a 14 anos' },
+  { turma: 'Kids 03 (Tatame 01)', dias: 'Terça e Quinta', horario: '19:00', faixaEtaria: '10 a 14 anos' },
+  { turma: 'Kids 03 (Tatame 02 • Competição)', dias: 'Segunda, Quarta e Sexta', horario: '17:00', faixaEtaria: '10 a 14 anos' },
+  { turma: 'Muay Thai Kids (Tatame 02)', dias: 'Terça e Quinta', horario: '19:00', faixaEtaria: 'Kids 02 • 7 a 12 anos' }
 ];
 
 export const loyaltyOfficialOperatingHours: AcademyOperatingDay[] = [
@@ -1233,14 +1326,16 @@ export const loyaltyOfficialOperatingHours: AcademyOperatingDay[] = [
     dayLabel: 'segunda-feira',
     isOpen: true,
     slots: [
-      '07:00 (No-Gi)',
-      '08:00 (Gi)',
-      '11:00 (Gi)',
-      '12:00 (No-Gi Almoço)',
-      '16:00 (No-Gi Tarde)',
-      '18:00 (Kids 1)',
-      '19:00 (Gi Noite)',
-      '20:00 (Gi Noite)'
+      '07:00 (No Gi • Inic/Inter)',
+      '08:00 (Gi • Iniciante)',
+      '11:00 (Gi • Inter/Avançado)',
+      '12:00 (No Gi • Inic/Inter)',
+      '15:00 (Gi • Intermediário)',
+      '16:00 (No Gi • Inic/Inter)',
+      '17:00 (Kids 03 • T1 e T2 Competição)',
+      '18:00 (Kids 01 • T1 3 a 6 anos)',
+      '19:00 (Gi Inic & Muay Thai)',
+      '20:00 (Gi • Inter/Avançado)'
     ]
   },
   {
@@ -1248,13 +1343,17 @@ export const loyaltyOfficialOperatingHours: AcademyOperatingDay[] = [
     dayLabel: 'terça-feira',
     isOpen: true,
     slots: [
-      '07:00 (No-Gi)',
-      '11:00 (Gi)',
-      '12:00 (No-Gi Almoço)',
-      '16:00 (No-Gi Tarde)',
-      '18:00 (Kids 2)',
-      '19:00 (Kids 3)',
-      '20:00 (Gi Noite)'
+      '07:00 (No Gi • Inic/Inter)',
+      '08:00 (Gi • Iniciante)',
+      '09:00 (Kids 02 • T1 7 a 12 anos)',
+      '11:00 (Gi • Inter/Avançado)',
+      '12:00 (No Gi • Inic/Inter)',
+      '15:00 (Kids 02 • T1 7 a 12 anos)',
+      '16:00 (No Gi • Inic/Inter)',
+      '17:00 (Kids 03 • T1 10 a 14 anos)',
+      '18:00 (Kids 02 • T1 & Kids 01 • T2)',
+      '19:00 (Kids 03 • T1 & Muay Thai Kids • T2)',
+      '20:00 (Gi • Inter/Avançado)'
     ]
   },
   {
@@ -1262,14 +1361,16 @@ export const loyaltyOfficialOperatingHours: AcademyOperatingDay[] = [
     dayLabel: 'quarta-feira',
     isOpen: true,
     slots: [
-      '07:00 (No-Gi)',
-      '08:00 (Gi)',
-      '11:00 (Gi)',
-      '12:00 (No-Gi Almoço)',
-      '16:00 (No-Gi Tarde)',
-      '18:00 (Kids 1)',
-      '19:00 (Gi Noite)',
-      '20:00 (Gi Noite)'
+      '07:00 (No Gi • Inic/Inter)',
+      '08:00 (Gi • Iniciante)',
+      '11:00 (Gi • Inter/Avançado)',
+      '12:00 (No Gi • Inic/Inter)',
+      '15:00 (Gi • Intermediário)',
+      '16:00 (No Gi • Inic/Inter)',
+      '17:00 (Kids 03 • T1 e T2 Competição)',
+      '18:00 (Kids 01 • T1 3 a 6 anos)',
+      '19:00 (Gi Inic & Muay Thai)',
+      '20:00 (Gi • Inter/Avançado)'
     ]
   },
   {
@@ -1277,13 +1378,17 @@ export const loyaltyOfficialOperatingHours: AcademyOperatingDay[] = [
     dayLabel: 'quinta-feira',
     isOpen: true,
     slots: [
-      '07:00 (No-Gi)',
-      '11:00 (Gi)',
-      '12:00 (No-Gi Almoço)',
-      '16:00 (No-Gi Tarde)',
-      '18:00 (Kids 2)',
-      '19:00 (Kids 3)',
-      '20:00 (Gi Noite)'
+      '07:00 (No Gi • Inic/Inter)',
+      '08:00 (Gi • Iniciante)',
+      '09:00 (Kids 02 • T1 7 a 12 anos)',
+      '11:00 (Gi • Inter/Avançado)',
+      '12:00 (No Gi • Inic/Inter)',
+      '15:00 (Kids 02 • T1 7 a 12 anos)',
+      '16:00 (No Gi • Inic/Inter)',
+      '17:00 (Kids 03 • T1 10 a 14 anos)',
+      '18:00 (Kids 02 • T1 & Kids 01 • T2)',
+      '19:00 (Kids 03 • T1 & Muay Thai Kids • T2)',
+      '20:00 (Gi • Inter/Avançado)'
     ]
   },
   {
@@ -1291,14 +1396,16 @@ export const loyaltyOfficialOperatingHours: AcademyOperatingDay[] = [
     dayLabel: 'sexta-feira',
     isOpen: true,
     slots: [
-      '07:00 (No-Gi)',
-      '08:00 (Gi)',
-      '11:00 (Gi)',
-      '12:00 (No-Gi Almoço)',
-      '16:00 (No-Gi Tarde)',
-      '18:00 (Kids 2)',
-      '19:00 (Gi Noite)',
-      '20:00 (Gi Noite)'
+      '07:00 (No Gi • Inic/Inter)',
+      '08:00 (Gi • Iniciante)',
+      '11:00 (Gi • Inter/Avançado)',
+      '12:00 (No Gi • Inic/Inter)',
+      '15:00 (Gi • Intermediário)',
+      '16:00 (No Gi • Inic/Inter)',
+      '17:00 (Kids 03 • T1 e T2 Competição)',
+      '18:00 (Kids 02 • T1 7 a 12 anos)',
+      '19:00 (Gi Inic & Muay Thai)',
+      '20:00 (Gi • Inter/Avançado)'
     ]
   },
   {
@@ -1327,7 +1434,7 @@ export const mockRegisteredAcademies: RegisteredAcademy[] = [
     address: 'Av. Beira Mar, 2800',
     neighborhood: 'Meireles',
     cep: '60165-121',
-    phone: '(85) 98765-4321',
+    phone: '(85) 9-9136-2789',
     email: 'contato@loyaltyjiujitsu.com.br',
     headInstructor: 'Messias Batista da Silva Junior (• Mestre Fundador)',
     crefNumber: '019844-G/CE',
@@ -1355,7 +1462,7 @@ export const mockRegisteredAcademies: RegisteredAcademy[] = [
     legalRepresentativeName: 'Messias Batista da Silva Junior',
     legalRepresentativeCpf: '580.876.303-78',
     legalRepresentativeRole: 'Sócio Fundador & Mestre Responsável',
-    legalRepresentativePhone: '(85) 98765-4321',
+    legalRepresentativePhone: '(85) 9-9136-2789',
     federationAffiliation: 'CBJJ / IBJJF',
     federationRegisterNumber: 'CBJJ-CE-10928',
     fireDepartmentPermit: 'AVCB nº 2024-918293',
@@ -1363,7 +1470,7 @@ export const mockRegisteredAcademies: RegisteredAcademy[] = [
     hasFirstAidKit: true,
     billingDueDay: 10,
     financialContactEmail: 'financeiro@loyaltyjiujitsu.com.br',
-    financialContactPhone: '(85) 98765-4321',
+    financialContactPhone: '(85) 9-9136-2789',
     termsAccepted: true,
     termsAcceptedDate: '15/01/2026 14:30',
     termsAcceptedIp: '189.120.44.12',
@@ -1427,6 +1534,122 @@ export const mockRegisteredAcademies: RegisteredAcademy[] = [
       { id: 'plan_loyalty_kids', name: 'Loyalty Kids & Teens', periodMonths: 1, price: 220.00, monthlyEquivalent: 220.00, description: 'Valores, respeito e defesa pessoal para a juventude.' }
     ],
     operatingHours: loyaltyOfficialOperatingHours
+  },
+  {
+    id: 'acad_gracie_barra_sp',
+    name: 'Gracie Barra Jardins',
+    shortName: 'GB Jardins',
+    branch: 'Unidade Jardins • SP',
+    city: 'São Paulo - SP',
+    state: 'SP',
+    cnpj: '12.345.678/0001-90',
+    address: 'Rua Oscar Freire, 1120',
+    phone: '(11) 98111-2233',
+    email: 'carlos.gracie@gbjardins.com.br',
+    headInstructor: 'Prof. Carlos Eduardo Gracie',
+    crefNumber: '028114-G/SP',
+    studentCapacity: 200,
+    tatamiAreaM2: 180,
+    activeStudentsCount: 110,
+    saasPlanTier: 'AVANCADO',
+    maxActiveStudentsLimit: 150,
+    status: 'active',
+    voiceEnabled: true,
+    voiceStyle: 'tatame_master',
+    notificationFormat: 'name_and_title',
+    chimeType: 'tatame_bell',
+    speechRate: 1.0,
+    speechPitch: 1.0,
+    billingDueDay: 5,
+    legalRepresentativeName: 'Prof. Carlos Eduardo Gracie',
+    pricingPlans: []
+  },
+  {
+    id: 'acad_alliance_campinas',
+    name: 'Alliance Campinas',
+    shortName: 'Alliance Campinas',
+    branch: 'Taquaral • Campinas SP',
+    city: 'Campinas - SP',
+    state: 'SP',
+    cnpj: '23.456.789/0001-01',
+    address: 'Av. Barão de Itapura, 940',
+    phone: '(19) 97222-3344',
+    email: 'fernando@alliancecampinas.com.br',
+    headInstructor: 'Mestre Fernando Ramos',
+    crefNumber: '018992-G/SP',
+    studentCapacity: 120,
+    tatamiAreaM2: 110,
+    activeStudentsCount: 38,
+    saasPlanTier: 'BASICO',
+    maxActiveStudentsLimit: 40,
+    status: 'suspended',
+    voiceEnabled: false,
+    voiceStyle: 'commercial',
+    notificationFormat: 'name_only',
+    chimeType: 'chime_bright',
+    speechRate: 1.0,
+    speechPitch: 1.0,
+    billingDueDay: 15,
+    legalRepresentativeName: 'Mestre Fernando Ramos',
+    pricingPlans: []
+  },
+  {
+    id: 'acad_checkmat_santos',
+    name: 'Checkmat Baixada',
+    shortName: 'Checkmat Santos',
+    branch: 'Gonzaga • Santos SP',
+    city: 'Santos - SP',
+    state: 'SP',
+    cnpj: '34.567.890/0001-12',
+    address: 'Av. Ana Costa, 400',
+    phone: '(13) 99333-4455',
+    email: 'contato@checkmatsantos.com.br',
+    headInstructor: 'Prof. Rodrigo Martins',
+    crefNumber: '023199-G/SP',
+    studentCapacity: 180,
+    tatamiAreaM2: 150,
+    activeStudentsCount: 95,
+    saasPlanTier: 'AVANCADO',
+    maxActiveStudentsLimit: 150,
+    status: 'active',
+    voiceEnabled: true,
+    voiceStyle: 'energetic',
+    notificationFormat: 'name_and_title',
+    chimeType: 'tatame_bell',
+    speechRate: 1.0,
+    speechPitch: 1.0,
+    billingDueDay: 20,
+    legalRepresentativeName: 'Prof. Rodrigo Martins',
+    pricingPlans: []
+  },
+  {
+    id: 'acad_nova_uniao_bh',
+    name: 'Nova União Minas',
+    shortName: 'Nova União BH',
+    branch: 'Savassi • Belo Horizonte MG',
+    city: 'Belo Horizonte - MG',
+    state: 'MG',
+    cnpj: '45.678.901/0001-23',
+    address: 'Rua Fernandes Tourinho, 210',
+    phone: '(31) 98444-5566',
+    email: 'leandro@novauniaominas.com.br',
+    headInstructor: 'Prof. Leandro Barbosa',
+    crefNumber: '011244-G/MG',
+    studentCapacity: 100,
+    tatamiAreaM2: 90,
+    activeStudentsCount: 32,
+    saasPlanTier: 'BASICO',
+    maxActiveStudentsLimit: 40,
+    status: 'suspended',
+    voiceEnabled: false,
+    voiceStyle: 'tatame_master',
+    notificationFormat: 'full_message',
+    chimeType: 'tatame_bell',
+    speechRate: 1.0,
+    speechPitch: 1.0,
+    billingDueDay: 25,
+    legalRepresentativeName: 'Prof. Leandro Barbosa',
+    pricingPlans: []
   }
 ];
 
@@ -1947,6 +2170,285 @@ export const mockBirthdays: BirthdayPerson[] = [
     academyId: 'acad_loyalty_jiujitsu',
     academyName: 'Loyalty Jiu-Jitsu',
     congratulated: false
+  }
+];
+
+// Helper para gerar datas no mês corrente e mês anterior garantindo dados ricos em qualquer data de execução
+const _now = new Date();
+const _year = _now.getFullYear();
+const _month = String(_now.getMonth() + 1).padStart(2, '0');
+const _prevMonth = String(_now.getMonth() === 0 ? 12 : _now.getMonth()).padStart(2, '0');
+const _prevYear = _now.getMonth() === 0 ? _year - 1 : _year;
+
+export const mockPayableExpenses: PayableExpense[] = [
+  // 🏢 1. ALUGUEL E CUSTOS FIXOS
+  {
+    id: 'exp_aluguel_matriz_01',
+    tenantId: 'acad_loyalty_jiujitsu',
+    category: 'aluguel_fixos',
+    categoryLabel: 'Aluguel e custos fixos',
+    description: 'Aluguel do Galpão Principal (Loyalty Matriz)',
+    amount: 3800.00,
+    dueDate: `${_year}-${_month}-10`,
+    status: 'paid',
+    paidDate: `${_year}-${_month}-09`,
+    recipientName: 'Imobiliária Fortaleza Prime Imóveis',
+    paymentMethod: 'pix',
+    pixKey: 'financeiro@primeimoveis.com.br',
+    notes: 'Contrato com bonificação de pontualidade aplicada.',
+    createdAt: `${_year}-${_month}-01T08:00:00.000Z`,
+    createdBy: { id: 'mgr_loyalty', name: 'Gestor Matriz', role: 'manager' }
+  },
+  {
+    id: 'exp_condominio_02',
+    tenantId: 'acad_loyalty_jiujitsu',
+    category: 'aluguel_fixos',
+    categoryLabel: 'Aluguel e custos fixos',
+    description: 'Taxa de Condomínio Empresarial & IPTU Rateado',
+    amount: 650.00,
+    dueDate: `${_year}-${_month}-15`,
+    status: 'paid',
+    paidDate: `${_year}-${_month}-14`,
+    recipientName: 'Condomínio Centro Empresarial Aldeota',
+    paymentMethod: 'boleto',
+    notes: 'Boleto bancário quitado pelo app do banco.',
+    createdAt: `${_year}-${_month}-01T08:10:00.000Z`,
+    createdBy: { id: 'mgr_loyalty', name: 'Gestor Matriz', role: 'manager' }
+  },
+  {
+    id: 'exp_seguro_predial_03',
+    tenantId: 'acad_loyalty_jiujitsu',
+    category: 'aluguel_fixos',
+    categoryLabel: 'Aluguel e custos fixos',
+    description: 'Seguro Predial Contra Incêndio & Responsabilidade Civil',
+    amount: 280.00,
+    dueDate: `${_year}-${_month}-28`,
+    status: 'pending',
+    recipientName: 'Porto Seguro Cia de Seguros',
+    paymentMethod: 'boleto',
+    notes: 'Parcela 09/12 da apólice de segurança do tatame.',
+    createdAt: `${_year}-${_month}-02T09:00:00.000Z`,
+    createdBy: { id: 'mgr_loyalty', name: 'Gestor Matriz', role: 'manager' }
+  },
+
+  // 🥋 2. FOLHA DE PAGAMENTO (Salários de professores e outros funcionários)
+  {
+    id: 'exp_folha_rodrigo_04',
+    tenantId: 'acad_loyalty_jiujitsu',
+    category: 'folha_pagamento',
+    categoryLabel: 'Folha de pagamento (salários de professores e outros funcionários)',
+    description: 'Salário Professor Rodrigo Cavalo (Tatame Adulto / Pro)',
+    amount: 2500.00,
+    dueDate: `${_year}-${_month}-05`,
+    status: 'paid',
+    paidDate: `${_year}-${_month}-05`,
+    recipientName: 'Rodrigo "Cavalo" Silva',
+    paymentMethod: 'pix',
+    pixKey: 'rodrigo.cavalo@loyaltybjj.com',
+    notes: 'Aulas noturnas e preparação dos atletas para o Estadual.',
+    createdAt: `${_year}-${_month}-01T10:00:00.000Z`,
+    createdBy: { id: 'mgr_loyalty', name: 'Gestor Matriz', role: 'manager' }
+  },
+  {
+    id: 'exp_folha_camila_05',
+    tenantId: 'acad_loyalty_jiujitsu',
+    category: 'folha_pagamento',
+    categoryLabel: 'Folha de pagamento (salários de professores e outros funcionários)',
+    description: 'Salário Professora Camila (Tatame Kids & BJJ Feminino)',
+    amount: 1900.00,
+    dueDate: `${_year}-${_month}-05`,
+    status: 'paid',
+    paidDate: `${_year}-${_month}-05`,
+    recipientName: 'Camila Guimarães',
+    paymentMethod: 'pix',
+    pixKey: 'camila.bjj@loyaltybjj.com',
+    notes: 'Turmas Kids (4 a 12 anos) e turma feminina das terças/quintas.',
+    createdAt: `${_year}-${_month}-01T10:15:00.000Z`,
+    createdBy: { id: 'mgr_loyalty', name: 'Gestor Matriz', role: 'manager' }
+  },
+  {
+    id: 'exp_folha_recepcao_06',
+    tenantId: 'acad_loyalty_jiujitsu',
+    category: 'folha_pagamento',
+    categoryLabel: 'Folha de pagamento (salários de professores e outros funcionários)',
+    description: 'Bolsa Suporte Recepção & Controle de Acesso',
+    amount: 1200.00,
+    dueDate: `${_year}-${_month}-05`,
+    status: 'paid',
+    paidDate: `${_year}-${_month}-05`,
+    recipientName: 'Ana Beatriz Souza',
+    paymentMethod: 'pix',
+    pixKey: 'anabeatriz.rec@gmail.com',
+    notes: 'Atendimento do WhatsApp, cadastros e totem de presença.',
+    createdAt: `${_year}-${_month}-01T10:30:00.000Z`,
+    createdBy: { id: 'mgr_loyalty', name: 'Gestor Matriz', role: 'manager' }
+  },
+  {
+    id: 'exp_folha_limpeza_07',
+    tenantId: 'acad_loyalty_jiujitsu',
+    category: 'folha_pagamento',
+    categoryLabel: 'Folha de pagamento (salários de professores e outros funcionários)',
+    description: 'Serviço de Higienização e Limpeza Noturna de Tatame',
+    amount: 950.00,
+    dueDate: `${_year}-${_month}-20`,
+    status: 'pending',
+    recipientName: 'Marcos Vinícius Oliveira',
+    paymentMethod: 'pix',
+    pixKey: 'marcos.limpeza@outlook.com',
+    notes: 'Higienização e desinfecção pós-treinos das 21h30.',
+    createdAt: `${_year}-${_month}-02T11:00:00.000Z`,
+    createdBy: { id: 'mgr_loyalty', name: 'Gestor Matriz', role: 'manager' }
+  },
+
+  // ⚡ 3. SERVIÇOS EXTRAS (Água, luz, internet, limpeza, manutenção)
+  {
+    id: 'exp_luz_enel_08',
+    tenantId: 'acad_loyalty_jiujitsu',
+    category: 'servicos_extras',
+    categoryLabel: 'Serviços extras (água, luz, internet, limpeza, manutenção)',
+    description: 'Energia Elétrica Enel (Iluminação LED Tatame + Climatização)',
+    amount: 840.50,
+    dueDate: `${_year}-${_month}-12`,
+    status: 'paid',
+    paidDate: `${_year}-${_month}-11`,
+    recipientName: 'Enel Distribuição Ceará',
+    paymentMethod: 'boleto',
+    notes: 'Código de barras débito em conta.',
+    createdAt: `${_year}-${_month}-01T11:00:00.000Z`,
+    createdBy: { id: 'mgr_loyalty', name: 'Gestor Matriz', role: 'manager' }
+  },
+  {
+    id: 'exp_agua_cagece_09',
+    tenantId: 'acad_loyalty_jiujitsu',
+    category: 'servicos_extras',
+    categoryLabel: 'Serviços extras (água, luz, internet, limpeza, manutenção)',
+    description: 'Água e Esgoto Cagece (Bebedouros e Vestiários)',
+    amount: 245.80,
+    dueDate: `${_year}-${_month}-14`,
+    status: 'paid',
+    paidDate: `${_year}-${_month}-14`,
+    recipientName: 'Cagece Companhia de Água e Esgoto',
+    paymentMethod: 'pix',
+    pixKey: 'pix.arrecadacao@cagece.com.br',
+    notes: 'Consumo do mês dentro da meta sustentável da academia.',
+    createdAt: `${_year}-${_month}-01T11:20:00.000Z`,
+    createdBy: { id: 'mgr_loyalty', name: 'Gestor Matriz', role: 'manager' }
+  },
+  {
+    id: 'exp_internet_fibra_10',
+    tenantId: 'acad_loyalty_jiujitsu',
+    category: 'servicos_extras',
+    categoryLabel: 'Serviços extras (água, luz, internet, limpeza, manutenção)',
+    description: 'Internet Fibra Óptica 600MB (Câmeras de Segurança e Totem)',
+    amount: 149.90,
+    dueDate: `${_year}-${_month}-18`,
+    status: 'paid',
+    paidDate: `${_year}-${_month}-17`,
+    recipientName: 'Brisanet Telecomunicações S.A.',
+    paymentMethod: 'pix',
+    pixKey: 'cobranca@brisanet.com.br',
+    notes: 'IP dedicado para streaming da Tatame TV e aplicativo dos alunos.',
+    createdAt: `${_year}-${_month}-01T11:35:00.000Z`,
+    createdBy: { id: 'mgr_loyalty', name: 'Gestor Matriz', role: 'manager' }
+  },
+  {
+    id: 'exp_quimica_tatame_11',
+    tenantId: 'acad_loyalty_jiujitsu',
+    category: 'servicos_extras',
+    categoryLabel: 'Serviços extras (água, luz, internet, limpeza, manutenção)',
+    description: 'Galões de Quaternário de Amônio 5ª Geração (Sanitização Anti-Fúngica)',
+    amount: 320.00,
+    dueDate: `${_year}-${_month}-22`,
+    status: 'pending',
+    recipientName: 'Detergel Distribuidora Hospitalar',
+    paymentMethod: 'boleto',
+    notes: 'Essencial para prevenção de dermatite e micose no tatame.',
+    createdAt: `${_year}-${_month}-03T14:00:00.000Z`,
+    createdBy: { id: 'mgr_loyalty', name: 'Gestor Matriz', role: 'manager' }
+  },
+  {
+    id: 'exp_manutencao_ventiladores_12',
+    tenantId: 'acad_loyalty_jiujitsu',
+    category: 'servicos_extras',
+    categoryLabel: 'Serviços extras (água, luz, internet, limpeza, manutenção)',
+    description: 'Manutenção Preventiva de 4 Ventiladores de Coluna e Exaustor',
+    amount: 180.00,
+    dueDate: `${_year}-${_month}-25`,
+    status: 'pending',
+    recipientName: 'EletroRefrigeração Silva',
+    paymentMethod: 'cash',
+    notes: 'Troca de rolamentos e balanceamento das pás.',
+    createdAt: `${_year}-${_month}-05T15:00:00.000Z`,
+    createdBy: { id: 'mgr_loyalty', name: 'Gestor Matriz', role: 'manager' }
+  },
+
+  // 📝 4. DESPESAS AVULSAS (Com campo para descrição e valor)
+  {
+    id: 'exp_faixas_graduacao_13',
+    tenantId: 'acad_loyalty_jiujitsu',
+    category: 'despesas_avulsas',
+    categoryLabel: 'Despesas avulsas (com campo para descrição e valor)',
+    description: 'Lote de 25 Faixas Oficiais CBJJ e Esparadrapos de Grau',
+    amount: 550.00,
+    dueDate: `${_year}-${_month}-08`,
+    status: 'paid',
+    paidDate: `${_year}-${_month}-08`,
+    recipientName: 'Kimonos & Cia BJJ Store',
+    paymentMethod: 'pix',
+    pixKey: 'vendas@kimonosecia.com.br',
+    notes: 'Faixas brancas, azuis e roxas para cerimônia trimestral de graduação.',
+    createdAt: `${_year}-${_month}-02T16:00:00.000Z`,
+    createdBy: { id: 'mgr_loyalty', name: 'Gestor Matriz', role: 'manager' }
+  },
+  {
+    id: 'exp_primeiros_socorros_14',
+    tenantId: 'acad_loyalty_jiujitsu',
+    category: 'despesas_avulsas',
+    categoryLabel: 'Despesas avulsas (com campo para descrição e valor)',
+    description: 'Reposição Farmácia Tatame (Spray de Cloreto, Gelo Rápido, Bandagens)',
+    amount: 165.40,
+    dueDate: `${_year}-${_month}-13`,
+    status: 'paid',
+    paidDate: `${_year}-${_month}-13`,
+    recipientName: 'Farmácia Pague Menos Aldeota',
+    paymentMethod: 'credit_card',
+    notes: 'Estojo de emergência para treinos fortes de sparring.',
+    createdAt: `${_year}-${_month}-04T12:00:00.000Z`,
+    createdBy: { id: 'mgr_loyalty', name: 'Gestor Matriz', role: 'manager' }
+  },
+  {
+    id: 'exp_banner_campeonato_15',
+    tenantId: 'acad_loyalty_jiujitsu',
+    category: 'despesas_avulsas',
+    categoryLabel: 'Despesas avulsas (com campo para descrição e valor)',
+    description: 'Banner em Lona com Quadro de Honra e Regulamento dos Treinos',
+    amount: 210.00,
+    dueDate: `${_year}-${_month}-27`,
+    status: 'pending',
+    recipientName: 'Gráfica Rápida Express Fortaleza',
+    paymentMethod: 'pix',
+    pixKey: 'financeiro@graficaexpress.com.br',
+    notes: 'Impressão 3x1.5m em alta resolução para entrada da academia.',
+    createdAt: `${_year}-${_month}-06T14:30:00.000Z`,
+    createdBy: { id: 'mgr_loyalty', name: 'Gestor Matriz', role: 'manager' }
+  },
+
+  // Despesa do mês anterior para testar histórico comparativo
+  {
+    id: 'exp_aluguel_anterior_16',
+    tenantId: 'acad_loyalty_jiujitsu',
+    category: 'aluguel_fixos',
+    categoryLabel: 'Aluguel e custos fixos',
+    description: 'Aluguel do Galpão Principal (Mês Anterior)',
+    amount: 3800.00,
+    dueDate: `${_prevYear}-${_prevMonth}-10`,
+    status: 'paid',
+    paidDate: `${_prevYear}-${_prevMonth}-09`,
+    recipientName: 'Imobiliária Fortaleza Prime Imóveis',
+    paymentMethod: 'pix',
+    pixKey: 'financeiro@primeimoveis.com.br',
+    createdAt: `${_prevYear}-${_prevMonth}-01T08:00:00.000Z`,
+    createdBy: { id: 'mgr_loyalty', name: 'Gestor Matriz', role: 'manager' }
   }
 ];
 
