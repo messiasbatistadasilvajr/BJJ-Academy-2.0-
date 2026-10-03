@@ -187,5 +187,14 @@ service cloud.firestore {
     match /saas_subscriptions/{subId} {
       allow read, write: if isCeo() || (isAuthenticated() && request.auth.token.role == 'SUPER_ADMIN') || isValidId(subId);
     }
+
+    // =========================================================================
+    // 9. Pedidos Pro-Shop & Central de Separação de Estoque
+    // =========================================================================
+    match /pro_shop_orders/{orderId} {
+      allow read: if true;
+      allow create, update: if isValidId(orderId);
+      allow delete: if isAdmin();
+    }
   }
 }

@@ -1,7 +1,7 @@
 import { 
   StudentProfile, DependentStudent, ClassSession, Invoice, Announcement, 
   ChatMessage, PushNotification, RankingMember, TechniqueItem, 
-  GraduationEligibility, ShopProduct, ContractWaiver, TournamentItem, TeamMedal,
+  GraduationEligibility, ShopProduct, ProShopOrder, ContractWaiver, TournamentItem, TeamMedal,
   RegisteredAcademy, PlatformGeneralManager, PlatformAcademyPayment,
   RetentionAlertItem, SparringSession, BirthdayPerson, AcademyOperatingDay,
   PayableExpense
@@ -1039,10 +1039,43 @@ export const mockShopProducts: ShopProduct[] = [
     category: 'Kimonos',
     price: 489.90,
     image: '/bjj_media/bjj_gi_kimono.jpg',
-    sizes: ['A1', 'A2', 'A3', 'A4'],
+    sizes: [
+      'M000 (2 a 3 anos)',
+      'M00 (4 a 5 anos)',
+      'M0 (6 a 7 anos)',
+      'M1 (8 a 9 anos)',
+      'M2 (10 a 11 anos)',
+      'M3 (12 a 13 anos)',
+      'M4 (14 a 15 anos)',
+      'A0 (Adulto)',
+      'A1 (Adulto)',
+      'A2 (Adulto)',
+      'A3 (Adulto)',
+      'A4 (Adulto)'
+    ],
     colors: ['Branco Oficial', 'Azul Royal', 'Preto'],
     inStock: true,
-    description: 'Kimono trançado ouro 100% algodão pré-encolhido com bordados de alta definição e patch oficial no peito e costas. Autorizado para competições CBJJ e IBJJF.',
+    description: 'Kimono trançado ouro 100% algodão pré-encolhido com bordados de alta definição e patch oficial no peito e costas. Grade completa com tamanhos infantis (M000 a M4) e adultos (A0 a A4). Autorizado para competições CBJJ e IBJJF.',
+    officialAcademy: true
+  },
+  {
+    id: 'prod_kids_gi',
+    name: 'Kimono Oficial Kids BJJ Academy (Uniforme Infantil com Faixa Inclusa)',
+    category: 'Kimonos',
+    price: 329.90,
+    image: '/bjj_media/bjj_kid_student.jpg',
+    sizes: [
+      'M000 (2 a 3 anos)',
+      'M00 (4 a 5 anos)',
+      'M0 (6 a 7 anos)',
+      'M1 (8 a 9 anos)',
+      'M2 (10 a 11 anos)',
+      'M3 (12 a 13 anos)',
+      'M4 (14 a 15 anos)'
+    ],
+    colors: ['Branco Oficial', 'Azul Royal', 'Preto'],
+    inStock: true,
+    description: 'Uniforme oficial infantil ultraleve e macio para crianças. Costuras triplas reforçadas, calça com elástico confortável e cordão, patch bordado e faixa branca infantil inclusa. 100% de acordo com as normas CBJJ/IBJJF.',
     officialAcademy: true
   },
   {
@@ -1104,6 +1137,58 @@ export const mockShopProducts: ShopProduct[] = [
     inStock: true,
     description: 'Patch redondo grande para costas (24cm), patch peito (10cm) e patch perna (12cm). Termocolantes e bordados.',
     officialAcademy: true
+  }
+];
+
+export const mockInitialProShopOrders: ProShopOrder[] = [
+  {
+    id: 'ord_mock_1',
+    orderNumber: 'ORD-BJJ-928412',
+    productId: 'prod_1',
+    productName: 'Kimono Oficial BJJ Academy Gold Weave 450g',
+    category: 'Kimonos',
+    price: 489.90,
+    size: 'A2',
+    color: 'Branco Oficial',
+    paymentMethod: 'pix',
+    buyerRole: 'student',
+    studentId: 'stu_lucas_silva',
+    studentName: 'Lucas Silva',
+    studentBelt: 'Faixa Azul • 2 Graus',
+    studentRegistration: '#BJJ-2026-084',
+    studentPhone: '(11) 98765-4321',
+    responsibleName: 'O próprio aluno',
+    academyId: 'acad_loyalty_jiujitsu',
+    academyName: 'Loyalty Jiu-Jitsu • Matriz Oficial',
+    createdAt: 'Hoje às 10:15',
+    status: 'aguardando_separacao',
+    pickupLocation: 'Balcão da Recepção • Loyalty Jiu-Jitsu',
+    stockChecked: false
+  },
+  {
+    id: 'ord_mock_2',
+    orderNumber: 'ORD-BJJ-714209',
+    productId: 'prod_2',
+    productName: 'Rashguard Compressão No-Gi Black Armor',
+    category: 'No-Gi / Rashguard',
+    price: 189.00,
+    size: 'M',
+    color: 'Preto / Vermelho',
+    paymentMethod: 'mensalidade',
+    buyerRole: 'parent',
+    studentId: 'dep_enzo_01',
+    studentName: 'Enzo Mendes',
+    studentBelt: 'Faixa Cinza • 2 Graus',
+    studentRegistration: '#BJJ-KIDS-01',
+    responsibleName: 'Marcelo Mendes (Pai)',
+    academyId: 'acad_loyalty_jiujitsu',
+    academyName: 'Loyalty Jiu-Jitsu • Matriz Oficial',
+    createdAt: 'Hoje às 09:30',
+    status: 'separado_estoque',
+    pickupLocation: 'Balcão da Recepção • Loyalty Jiu-Jitsu',
+    stockChecked: true,
+    separatedAt: 'Hoje às 09:45',
+    separatedBy: 'Recepção / Prof. Messias'
   }
 ];
 

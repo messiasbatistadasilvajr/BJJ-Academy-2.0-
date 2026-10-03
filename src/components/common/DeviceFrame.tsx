@@ -4,7 +4,7 @@ import {
   RotateCcw, Sparkles, Shield, User, Users, GraduationCap, Briefcase, Crown,
   Timer, BookOpen, Tablet, Award, ShoppingBag, FileText, Trophy, Volume2, DollarSign, Building2,
   Database, Cloud, Key, ChevronDown, Menu, X, Check, ArrowRight, Maximize2, Minimize2, SlidersHorizontal, Code,
-  TrendingDown, ShieldCheck
+  TrendingDown, ShieldCheck, Package
 } from 'lucide-react';
 import { UserRole, isCeoRole, isSuperAdminOrCeoRole, RegisteredAcademy, canAccessExpenseManagement, canAccessSuperAdmin } from '../../types';
 import { NativeStatusBar } from './NativeStatusBar';
@@ -28,6 +28,7 @@ interface DeviceFrameProps {
   onOpenKiosk?: () => void;
   onOpenGraduation?: () => void;
   onOpenProShop?: () => void;
+  onOpenProShopFulfillment?: () => void;
   onOpenContract?: () => void;
   onOpenTournaments?: () => void;
   onOpenVoiceSettings?: () => void;
@@ -68,6 +69,7 @@ export const DeviceFrame: React.FC<DeviceFrameProps> = ({
   onOpenKiosk,
   onOpenGraduation,
   onOpenProShop,
+  onOpenProShopFulfillment,
   onOpenContract,
   onOpenTournaments,
   onOpenVoiceSettings,
@@ -422,6 +424,20 @@ export const DeviceFrame: React.FC<DeviceFrameProps> = ({
                   <span className="text-xs font-bold text-white">Pro-Shop Kimonos</span>
                   <span className="text-[10px] text-slate-400">Loja oficial BJJ</span>
                 </button>
+
+                {(activeRole === 'manager' || activeRole === 'ceo' || activeRole === 'teacher' || activeRole === 'general_manager') && onOpenProShopFulfillment && (
+                  <button
+                    onClick={() => {
+                      setIsMobileModulesOpen(false);
+                      onOpenProShopFulfillment();
+                    }}
+                    className="p-3 rounded-2xl bg-purple-950/40 border border-purple-500/50 hover:border-purple-400 flex flex-col items-start gap-1.5 transition text-left"
+                  >
+                    <Package className="w-5 h-5 text-purple-400" />
+                    <span className="text-xs font-bold text-white">Separação Estoque</span>
+                    <span className="text-[10px] text-slate-400">Recepção & pedidos</span>
+                  </button>
+                )}
 
                 <button
                   onClick={() => {
@@ -1070,6 +1086,17 @@ export const DeviceFrame: React.FC<DeviceFrameProps> = ({
             <ShoppingBag className="w-3.5 h-3.5 text-purple-400" />
             <span>Pro-Shop Kimonos</span>
           </button>
+
+          {(activeRole === 'manager' || activeRole === 'ceo' || activeRole === 'teacher' || activeRole === 'general_manager') && onOpenProShopFulfillment && (
+            <button
+              onClick={onOpenProShopFulfillment}
+              className="flex items-center gap-1 px-2.5 py-1 rounded-lg bg-purple-950/70 hover:bg-purple-900 text-purple-200 border border-purple-500/50 font-semibold text-[11px] whitespace-nowrap transition-colors"
+              title="Central de Separação de Pedidos e Estoque Físico da Pro-Shop"
+            >
+              <Package className="w-3.5 h-3.5 text-purple-400" />
+              <span>Separação Estoque</span>
+            </button>
+          )}
 
           <button
             onClick={onOpenTournaments}

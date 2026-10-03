@@ -741,6 +741,45 @@ export interface ShopProduct {
   officialAcademy: boolean;
 }
 
+export type ProShopOrderStatus = 
+  | 'aguardando_separacao' 
+  | 'separado_estoque' 
+  | 'entregue' 
+  | 'sem_estoque' 
+  | 'reservado' 
+  | 'pago';
+
+export interface ProShopOrder {
+  id: string;
+  orderNumber: string;
+  productId: string;
+  productName: string;
+  category: string;
+  price: number;
+  size?: string;
+  color?: string;
+  paymentMethod: 'pix' | 'mensalidade';
+  // Identificação do Comprador e Beneficiário
+  buyerRole: string;
+  studentId: string;
+  studentName: string;
+  responsibleName?: string;
+  studentBelt?: string;
+  studentRegistration?: string;
+  studentPhone?: string;
+  academyId?: string;
+  academyName?: string;
+  createdAt: string;
+  status: ProShopOrderStatus;
+  pickupLocation: string;
+  // Gestão Operacional de Estoque e Separação na Recepção
+  stockChecked?: boolean;
+  separatedAt?: string;
+  separatedBy?: string;
+  deliveredAt?: string;
+  stockNote?: string;
+}
+
 // 5. Digital Contract & Medical Waiver Types
 export interface ContractWaiver {
   id: string;

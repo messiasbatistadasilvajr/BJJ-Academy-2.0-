@@ -18,6 +18,7 @@ import { TechniquesModal } from './components/common/TechniquesModal';
 import { KioskTurnstileModal } from './components/common/KioskTurnstileModal';
 import { GraduationExamModal } from './components/common/GraduationExamModal';
 import { ProShopModal } from './components/common/ProShopModal';
+import { ProShopFulfillmentModal } from './components/common/ProShopFulfillmentModal';
 import { DigitalContractModal } from './components/common/DigitalContractModal';
 import { TournamentsModal } from './components/common/TournamentsModal';
 import { AcademyVoiceSettingsModal } from './components/common/AcademyVoiceSettingsModal';
@@ -180,6 +181,7 @@ export default function App() {
   const [isKioskOpen, setIsKioskOpen] = useState(false);
   const [isGraduationOpen, setIsGraduationOpen] = useState(false);
   const [isProShopOpen, setIsProShopOpen] = useState(false);
+  const [isProShopFulfillmentOpen, setIsProShopFulfillmentOpen] = useState(false);
   const [isContractOpen, setIsContractOpen] = useState(false);
   const [isTournamentsOpen, setIsTournamentsOpen] = useState(false);
   const [isVoiceSettingsOpen, setIsVoiceSettingsOpen] = useState(false);
@@ -848,6 +850,7 @@ export default function App() {
       onOpenStudentEnrollment={handleOpenStudentEnrollment}
       onOpenExpenseManagement={() => setActiveRole('expense_management')}
       onOpenSuperAdminSaas={() => setActiveRole('saas_superadmin')}
+      onOpenProShopFulfillment={() => setIsProShopFulfillmentOpen(true)}
     >
       {/* Offline Mode Banner */}
       {!isOnline && (
@@ -1021,6 +1024,7 @@ export default function App() {
           onOpenCapacitorDocs={() => setIsCapacitorDocsOpen(true)}
           onOpenKiosk={() => setIsKioskOpen(true)}
           onOpenProShop={() => setIsProShopOpen(true)}
+          onOpenProShopFulfillment={() => setIsProShopFulfillmentOpen(true)}
           onOpenGraduation={() => setIsGraduationOpen(true)}
           onOpenContract={() => setIsContractOpen(true)}
           onOpenTournaments={() => setIsTournamentsOpen(true)}
@@ -1208,11 +1212,17 @@ export default function App() {
       <ProShopModal
         isOpen={isProShopOpen}
         onClose={() => setIsProShopOpen(false)}
-        onOpenPix={(amount, title) => {
+        currentStudent={student}
+        activeRole={activeRole}
+        dependents={dependents}
+        allStudents={studentsList}
+        academyName={activeAcademy.shortName || activeAcademy.name}
+        onOpenFulfillment={() => setIsProShopFulfillmentOpen(true)}
+        onOpenPix={(amount, title, buyerName) => {
           setSelectedPixInvoice({
             id: 'pix_shop_' + Date.now(),
             studentId: student.id,
-            studentName: student.name,
+            studentName: buyerName || (activeRole === 'parent' ? dependents[0]?.name || student.name : student.name),
             title,
             amount,
             dueDate: 'Hoje',
@@ -1221,6 +1231,47 @@ export default function App() {
             academyId: activeAcademy.id,
             academyName: activeAcademy.shortName || activeAcademy.name,
           });
+        }}
+        onRegisterPurchase={(order) => {
+          triggerPushNotification(
+            '📦 NOVO PEDIDO PRO-SHOP PARA SEPARAR!',
+            `Aluno: ${order.studentName} comprou ${order.productName} (Tam: ${order.size || 'Único'}). Verifique o estoque físico e separe na recepção!`,
+            'announcement'
+          );
+          if (order.paymentMethod === 'mensalidade') {
+            const newInvoice: Invoice = {
+              id: 'inv_shop_' + Date.now(),
+              title: `Pro-Shop: ${order.productName} (${order.size || 'Único'})`,
+              amount: order.price,
+              dueDate: 'Próxima Mensalidade',
+              status: 'pending',
+              invoiceNumber: order.orderNumber,
+              academyId: activeAcademy.id,
+              academyName: activeAcademy.shortName || activeAcademy.name,
+              studentId: order.studentId,
+              studentName: order.studentName
+            };
+            setInvoices((prev) => {
+              const updated = [newInvoice, ...prev];
+              safeLocalStorageSet('bjj_invoices', updated);
+              return updated;
+            });
+          }
+        }}
+      />
+
+      <ProShopFulfillmentModal
+        isOpen={isProShopFulfillmentOpen}
+        onClose={() => setIsProShopFulfillmentOpen(false)}
+        academyName={activeAcademy.shortName || activeAcademy.name}
+        academyId={activeAcademy.id}
+        responsibleStaffName={
+          activeInstructor ? `${activeInstructor.name} (${activeInstructor.role})` :
+          isCEO ? `${generalManager.name} (CEO)` :
+          'Recepção / Prof. Messias'
+        }
+        onSendStudentPush={(title, body) => {
+          triggerPushNotification(title, body, 'announcement');
         }}
       />
 

@@ -8,7 +8,8 @@ import {
   Tablet, ShoppingBag, Award, FileText, Trophy, Volume2,
   Lock, Unlock, Calculator, Building2, ShieldAlert, Copy, Check,
   QrCode, CheckCheck, Edit3, Sparkles, Download, AlertCircle, MessageCircle, Cake,
-  Database, Cloud, Crown, Clock, Swords, Star, Tv, TrendingDown
+  Database, Cloud, Crown, Clock, Swords, Star, Tv, TrendingDown,
+  Package
 } from 'lucide-react';
 import { 
   ClassSession, Invoice, Announcement, PushNotification, 
@@ -26,6 +27,7 @@ import { safeLocalStorageGet, safeLocalStorageSet } from '../../utils/safeStorag
 import { StudentEnrollmentButton } from '../common/StudentEnrollmentButton';
 import { saveCRMLeadToFirestore, subscribeToCRMLeads } from '../../firebase/firestoreService';
 import { ExpenseManagementView } from './ExpenseManagementView';
+import { ProShopOrderService } from '../../services/proShopOrderService';
 
 interface ManagerViewProps {
   classes: ClassSession[];
@@ -73,6 +75,7 @@ interface ManagerViewProps {
   onUpdateExpense?: (expense: PayableExpense) => void;
   onDeleteExpense?: (expenseId: string) => void;
   onOpenExpenseManagement?: () => void;
+  onOpenProShopFulfillment?: () => void;
 }
 
 export const ManagerView: React.FC<ManagerViewProps> = ({
@@ -85,6 +88,7 @@ export const ManagerView: React.FC<ManagerViewProps> = ({
   onOpenCapacitorDocs,
   onOpenKiosk,
   onOpenProShop,
+  onOpenProShopFulfillment,
   onOpenGraduation,
   onOpenContract,
   onOpenTournaments,
@@ -127,6 +131,19 @@ export const ManagerView: React.FC<ManagerViewProps> = ({
   const activeRegisteredAcademy = useMemo(() => {
     return academies.find(a => a.id === activeAcademyId) || academies[0];
   }, [academies, activeAcademyId]);
+
+  // Pro-Shop Fulfillment Orders State (Aguardando Separação no Estoque)
+  const [pendingProShopCount, setPendingProShopCount] = useState<number>(() => {
+    return ProShopOrderService.getPendingSeparationCount(activeAcademyId);
+  });
+
+  useEffect(() => {
+    setPendingProShopCount(ProShopOrderService.getPendingSeparationCount(activeAcademyId));
+    const unsub = ProShopOrderService.subscribe(() => {
+      setPendingProShopCount(ProShopOrderService.getPendingSeparationCount(activeAcademyId));
+    });
+    return () => unsub();
+  }, [activeAcademyId]);
   
   // CRM Kanban Leads state
   const [leads, setLeads] = useState<CRMLead[]>(() => {
@@ -539,6 +556,25 @@ export const ManagerView: React.FC<ManagerViewProps> = ({
               </button>
             )}
 
+            {/* 📦 Separação de Pedidos da Pro-Shop Quick Indicator Button */}
+            <button
+              onClick={onOpenProShopFulfillment || onOpenProShop}
+              className={`px-2.5 py-1.5 rounded-xl border text-[11px] font-bold flex items-center gap-1.5 transition shadow-sm shrink-0 ${
+                pendingProShopCount > 0
+                  ? 'bg-purple-950/70 hover:bg-purple-900/90 border-purple-500/70 text-purple-200 ring-1 ring-purple-500/40'
+                  : 'bg-slate-800 hover:bg-slate-700 border-slate-700 text-slate-300'
+              }`}
+              title="Central de Separação de Pedidos e Estoque Físico da Pro-Shop"
+            >
+              <Package className={`w-3.5 h-3.5 ${pendingProShopCount > 0 ? 'text-purple-400' : 'text-slate-400'}`} />
+              <span>Separação Estoque</span>
+              {pendingProShopCount > 0 && (
+                <span className="px-1.5 py-0.2 rounded-full text-[9px] bg-amber-400 text-slate-950 font-black animate-pulse">
+                  {pendingProShopCount} para separar
+                </span>
+              )}
+            </button>
+
             {/* Smart Due Alerts Indicator Button */}
             <button
               onClick={() => setIsDueAlertsOpen(true)}
@@ -636,6 +672,45 @@ export const ManagerView: React.FC<ManagerViewProps> = ({
         {/* 1. DASHBOARD */}
         {activeTab === 'dashboard' && (
           <div className="space-y-4">
+            {/* 📦 Banner Operacional: Pedidos Pro-Shop Aguardando Separação no Estoque */}
+            {pendingProShopCount > 0 && (
+              <div 
+                onClick={onOpenProShopFulfillment || onOpenProShop}
+                className="p-3.5 rounded-2xl bg-gradient-to-r from-purple-950/80 via-slate-900 to-slate-900 border border-purple-500/60 hover:border-purple-400/90 cursor-pointer flex flex-col sm:flex-row sm:items-center justify-between gap-3 transition group shadow-lg"
+              >
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-2xl bg-purple-500/20 text-purple-300 border border-purple-500/40 flex items-center justify-center shrink-0 group-hover:scale-105 transition">
+                    <Package className="w-5 h-5 text-purple-400 animate-bounce" />
+                  </div>
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs font-black text-white group-hover:text-purple-300 transition">
+                        📦 {pendingProShopCount} Pedido{pendingProShopCount > 1 ? 's' : ''} Pro-Shop para Separar no Estoque!
+                      </span>
+                      <span className="px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-amber-400 text-slate-950">
+                        RECEPÇÃO & TATAME
+                      </span>
+                    </div>
+                    <p className="text-[11px] text-slate-300 leading-tight mt-0.5">
+                      Alunos compraram kimonos/acessórios. Verifique os tamanhos no depósito e deixe os itens separados no balcão.
+                    </p>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    if (onOpenProShopFulfillment) onOpenProShopFulfillment();
+                    else if (onOpenProShop) onOpenProShop();
+                  }}
+                  className="px-3.5 py-1.5 rounded-xl bg-purple-600 hover:bg-purple-500 text-white text-xs font-extrabold flex items-center justify-center gap-1 shrink-0 shadow-md transition"
+                >
+                  <span>Separar Agora</span>
+                  <ArrowUpRight className="w-3.5 h-3.5" />
+                </button>
+              </div>
+            )}
+
             {/* 🚨 Radar Anti-Evasão Warning Banner */}
             {onOpenRetentionRadar && (
               <div 
@@ -860,13 +935,42 @@ export const ManagerView: React.FC<ManagerViewProps> = ({
 
                 <button
                   onClick={onOpenProShop}
-                  className="p-3 rounded-2xl bg-slate-950 border border-slate-800 hover:border-purple-500/50 flex flex-col items-start gap-1 text-left transition group"
+                  className="p-3 rounded-2xl bg-slate-950 border border-slate-800 hover:border-purple-500/50 flex flex-col items-start gap-1 text-left transition group relative overflow-hidden"
                 >
-                  <div className="w-8 h-8 rounded-xl bg-purple-500/10 text-purple-400 flex items-center justify-center group-hover:scale-110 transition-transform">
-                    <ShoppingBag className="w-4 h-4" />
+                  <div className="flex items-center justify-between w-full">
+                    <div className="w-8 h-8 rounded-xl bg-purple-500/10 text-purple-400 flex items-center justify-center group-hover:scale-110 transition-transform">
+                      <ShoppingBag className="w-4 h-4" />
+                    </div>
+                    {pendingProShopCount > 0 && (
+                      <span className="text-[10px] font-black px-1.5 py-0.2 rounded-full bg-amber-400 text-slate-950 animate-pulse">
+                        {pendingProShopCount} novos
+                      </span>
+                    )}
                   </div>
                   <span className="text-xs font-bold text-white mt-1">Pro-Shop Oficial</span>
                   <span className="text-[10px] text-slate-400">Kimonos, rashguards & vendas</span>
+                </button>
+
+                <button
+                  onClick={onOpenProShopFulfillment || onOpenProShop}
+                  className={`p-3 rounded-2xl bg-slate-950 border flex flex-col items-start gap-1 text-left transition group relative overflow-hidden ${
+                    pendingProShopCount > 0
+                      ? 'border-purple-500/70 hover:border-purple-400 shadow-md shadow-purple-950/40 ring-1 ring-purple-500/40'
+                      : 'border-slate-800 hover:border-purple-500/50'
+                  }`}
+                >
+                  <div className="flex items-center justify-between w-full">
+                    <div className="w-8 h-8 rounded-xl bg-purple-500/20 text-purple-300 flex items-center justify-center group-hover:scale-110 transition-transform">
+                      <Package className="w-4 h-4" />
+                    </div>
+                    {pendingProShopCount > 0 && (
+                      <span className="text-[10px] font-extrabold px-1.5 py-0.2 rounded-full bg-purple-500 text-white">
+                        Separar
+                      </span>
+                    )}
+                  </div>
+                  <span className="text-xs font-bold text-white mt-1">Separação no Estoque</span>
+                  <span className="text-[10px] text-slate-400">Balcão da recepção & entrega</span>
                 </button>
 
                 <button
