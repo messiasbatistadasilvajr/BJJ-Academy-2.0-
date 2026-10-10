@@ -43,6 +43,14 @@ O **BJJ Academy Mobile** é uma aplicação completa com arquitetura híbrida (F
 ### 📱 6. Totem Kiosk de Tatame (Tablet)
 * **Terminal de Autoatendimento**: Interface em tela cheia para posicionamento na recepção ou entrada do tatame, permitindo check-in instantâneo via leitura de QR Code da carteirinha ou código do aluno.
 
+### 🛍️ 7. Pro-Shop Oficial Integrado (Adulto & Kids) + Central de Separação
+* **Vitrine de Kimonos Oficiais (Adulto & Infantil)**: Catálogo completo com grade de tamanhos adultos (`A0`, `A1`, `A2`, `A3`, `A4`) e grade completa de **Kimonos Kids** (`M00`, `M0`, `M1`, `M2`, `M3`, `M4`), além de Rashguards No-Gi, Faixas Oficiais e acessórios.
+* **Checkout Integrado e Central de Separação (`pro_shop_orders`)**: Pagamento via PIX ou lançamento direto na fatura do aluno, integrado com o painel administrativo de separação de estoque e entrega na recepção.
+
+### 💸 8. Gestão de Despesas, Custos Operacionais e Assinaturas SaaS
+* **Controle de Contas a Pagar (`payable_expenses`)**: Lançamento de despesas fixas e variáveis da academia (aluguel, tatame, energia, comissão de professores) com cálculo automático de lucro líquido real.
+* **Motor de Assinaturas SaaS & Bloqueio Automático (`saas_subscriptions`)**: Painel exclusivo Super Admin/CEO com planos Starter, Pro e Enterprise, simulador de receita recorrente (MRR/ARR) e bloqueio automático por inadimplência.
+
 ---
 
 ## ⚙️ Arquitetura Técnica e Módulos Implementados
@@ -235,6 +243,9 @@ O **BJJ Academy Mobile** é uma aplicação completa com arquitetura híbrida (F
 | `classes` | Grade horária de aulas, professores responsáveis e controle de presenças. |
 | `invoices` | Faturas com recálculo automático de multas/juros e liquidação instantânea via webhook. |
 | `daily_cash_summaries` | Histórico auditável de fechamentos de caixa diários (Total Bruto, Digital e Balcão). |
+| `payable_expenses` | Gestão de contas a pagar e custos operacionais da academia sincronizados em nuvem. |
+| `pro_shop_orders` | Pedidos da loja Pro-Shop (Kimonos Adulto e Kids `M00-M4` / `A0-A4`) e status de entrega. |
+| `saas_subscriptions` | Controle sigiloso de assinaturas SaaS e planos das academias (restrito ao CEO/Super Admin). |
 | `sparringSessions` | Registros do diário de treino e rolas de cada praticante. |
 | `birthdays` | Base de aniversariantes para ações de retenção e engajamento comunitário. |
 | **Firebase Storage** | Bucket com isolamento para `/avatars`, `/certificates` oficiais e `/receipts`. |
@@ -242,21 +253,35 @@ O **BJJ Academy Mobile** é uma aplicação completa com arquitetura híbrida (F
 
 ---
 
-## 📱 Compilação Mobile Android (Capacitor 8 & Google Play Store)
+## 📱 Compilação Mobile Android (Capacitor 8, Ícones Nativos & Google Play Store)
 
-O projeto está totalmente configurado com **Capacitor 8**, plugins nativos (Status Bar escura, Splash Screen sem tela branca, resposta do botão Voltar do Android, Feedback Háptico e ajuste de teclado virtual) e o diretório nativo `android/` devidamente sincronizado.
+O projeto está 100% configurado e pronto para publicação na **Google Play Store** e instalação direta como **PWA Mobile**:
+* **Credenciais Firebase Android (`android/app/google-services.json`)**: Vinculado nativamente ao projeto Firebase para suporte a Push Notifications (FCM) e serviços Google.
+* **Gerador Automático de Ícones e Splash Screens Nativos (`scripts/generate-icons.js`)**: Gera automaticamente todos os ícones adaptativos do Android (`mipmap-mdpi` até `mipmap-xxxhdpi`, incluindo `ic_launcher.png`, `ic_launcher_round.png` e `ic_launcher_foreground.png`) e telas de abertura escuras (`#090d16`) em todas as orientações (`drawable-port-*` e `drawable-land-*`), além dos ícones PWA (`192x192`, `512x512`, `maskable` e `apple-touch-icon`).
+* **Assinatura Digital Automática (`android/app/build.gradle`)**: Configurado para assinar automaticamente o pacote `.aab` e `.apk` em modo Release usando `key.properties` e `release-key.jks`.
 
-### 1. Sincronizar alterações da Web com o Android:
-```bash
-npm run cap:build
-```
+### Opção A: Gerar `.AAB` e `.APK` Assinados na Nuvem (100% pelo Celular via GitHub Actions)
+O projeto conta com o robô de compilação em nuvem `.github/workflows/build-android.yml`:
+1. Exporte/sincronize o projeto com seu repositório no **GitHub**.
+2. Acesse a aba **Actions** do repositório pelo navegador do celular ou computador e execute o workflow **"Gerar App Android (.AAB + .APK) para Play Store"**.
+3. O servidor da nuvem instalará o Java JDK 21 e Android SDK, gerará os ícones oficiais, criará/assinará a chave `release-key.jks` e disponibilizará para download imediato:
+   - `BJJ-Academy-PlayStore-AAB` (`app-release.aab` pronto para enviar ao Google Play Console)
+   - `BJJ-Academy-Instalador-APK` (`app-release.apk` para instalação direta)
+   - `BJJ-Academy-Chave-Seguranca-Keystore` (Backup da chave `release-key.jks`)
 
-### 2. Gerar o arquivo `.aab` de produção (Release Bundle):
-```bash
-cd android
-./gradlew bundleRelease
-```
-*(No Windows, execute `.\gradlew.bat bundleRelease`)*
+### Opção B: Compilação Local via Terminal / Android Studio
+1. **Gerar ícones e sincronizar alterações da Web com o Android:**
+   ```bash
+   node scripts/generate-icons.js
+   npm run cap:build
+   ```
+
+2. **Gerar o arquivo `.aab` de produção (Release Bundle):**
+   ```bash
+   cd android
+   ./gradlew bundleRelease
+   ```
+   *(No Windows, execute `.\gradlew.bat bundleRelease`)*
 
 O pacote assinado pronto para upload no Google Play Console será gerado em:
 `android/app/build/outputs/bundle/release/app-release.aab`
