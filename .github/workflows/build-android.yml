@@ -1,0 +1,86 @@
+name: Gerar App Android (.AAB + .APK) para Play Store
+
+on:
+  push:
+    branches: [ main, master ]
+  workflow_dispatch:
+
+jobs:
+  build-android:
+    name: Compilar e Assinar App BJJ Academy 2.0
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: 1. Baixar código do projeto
+        uses: actions/checkout@v4
+
+      - name: 2. Configurar Node.js 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+
+      - name: 3. Configurar Java JDK 21 (Requisito Android Gradle)
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '21'
+
+      - name: 4. Instalar dependências e gerar ícones oficiais
+        run: |
+          npm install
+          node scripts/generate-icons.js
+
+      - name: 5. Compilar Web App e Sincronizar Capacitor Android
+        run: |
+          npm run build
+          npx cap sync android
+
+      - name: 6. Garantir Chave de Assinatura (Keystore) Segura
+        working-directory: ./android
+        run: |
+          if [ ! -f "release-key.jks" ]; then
+            echo "Gerando chave de assinatura de produção..."
+            keytool -genkeypair -v \
+              -keystore release-key.jks \
+              -alias bjjacademy \
+              -keyalg RSA \
+              -keysize 2048 \
+              -validity 10000 \
+              -storepass "${{ secrets.RELEASE_STORE_PASSWORD || 'BjjAcademy2026Secure!' }}" \
+              -keypass "${{ secrets.RELEASE_KEY_PASSWORD || 'BjjAcademy2026Secure!' }}" \
+              -dname "CN=BJJ Academy Official, OU=Mobile, O=BJJ Academy, L=Sao Paulo, ST=SP, C=BR"
+          fi
+          cat <<EOF > key.properties
+          RELEASE_STORE_FILE=../release-key.jks
+          RELEASE_STORE_PASSWORD=${{ secrets.RELEASE_STORE_PASSWORD || 'BjjAcademy2026Secure!' }}
+          RELEASE_KEY_ALIAS=bjjacademy
+          RELEASE_KEY_PASSWORD=${{ secrets.RELEASE_KEY_PASSWORD || 'BjjAcademy2026Secure!' }}
+          EOF
+
+      - name: 7. Gerar Pacote Oficial da Google Play Store (.AAB Assinado) e .APK
+        working-directory: ./android
+        run: |
+          chmod +x gradlew
+          ./gradlew bundleRelease assembleRelease
+
+      - name: 8. Disponibilizar Arquivo .AAB (Para enviar à Play Store pelo Celular)
+        uses: actions/upload-artifact@v4
+        with:
+          name: BJJ-Academy-PlayStore-AAB
+          path: android/app/build/outputs/bundle/release/app-release.aab
+          if-no-files-found: error
+
+      - name: 9. Disponibilizar Arquivo .APK (Para instalação direta de teste)
+        uses: actions/upload-artifact@v4
+        with:
+          name: BJJ-Academy-Instalador-APK
+          path: android/app/build/outputs/apk/release/app-release.apk
+          if-no-files-found: warn
+
+      - name: 10. Disponibilizar Backup da Chave de Segurança (Keystore .jks)
+        uses: actions/upload-artifact@v4
+        with:
+          name: BJJ-Academy-Chave-Seguranca-Keystore
+          path: android/release-key.jks
+          if-no-files-found: warn

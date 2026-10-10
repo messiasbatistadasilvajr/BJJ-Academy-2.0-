@@ -43,7 +43,98 @@ async function generateIcons() {
     .toFile(path.resolve('public', 'apple-touch-icon.png'));
   console.log('Created apple-touch-icon.png');
 
-  console.log('All PWA icons generated successfully!');
+  // Generate Native Android Mipmap Icons
+  const androidDensities = [
+    { dir: 'mipmap-mdpi', launcher: 48, foreground: 108 },
+    { dir: 'mipmap-hdpi', launcher: 72, foreground: 162 },
+    { dir: 'mipmap-xhdpi', launcher: 96, foreground: 216 },
+    { dir: 'mipmap-xxhdpi', launcher: 144, foreground: 324 },
+    { dir: 'mipmap-xxxhdpi', launcher: 192, foreground: 432 },
+  ];
+
+  const androidResDir = path.resolve('android', 'app', 'src', 'main', 'res');
+  if (fs.existsSync(androidResDir)) {
+    console.log('Generating Native Android Mipmap icons...');
+    for (const d of androidDensities) {
+      const targetDir = path.join(androidResDir, d.dir);
+      if (!fs.existsSync(targetDir)) continue;
+
+      // ic_launcher.png
+      await sharp(svgBuffer)
+        .resize(d.launcher, d.launcher)
+        .png()
+        .toFile(path.join(targetDir, 'ic_launcher.png'));
+
+      // ic_launcher_round.png (circular mask)
+      const radius = d.launcher / 2;
+      const circleSvg = Buffer.from(
+        `<svg width="${d.launcher}" height="${d.launcher}"><circle cx="${radius}" cy="${radius}" r="${radius}" fill="#fff"/></svg>`
+      );
+      await sharp(svgBuffer)
+        .resize(d.launcher, d.launcher)
+        .composite([{ input: circleSvg, blend: 'dest-in' }])
+        .png()
+        .toFile(path.join(targetDir, 'ic_launcher_round.png'));
+
+      // ic_launcher_foreground.png (centered in 108dp safe zone)
+      const innerSize = Math.round(d.foreground * 0.66);
+      const pad = Math.floor((d.foreground - innerSize) / 2);
+      const padExtra = d.foreground - innerSize - pad * 2;
+      await sharp(svgBuffer)
+        .resize(innerSize, innerSize)
+        .extend({
+          top: pad,
+          bottom: pad + padExtra,
+          left: pad,
+          right: pad + padExtra,
+          background: { r: 9, g: 13, b: 22, alpha: 0 }
+        })
+        .png()
+        .toFile(path.join(targetDir, 'ic_launcher_foreground.png'));
+    }
+    console.log('All Native Android Mipmap icons generated successfully!');
+
+    // Generate Native Android Splash Screens
+    console.log('Generating Native Android Splash screens...');
+    const splashTargets = [
+      { dir: 'drawable', w: 480, h: 800, logo: 192 },
+      { dir: 'drawable-port-mdpi', w: 320, h: 480, logo: 128 },
+      { dir: 'drawable-port-hdpi', w: 480, h: 800, logo: 192 },
+      { dir: 'drawable-port-xhdpi', w: 720, h: 1280, logo: 256 },
+      { dir: 'drawable-port-xxhdpi', w: 960, h: 1600, logo: 320 },
+      { dir: 'drawable-port-xxxhdpi', w: 1280, h: 1920, logo: 384 },
+      { dir: 'drawable-land-mdpi', w: 480, h: 320, logo: 128 },
+      { dir: 'drawable-land-hdpi', w: 800, h: 480, logo: 192 },
+      { dir: 'drawable-land-xhdpi', w: 1280, h: 720, logo: 256 },
+      { dir: 'drawable-land-xxhdpi', w: 1600, h: 960, logo: 320 },
+      { dir: 'drawable-land-xxxhdpi', w: 1920, h: 1280, logo: 384 },
+    ];
+
+    for (const s of splashTargets) {
+      const targetDir = path.join(androidResDir, s.dir);
+      if (!fs.existsSync(targetDir)) continue;
+
+      const logoBuf = await sharp(svgBuffer)
+        .resize(s.logo, s.logo)
+        .png()
+        .toBuffer();
+
+      await sharp({
+        create: {
+          width: s.w,
+          height: s.h,
+          channels: 4,
+          background: { r: 2, g: 6, b: 23, alpha: 1 } // #020617
+        }
+      })
+        .composite([{ input: logoBuf, gravity: 'center' }])
+        .png()
+        .toFile(path.join(targetDir, 'splash.png'));
+    }
+    console.log('All Native Android Splash screens generated successfully!');
+  }
+
+  console.log('All PWA and Android icons generated successfully!');
 }
 
 generateIcons().catch((err) => {
