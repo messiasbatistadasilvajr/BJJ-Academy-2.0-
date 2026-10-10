@@ -55,13 +55,6 @@ export const CEOProfileModal: React.FC<CEOProfileModalProps> = ({
     });
   }, [generalManager]);
 
-  // Reproduz a voz do CEO ao abrir a tela oficial do CEO Messias
-  useEffect(() => {
-    if (isOpen) {
-      academyVoiceEngine.speakCEOWelcome();
-    }
-  }, [isOpen]);
-
   if (!isOpen) return null;
 
   const totalActiveAcademies = academies.filter(a => a.status !== 'suspended').length || 5;

@@ -233,80 +233,17 @@ class AcademyVoiceNotificationEngine {
     return 'Oss! Seja bem-vindo ao BJJACADEMY.';
   }
 
-  // Reproduz a locução personalizada exclusiva para a página / perfil do CEO Messias
+  // Locução de boas-vindas do CEO desativada (mantendo apenas avisos de mensalidades e compras)
   public async speakCEOWelcome(): Promise<void> {
-    const mensagem = 'ola Sr. Messias seja bem vindo ao BJJACADEMY.';
-    await this.playChime('chime_bright');
-
-    if (typeof window === 'undefined' || !('speechSynthesis' in window)) {
-      console.info('[VoiceNotification] SpeechSynthesis indisponível:', mensagem);
-      return;
-    }
-
-    try {
-      window.speechSynthesis.cancel();
-      const utterance = new SpeechSynthesisUtterance(mensagem);
-      utterance.lang = 'pt-BR';
-
-      const voice = this.getPreferredVoice();
-      if (voice) {
-        utterance.voice = voice;
-      }
-
-      utterance.pitch = 1.05;
-      utterance.rate = 1.0;
-
-      utterance.onstart = () => this.setSpeaking(true);
-      utterance.onend = () => this.setSpeaking(false);
-      utterance.onerror = () => this.setSpeaking(false);
-
-      window.speechSynthesis.speak(utterance);
-    } catch (err) {
-      console.warn('[VoiceNotification] Erro ao sintetizar boas-vindas do CEO:', err);
-      this.setSpeaking(false);
-    }
+    return;
   }
 
-  // Reproduz a locução oficial de boas-vindas com o som jingle
+  // Locução de boas-vindas geral desativada (mantendo apenas avisos de mensalidades e compras)
   public async speakWelcomeAnnouncement(
-    tipoDeAcesso: 'SISTEMA_GERAL' | 'PAGINA_ACADEMIA' | 'PAGINA_CEO',
-    academy?: RegisteredAcademy | null
+    _tipoDeAcesso: 'SISTEMA_GERAL' | 'PAGINA_ACADEMIA' | 'PAGINA_CEO',
+    _academy?: RegisteredAcademy | null
   ): Promise<void> {
-    const nomeAcademia = academy ? (academy.name || academy.shortName) : null;
-    const mensagem = this.definirMensagemDeBoasVindas(tipoDeAcesso, nomeAcademia);
-
-    // Toca o chime correspondente (ou padrão mercado livre / tatame bell)
-    const chime = tipoDeAcesso === 'PAGINA_CEO' ? 'chime_bright' : (academy?.chimeType || 'mercado_livre');
-    await this.playChime(chime);
-
-    if (typeof window === 'undefined' || !('speechSynthesis' in window)) {
-      console.info('[VoiceNotification] SpeechSynthesis indisponível:', mensagem);
-      return;
-    }
-
-    try {
-      window.speechSynthesis.cancel();
-
-      const utterance = new SpeechSynthesisUtterance(mensagem);
-      utterance.lang = 'pt-BR';
-
-      const voice = this.getPreferredVoice();
-      if (voice) {
-        utterance.voice = voice;
-      }
-
-      utterance.pitch = academy?.speechPitch || 1.1;
-      utterance.rate = academy?.speechRate || 1.05;
-
-      utterance.onstart = () => this.setSpeaking(true);
-      utterance.onend = () => this.setSpeaking(false);
-      utterance.onerror = () => this.setSpeaking(false);
-
-      window.speechSynthesis.speak(utterance);
-    } catch (err) {
-      console.warn('[VoiceNotification] Erro ao sintetizar boas-vindas:', err);
-      this.setSpeaking(false);
-    }
+    return;
   }
 
   // Notificação Completa: Jingle Mercado Livre + Voz Falando o Nome da Academia

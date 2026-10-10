@@ -95,7 +95,6 @@ export default function App() {
   const handleSelectRole = (newRole: UserRole) => {
     setActiveRole(newRole);
     if (isCeoRole(newRole)) {
-      academyVoiceEngine.speakCEOWelcome();
       triggerPushNotification(
         '👑 Olá, Sr. Messias!',
         'Acesso Master Total Ativado. Seja bem-vindo ao BJJACADEMY.',
@@ -463,30 +462,7 @@ export default function App() {
     safeLocalStorageSet('bjj_sparring_sessions', sparringSessions);
   }, [sparringSessions]);
 
-  // Initial welcoming push notification after 2 seconds with Voice (Tech Lead Architecture)
-  // Regra 1 (Acesso Geral / Visão Geral): "Oss! Seja bem-vindo ao BJJACADEMY."
-  // Regra 2 (Acesso Específico): "Oss! Seja bem-vindo à academia [Nome da Academia]."
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      const tipoAcesso = (!activeAcademyId || activeAcademyId === 'all') ? 'SISTEMA_GERAL' : 'PAGINA_ACADEMIA';
-      const academiaAtual = academies.find(a => a.id === activeAcademyId) || activeAcademy;
-      const nomeAcademia = tipoAcesso === 'PAGINA_ACADEMIA' ? (academiaAtual?.name || academiaAtual?.shortName || '') : '';
-
-      const fraseBoasVindas = academyVoiceEngine.definirMensagemDeBoasVindas(tipoAcesso, nomeAcademia);
-
-      triggerPushNotification(
-        fraseBoasVindas,
-        `Seja bem-vindo ao tatame da ${nomeAcademia || 'BJJACADEMY'}. Seu aplicativo oficial de Jiu-Jitsu está pronto!`
-      );
-
-      // Reproduz o áudio da voz de boas-vindas
-      if (academiaAtual?.voiceEnabled !== false) {
-        academyVoiceEngine.speakWelcomeAnnouncement(tipoAcesso, academiaAtual);
-      }
-    }, 2000);
-    return () => clearTimeout(timer);
-  }, []);
-
+  // Notificações de áudio de boas-vindas desativadas (apenas avisos de mensalidades e compras possuem som/voz)
   const triggerPushNotification = (title: string, body: string, type: PushNotification['type'] = 'class') => {
     const notif: PushNotification = {
       id: String(Date.now()),
@@ -500,8 +476,20 @@ export default function App() {
     setDynamicIslandNotice(title);
     triggerNativeHaptic(type === 'promotion' ? 'success' : 'medium');
 
-    // Dispara o jingle e a voz com o nome da academia cadastrada (estilo Mercado Livre)!
-    if (activeAcademy && activeAcademy.voiceEnabled) {
+    // Dispara o jingle e a voz APENAS para avisos de mensalidades (pagamentos/faturas) e compras (Pro-Shop)
+    const lowerText = `${title} ${body}`.toLowerCase();
+    const isPaymentOrPurchaseAlert =
+      type === 'payment' ||
+      lowerText.includes('mensalidade') ||
+      lowerText.includes('fatura') ||
+      lowerText.includes('pix') ||
+      lowerText.includes('pagamento') ||
+      lowerText.includes('pro-shop') ||
+      lowerText.includes('pedido') ||
+      lowerText.includes('comprou') ||
+      lowerText.includes('compra');
+
+    if (activeAcademy && activeAcademy.voiceEnabled && isPaymentOrPurchaseAlert) {
       academyVoiceEngine.announceAcademyMessage(activeAcademy, title, body);
     }
 
@@ -822,25 +810,8 @@ export default function App() {
       onSelectAcademy={(id) => {
         if (id === 'all') {
           setActiveAcademyId('all');
-          const fraseGeral = academyVoiceEngine.definirMensagemDeBoasVindas('SISTEMA_GERAL', null);
-          triggerPushNotification(
-            fraseGeral,
-            `Visão Global ativada para todas as ${academies.length} academias cadastradas.`
-          );
-          academyVoiceEngine.speakWelcomeAnnouncement('SISTEMA_GERAL', null);
         } else {
           setActiveAcademyId(id);
-          const chosen = academies.find((a) => a.id === id);
-          if (chosen) {
-            const fraseAcademia = academyVoiceEngine.definirMensagemDeBoasVindas('PAGINA_ACADEMIA', chosen.name);
-            triggerPushNotification(
-              fraseAcademia,
-              `Alternado para ${chosen.name} (${chosen.branch || chosen.city || 'Matriz'}).`
-            );
-            if (chosen.voiceEnabled !== false) {
-              academyVoiceEngine.speakWelcomeAnnouncement('PAGINA_ACADEMIA', chosen);
-            }
-          }
         }
       }}
       onOpenOperatingHours={(acad) => {
@@ -1652,7 +1623,6 @@ export default function App() {
         savedPassword={generalManager.password || 'Familia@jk4'}
         onSuccessLogin={() => {
           setActiveRole('ceo');
-          academyVoiceEngine.speakCEOWelcome();
           triggerPushNotification(
             '👑 Acesso Master Autenticado!',
             'Olá Sr. Messias, seja bem-vindo ao BJJACADEMY.',
