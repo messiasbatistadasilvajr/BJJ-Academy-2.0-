@@ -4,7 +4,8 @@ import {
   Phone, Mail, CheckCircle2, ChevronRight, Trash2, 
   Sparkles, Cloud, RefreshCw, AlertCircle, Zap, 
   Lock, UserCheck, UserX, ArrowUpRight, Baby,
-  HeartHandshake, FileText, Calendar, ShieldCheck
+  HeartHandshake, FileText, Calendar, ShieldCheck,
+  Printer, Send, Eye, FileCheck
 } from 'lucide-react';
 import { StudentProfile, BeltColor, RegisteredAcademy, SaasPlanTier, SAAS_PLAN_DETAILS, SAAS_PLAN_LIMITS } from '../../types';
 import { BeltBadge } from './BeltBadge';
@@ -12,6 +13,8 @@ import { saveStudentToFirestore, removeStudentFromFirestore } from '../../fireba
 import { StudentEnrollmentService } from '../../services/studentEnrollmentService';
 import { PlanUpgradeModal } from './PlanUpgradeModal';
 import { validateCPF, formatCPF, formatPhone } from '../../utils/brazilianDocValidators';
+import { LoyaltyOfficialContractView, ContractStudentData } from './LoyaltyOfficialContractView';
+import { sendLoyaltyContractWhatsApp } from '../../utils/whatsappHelper';
 
 interface StudentManagementModalProps {
   isOpen: boolean;
@@ -72,6 +75,23 @@ export const StudentManagementModal: React.FC<StudentManagementModalProps> = ({
   const [parentProfession, setParentProfession] = useState('');
   const [emergencyContactName, setEmergencyContactName] = useState('');
   const [emergencyContactPhone, setEmergencyContactPhone] = useState('');
+
+  // Aggregated Loyalty Contract & WhatsApp Dispatch State
+  const [contractSubTab, setContractSubTab] = useState<'form' | 'contract'>('form');
+  const [selectedStudentForContract, setSelectedStudentForContract] = useState<StudentProfile | null>(null);
+  const [isContractModalOpen, setIsContractModalOpen] = useState<boolean>(false);
+
+  // Address and Contract Fields for Real-Time Auto-Fill
+  const [studentRg, setStudentRg] = useState('');
+  const [address, setAddress] = useState('Rua Cidade Palhano, nº 115');
+  const [neighborhood, setNeighborhood] = useState('Vila Velha');
+  const [cep, setCep] = useState('60347-032');
+  const [city, setCity] = useState('Fortaleza');
+  const [state, setState] = useState('CE');
+  const [planName, setPlanName] = useState('(IRMÃOS) TEEN 3X');
+  const [monthlyFee, setMonthlyFee] = useState<number>(180);
+  const [dueDay, setDueDay] = useState<number>(10);
+  const [autoSendZapOnSave, setAutoSendZapOnSave] = useState<boolean>(true);
 
   // Sync initialRegistering prop when modal opens
   useEffect(() => {
@@ -181,11 +201,21 @@ export const StudentManagementModal: React.FC<StudentManagementModalProps> = ({
       tenantId: currentAcademy.id,
       academyId: currentAcademy.id,
       academyName: currentAcademy.name,
-      // Kids / Menor de Idade & Responsável Legal
-      isMinor: !!isMinor,
+      // Civil Identification & Contract Address
       birthDate: birthDate.trim() || undefined,
       cpf: studentCpf.trim() || undefined,
       studentCpf: studentCpf.trim() || undefined,
+      rg: studentRg.trim() || undefined,
+      address: address.trim() || undefined,
+      neighborhood: neighborhood.trim() || undefined,
+      cep: cep.trim() || undefined,
+      city: city.trim() || undefined,
+      state: state.trim() || undefined,
+      planName: planName.trim() || '(IRMÃOS) TEEN 3X',
+      monthlyFee: Number(monthlyFee) || 180,
+      billingDueDay: Number(dueDay) || 10,
+      // Kids / Menor de Idade & Responsável Legal
+      isMinor: !!isMinor,
       parentName: isMinor ? parentName.trim() : undefined,
       parentRelationship: isMinor ? parentRelationship.trim() : undefined,
       parentCpf: isMinor ? parentCpf.trim() : undefined,
@@ -203,8 +233,8 @@ export const StudentManagementModal: React.FC<StudentManagementModalProps> = ({
           date: new Date().toLocaleDateString('pt-BR'),
           instructor: 'Registro Inicial no Sistema',
           notes: isMinor 
-            ? `Matrícula Kids efetuada. Responsável Legal: ${parentName.trim()} (${parentRelationship.trim()}).`
-            : 'Matrícula efetuada com validação no Database Tier.'
+            ? `Matrícula Kids efetuada. Responsável Legal: ${parentName.trim()} (${parentRelationship.trim()}). Contrato Loyalty gerado.`
+            : 'Matrícula efetuada com validação no Database Tier e Contrato Loyalty emitido.'
         }
       ]
     };
@@ -231,13 +261,34 @@ export const StudentManagementModal: React.FC<StudentManagementModalProps> = ({
       await saveStudentToFirestore(newStudent);
       await StudentEnrollmentService.syncActiveStudentsCount(currentAcademy, [...students, newStudent]);
       
+      // Envio Automático do Contrato em PDF para o WhatsApp do Pai/Responsável
+      if (autoSendZapOnSave) {
+        const targetPhone = isMinor && parentPhone.trim() 
+          ? parentPhone.trim() 
+          : (parentPhone.trim() || phone.trim() || '(85) 98746-2960');
+        
+        sendLoyaltyContractWhatsApp({
+          studentName: newStudent.name,
+          responsibleName: isMinor ? newStudent.parentName : (newStudent.parentName || newStudent.name),
+          phone: targetPhone,
+          cpf: newStudent.cpf,
+          parentCpf: newStudent.parentCpf,
+          planName: newStudent.planName || '(IRMÃOS) TEEN 3X',
+          monthlyFee: newStudent.monthlyFee || 180,
+          dueDay: newStudent.billingDueDay || 10,
+          academyName: currentAcademy.name
+        });
+      }
+
       if (onStudentSaved) onStudentSaved(newStudent);
       setIsRegistering(false);
+      setContractSubTab('form');
       setName('');
       setEmail('');
       setPhone('');
       setBirthDate('');
       setStudentCpf('');
+      setStudentRg('');
       setStripes(0);
       setStudentStatus('ATIVO');
       setIsMinor(false);
@@ -472,16 +523,44 @@ export const StudentManagementModal: React.FC<StudentManagementModalProps> = ({
             )}
 
             {isRegistering ? (
-              /* New Student Form */
-              <form onSubmit={handleCreateStudent} className="bg-slate-950/60 border border-slate-800 rounded-2xl p-4 space-y-4">
-                <div className="flex items-center justify-between border-b border-slate-800 pb-2">
-                  <span className="text-xs font-bold text-slate-200 uppercase tracking-wider flex items-center gap-1.5">
-                    <UserPlus size={14} className="text-blue-400" />
-                    Novo Aluno • Validação Automática de Cota
-                  </span>
-                  <span className="text-[11px] text-slate-400">
-                    Cota atual: <strong className="text-slate-200">{activeStudentsCount}/{planLimit === 999999 ? '∞' : planLimit}</strong>
-                  </span>
+              <div className="space-y-4">
+                {/* Aggregated View Switcher: Cadastro x Contrato Oficial Loyalty (PDF) */}
+                <div className="flex items-center justify-between gap-2 border-b border-slate-800 pb-3 flex-wrap">
+                  <div className="flex items-center gap-1.5 p-1 bg-slate-900 border border-slate-800 rounded-xl">
+                    <button
+                      type="button"
+                      onClick={() => setContractSubTab('form')}
+                      className={`px-3.5 py-1.5 rounded-lg text-xs font-bold flex items-center gap-1.5 transition cursor-pointer ${
+                        contractSubTab === 'form'
+                          ? 'bg-blue-600 text-white shadow-md'
+                          : 'text-slate-400 hover:text-white'
+                      }`}
+                    >
+                      <UserPlus size={14} />
+                      <span>1. Formulário de Cadastro</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setContractSubTab('contract')}
+                      className={`px-3.5 py-1.5 rounded-lg text-xs font-bold flex items-center gap-1.5 transition cursor-pointer ${
+                        contractSubTab === 'contract'
+                          ? 'bg-amber-600 text-white shadow-md'
+                          : 'text-slate-400 hover:text-amber-300'
+                      }`}
+                    >
+                      <FileText size={14} className="text-amber-400" />
+                      <span>2. Contrato Loyalty (PDF Exemplo)</span>
+                      {name.trim() && (
+                        <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" title="Nome do aluno vinculado" />
+                      )}
+                    </button>
+                  </div>
+
+                  <div className="flex items-center gap-2">
+                    <span className="text-[11px] text-slate-400">
+                      Cota atual: <strong className="text-slate-200">{activeStudentsCount}/{planLimit === 999999 ? '∞' : planLimit}</strong>
+                    </span>
+                  </div>
                 </div>
 
                 {/* Validation Feedback Error */}
@@ -491,6 +570,86 @@ export const StudentManagementModal: React.FC<StudentManagementModalProps> = ({
                     <span>{formValidationError}</span>
                   </div>
                 )}
+
+                {/* TAB 2: AGGREGATED CONTRACT VIEW (PDF Oficial 5 Páginas com Preenchimento Automático) */}
+                {contractSubTab === 'contract' ? (
+                  <div className="space-y-3">
+                    <div className="p-3 rounded-2xl bg-gradient-to-r from-amber-950/40 to-slate-900 border border-amber-500/40 flex items-center justify-between gap-3 text-xs text-amber-200">
+                      <div className="flex items-center gap-2">
+                        <Sparkles className="w-4 h-4 text-amber-400 shrink-0" />
+                        <div>
+                          <p className="font-bold text-white">Contrato Agregado à Matrícula do Novo Aluno</p>
+                          <p className="text-[11px] text-amber-300/80">
+                            {name.trim() ? (
+                              <>Nome adicionado automaticamente: <strong className="text-white underline">{name}</strong> {isMinor && parentName ? `(Resp: ${parentName})` : ''}</>
+                            ) : (
+                              <>Nome da pessoa deixado em branco (__________) — será adicionado automaticamente conforme digitar no cadastro.</>
+                            )}
+                          </p>
+                        </div>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => setContractSubTab('form')}
+                        className="px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold text-xs shrink-0 cursor-pointer"
+                      >
+                        ← Voltar ao Formulário
+                      </button>
+                    </div>
+
+                    <LoyaltyOfficialContractView
+                      studentData={{
+                        name: name.trim() || undefined,
+                        rg: studentRg.trim() || undefined,
+                        cpf: studentCpf.trim() || undefined,
+                        birthDate: birthDate.trim() || undefined,
+                        address: address.trim() || 'Rua Cidade Palhano, nº 115',
+                        neighborhood: neighborhood.trim() || 'Vila Velha',
+                        cep: cep.trim() || '60347-032',
+                        city: city.trim() || 'Fortaleza',
+                        state: state.trim() || 'CE',
+                        phone: phone.trim() || undefined,
+                        email: email.trim() || undefined,
+                        isMinor,
+                        parentName: parentName.trim() || undefined,
+                        parentRelationship: parentRelationship.trim() || 'Mãe',
+                        parentCpf: parentCpf.trim() || undefined,
+                        parentRg: parentRg.trim() || undefined,
+                        parentPhone: parentPhone.trim() || undefined,
+                        parentEmail: parentEmail.trim() || undefined,
+                        parentAddress: address.trim() || 'Rua Cidade Palhano, nº 115',
+                        planName: planName.trim() || '(IRMÃOS) TEEN 3X',
+                        monthlyFee: Number(monthlyFee) || 180,
+                        dueDay: Number(dueDay) || 10,
+                      }}
+                      isEmbedded={true}
+                      onClose={() => setContractSubTab('form')}
+                    />
+                  </div>
+                ) : (
+                  /* TAB 1: FORMULÁRIO DE CADASTRO COM BINDING EM TEMPO REAL */
+                  <form onSubmit={handleCreateStudent} className="bg-slate-950/60 border border-slate-800 rounded-2xl p-4 space-y-4">
+                    {/* Banner Informativo de Contrato Conectado */}
+                    <div className="p-3 rounded-xl bg-amber-950/30 border border-amber-500/30 flex items-center justify-between gap-2.5 text-xs">
+                      <div className="flex items-center gap-2">
+                        <FileText className="w-4 h-4 text-amber-400 shrink-0" />
+                        <span className="text-slate-300">
+                          {name.trim() ? (
+                            <>Contrato sincronizado com o aluno: <strong className="text-white">{name}</strong></>
+                          ) : (
+                            <>Nome em branco no contrato. Será preenchido automaticamente ao digitar abaixo.</>
+                          )}
+                        </span>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => setContractSubTab('contract')}
+                        className="px-2.5 py-1 rounded-lg bg-amber-500/20 hover:bg-amber-500/30 border border-amber-500/40 text-amber-300 font-bold text-[11px] flex items-center gap-1 shrink-0 cursor-pointer"
+                      >
+                        <Eye size={12} />
+                        <span>Ver Contrato (PDF)</span>
+                      </button>
+                    </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
                   <div className="sm:col-span-2">
@@ -828,27 +987,131 @@ export const StudentManagementModal: React.FC<StudentManagementModalProps> = ({
                       className="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-white focus:outline-none focus:border-blue-500"
                     />
                   </div>
+                  {/* CAMPOS ESPECÍFICOS DO CONTRATO LOYALTY JIU-JITSU */}
+                  <div className="sm:col-span-2 p-3.5 rounded-2xl bg-slate-900/90 border border-amber-500/30 space-y-3">
+                    <div className="flex items-center justify-between border-b border-slate-800 pb-2">
+                      <span className="text-xs font-bold text-amber-300 uppercase tracking-wider flex items-center gap-1.5">
+                        <FileCheck size={14} className="text-amber-400" />
+                        Parâmetros do Contrato Loyalty Jiu-Jitsu (Fortaleza - CE)
+                      </span>
+                      <span className="text-[10px] text-slate-400 font-mono">5 Páginas • Autentique</span>
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+                      <div>
+                        <label className="block text-slate-300 font-semibold mb-1 text-[11px]">Plano Contratado</label>
+                        <input
+                          type="text"
+                          value={planName}
+                          onChange={(e) => setPlanName(e.target.value)}
+                          placeholder="(IRMÃOS) TEEN 3X"
+                          className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-1.5 text-white text-xs font-medium"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-slate-300 font-semibold mb-1 text-[11px]">Valor da Mensalidade (R$)</label>
+                        <input
+                          type="number"
+                          step="0.01"
+                          value={monthlyFee}
+                          onChange={(e) => setMonthlyFee(Number(e.target.value))}
+                          placeholder="180.00"
+                          className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-1.5 text-white text-xs font-mono"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-slate-300 font-semibold mb-1 text-[11px]">Dia de Vencimento</label>
+                        <input
+                          type="number"
+                          min="1"
+                          max="31"
+                          value={dueDay}
+                          onChange={(e) => setDueDay(Number(e.target.value))}
+                          placeholder="10"
+                          className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-1.5 text-white text-xs font-mono"
+                        />
+                      </div>
+                      <div className="sm:col-span-2">
+                        <label className="block text-slate-300 font-semibold mb-1 text-[11px]">Endereço Completo</label>
+                        <input
+                          type="text"
+                          value={address}
+                          onChange={(e) => setAddress(e.target.value)}
+                          placeholder="Rua Cidade Palhano, nº 115"
+                          className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-1.5 text-white text-xs"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-slate-300 font-semibold mb-1 text-[11px]">Bairro / Cidade</label>
+                        <input
+                          type="text"
+                          value={`${neighborhood} - ${city}/${state}`}
+                          onChange={(e) => {
+                            const val = e.target.value;
+                            if (val.includes('-')) {
+                              setNeighborhood(val.split('-')[0].trim());
+                            } else {
+                              setNeighborhood(val);
+                            }
+                          }}
+                          className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-1.5 text-white text-xs"
+                        />
+                      </div>
+                    </div>
+                  </div>
                 </div>
 
-                <div className="flex items-center justify-end gap-2.5 pt-2">
+                {/* Checkbox para Envio Automático em PDF para o ZAP do Pai/Responsável */}
+                <div className="p-3 rounded-xl bg-slate-900 border border-slate-800 space-y-2">
+                  <label className="flex items-center gap-2.5 cursor-pointer text-xs text-slate-200 select-none">
+                    <input
+                      type="checkbox"
+                      checked={autoSendZapOnSave}
+                      onChange={(e) => setAutoSendZapOnSave(e.target.checked)}
+                      className="w-4 h-4 rounded text-emerald-500 bg-slate-950 border-slate-700 focus:ring-emerald-500 cursor-pointer"
+                    />
+                    <span className="flex items-center gap-1.5 font-semibold">
+                      <Send size={13} className="text-emerald-400" />
+                      Enviar automaticamente o Contrato em PDF no ZAP do Pai ou Responsável ao concluir a matrícula
+                    </span>
+                  </label>
+                  <p className="text-[11px] text-slate-400 pl-6">
+                    O WhatsApp receberá o link de auditoria, dados da mensalidade (R$ {monthlyFee.toFixed(2)}) e instruções completas para baixar o PDF das 5 páginas.
+                  </p>
+                </div>
+
+                <div className="flex items-center justify-between gap-2.5 pt-2 flex-wrap">
                   <button
                     type="button"
-                    onClick={() => setIsRegistering(false)}
-                    className="px-4 py-2 text-xs font-semibold text-slate-400 hover:text-white"
+                    onClick={() => setContractSubTab('contract')}
+                    className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-amber-300 rounded-xl text-xs font-bold transition flex items-center gap-1.5 border border-slate-700 cursor-pointer"
                   >
-                    Cancelar
+                    <Eye size={14} />
+                    <span>Pré-visualizar Contrato (PDF)</span>
                   </button>
-                  <button
-                    type="submit"
-                    disabled={isSaving}
-                    className="px-5 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-xs font-bold transition-colors flex items-center gap-1.5 disabled:opacity-50"
-                  >
-                    <CheckCircle2 size={15} />
-                    <span>{isSaving ? 'Validando no Banco...' : 'Validar e Salvar'}</span>
-                  </button>
+
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setIsRegistering(false)}
+                      className="px-4 py-2 text-xs font-semibold text-slate-400 hover:text-white cursor-pointer"
+                    >
+                      Cancelar
+                    </button>
+                    <button
+                      type="submit"
+                      disabled={isSaving}
+                      className="px-5 py-2.5 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white rounded-xl text-xs font-black transition-all shadow-lg shadow-emerald-950/40 flex items-center gap-1.5 disabled:opacity-50 cursor-pointer active:scale-95"
+                    >
+                      <CheckCircle2 size={15} />
+                      <span>{isSaving ? 'Validando no Banco...' : 'Validar, Salvar e Enviar no ZAP'}</span>
+                    </button>
+                  </div>
                 </div>
               </form>
-            ) : (
+            )}
+          </div>
+        ) : (
               /* Students List */
               filteredStudents.map((s) => {
                 const isActiveInApp = s.id === activeStudentId;
@@ -930,6 +1193,20 @@ export const StudentManagementModal: React.FC<StudentManagementModalProps> = ({
                     </div>
 
                     <div className="flex items-center gap-2 shrink-0">
+                      {/* Botão de Contrato Loyalty Oficial (PDF & WhatsApp) */}
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setSelectedStudentForContract(s);
+                          setIsContractModalOpen(true);
+                        }}
+                        title="Visualizar Contrato Oficial Loyalty Jiu-Jitsu (5 Páginas) e Enviar no ZAP"
+                        className="p-2 rounded-xl text-xs font-bold transition flex items-center gap-1.5 text-amber-300 hover:text-white hover:bg-amber-500/20 border border-amber-500/30 bg-amber-950/40 cursor-pointer"
+                      >
+                        <FileText size={14} className="text-amber-400" />
+                        <span className="hidden sm:inline text-[11px]">Contrato Loyalty</span>
+                      </button>
+
                       {/* Toggle Active / Inactive Status Button */}
                       <button
                         onClick={(e) => handleToggleStudentStatus(s, e)}
@@ -996,6 +1273,65 @@ export const StudentManagementModal: React.FC<StudentManagementModalProps> = ({
           </div>
         </div>
       </div>
+
+      {/* Modal para Visualização do Contrato Oficial Loyalty Jiu-Jitsu de Aluno Específico */}
+      {isContractModalOpen && selectedStudentForContract && (
+        <div 
+          className="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-2 sm:p-4 overflow-y-auto"
+          onClick={() => setIsContractModalOpen(false)}
+        >
+          <div 
+            className="w-full max-w-4xl bg-slate-900 border border-slate-700 rounded-3xl overflow-hidden shadow-2xl relative my-auto max-h-[92vh] flex flex-col"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="p-3 bg-slate-950 border-b border-slate-800 flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <FileCheck className="w-5 h-5 text-amber-400" />
+                <h3 className="text-sm font-black text-white">
+                  Contrato Loyalty Jiu-Jitsu • {selectedStudentForContract.name}
+                </h3>
+              </div>
+              <button
+                onClick={() => setIsContractModalOpen(false)}
+                className="p-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white"
+              >
+                <X size={16} />
+              </button>
+            </div>
+
+            <div className="flex-1 overflow-y-auto">
+              <LoyaltyOfficialContractView
+                studentData={{
+                  name: selectedStudentForContract.name,
+                  rg: selectedStudentForContract.rg,
+                  cpf: selectedStudentForContract.cpf || selectedStudentForContract.studentCpf,
+                  birthDate: selectedStudentForContract.birthDate,
+                  address: selectedStudentForContract.address || 'Rua Cidade Palhano, nº 115',
+                  neighborhood: selectedStudentForContract.neighborhood || 'Vila Velha',
+                  cep: selectedStudentForContract.cep || '60347-032',
+                  city: selectedStudentForContract.city || 'Fortaleza',
+                  state: selectedStudentForContract.state || 'CE',
+                  phone: selectedStudentForContract.phone,
+                  email: selectedStudentForContract.email,
+                  isMinor: selectedStudentForContract.isMinor,
+                  parentName: selectedStudentForContract.parentName,
+                  parentRelationship: selectedStudentForContract.parentRelationship || 'Mãe',
+                  parentCpf: selectedStudentForContract.parentCpf,
+                  parentRg: selectedStudentForContract.parentRg,
+                  parentPhone: selectedStudentForContract.parentPhone,
+                  parentEmail: selectedStudentForContract.parentEmail,
+                  parentAddress: selectedStudentForContract.address || 'Rua Cidade Palhano, nº 115',
+                  planName: selectedStudentForContract.planName || '(IRMÃOS) TEEN 3X',
+                  monthlyFee: selectedStudentForContract.monthlyFee || 180,
+                  dueDay: selectedStudentForContract.billingDueDay || 10,
+                }}
+                isEmbedded={false}
+                onClose={() => setIsContractModalOpen(false)}
+              />
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Plan Upgrade & Lock Modal */}
       <PlanUpgradeModal

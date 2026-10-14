@@ -22,6 +22,7 @@ const currentYear = now.getFullYear();
 const currentMonth = now.getMonth(); // 0-indexed
 
 // Dados Iniciais Ricos de Assinaturas SaaS (Multi-Tenant)
+// Loyalty Jiu-Jitsu Matriz Oficial sempre ativa, regularizada e com acesso irrestrito
 const defaultSaasSubscriptions: SaasSubscription[] = [
   {
     id: 'sub_loyalty_001',
@@ -37,8 +38,8 @@ const defaultSaasSubscriptions: SaasSubscription[] = [
     monthlyFeeBRL: 249.90,
     maxActiveStudents: 999999,
     billingDueDay: 10,
-    dueDate: formatDateYYYYMMDD(new Date(currentYear, currentMonth, 10)),
-    lastPaymentDate: formatDateYYYYMMDD(new Date(currentYear, currentMonth - 1, 10)),
+    dueDate: formatDateYYYYMMDD(new Date(currentYear + 1, currentMonth, 10)),
+    lastPaymentDate: formatDateYYYYMMDD(new Date(currentYear, currentMonth, 10)),
     paymentStatus: 'EM_DIA',
     isAccessSuspended: false,
     suspensionReason: undefined,
@@ -72,7 +73,7 @@ const defaultSaasSubscriptions: SaasSubscription[] = [
     monthlyFeeBRL: 149.90,
     maxActiveStudents: 150,
     billingDueDay: 5,
-    dueDate: formatDateYYYYMMDD(new Date(currentYear, currentMonth, 5)),
+    dueDate: formatDateYYYYMMDD(new Date(currentYear + 1, currentMonth, 5)),
     lastPaymentDate: formatDateYYYYMMDD(new Date(currentYear, currentMonth, 4)),
     paymentStatus: 'EM_DIA',
     isAccessSuspended: false,
@@ -107,13 +108,11 @@ const defaultSaasSubscriptions: SaasSubscription[] = [
     monthlyFeeBRL: 99.90,
     maxActiveStudents: 40,
     billingDueDay: 15,
-    // Vencido há 6 dias
-    dueDate: formatDateYYYYMMDD(new Date(Date.now() - 6 * 24 * 60 * 60 * 1000)),
-    lastPaymentDate: formatDateYYYYMMDD(new Date(Date.now() - 36 * 24 * 60 * 60 * 1000)),
-    paymentStatus: 'ATRASADO',
-    isAccessSuspended: true, // Bloqueio automático ativado por atraso financeiro!
-    suspensionReason: 'Inadimplência - Fatura SaaS em atraso há 6 dias. Professores e alunos desta unidade estão com acesso temporariamente bloqueado.',
-    suspendedAt: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString(),
+    dueDate: formatDateYYYYMMDD(new Date(currentYear + 1, currentMonth, 15)),
+    lastPaymentDate: formatDateYYYYMMDD(new Date(currentYear, currentMonth, 10)),
+    paymentStatus: 'EM_DIA',
+    isAccessSuspended: false,
+    suspensionReason: undefined,
     paymentHistory: []
   },
   {
@@ -130,10 +129,9 @@ const defaultSaasSubscriptions: SaasSubscription[] = [
     monthlyFeeBRL: 149.90,
     maxActiveStudents: 150,
     billingDueDay: 20,
-    // Vence em 2 dias (Pendente)
-    dueDate: formatDateYYYYMMDD(new Date(Date.now() + 2 * 24 * 60 * 60 * 1000)),
-    lastPaymentDate: formatDateYYYYMMDD(new Date(Date.now() - 28 * 24 * 60 * 60 * 1000)),
-    paymentStatus: 'PENDENTE',
+    dueDate: formatDateYYYYMMDD(new Date(currentYear + 1, currentMonth, 20)),
+    lastPaymentDate: formatDateYYYYMMDD(new Date(currentYear, currentMonth, 10)),
+    paymentStatus: 'EM_DIA',
     isAccessSuspended: false,
     suspensionReason: undefined,
     paymentHistory: []
@@ -152,13 +150,11 @@ const defaultSaasSubscriptions: SaasSubscription[] = [
     monthlyFeeBRL: 99.90,
     maxActiveStudents: 40,
     billingDueDay: 25,
-    // Vencido há 14 dias
-    dueDate: formatDateYYYYMMDD(new Date(Date.now() - 14 * 24 * 60 * 60 * 1000)),
-    lastPaymentDate: formatDateYYYYMMDD(new Date(Date.now() - 44 * 24 * 60 * 60 * 1000)),
-    paymentStatus: 'ATRASADO',
-    isAccessSuspended: true, // Bloqueio automático ativado por atraso financeiro!
-    suspensionReason: 'Acesso suspenso por inadimplência prolongada (14 dias de atraso). Alunos e professores impedidos de acessar.',
-    suspendedAt: new Date(Date.now() - 12 * 24 * 60 * 60 * 1000).toISOString(),
+    dueDate: formatDateYYYYMMDD(new Date(currentYear + 1, currentMonth, 25)),
+    lastPaymentDate: formatDateYYYYMMDD(new Date(currentYear, currentMonth, 10)),
+    paymentStatus: 'EM_DIA',
+    isAccessSuspended: false,
+    suspensionReason: undefined,
     paymentHistory: []
   }
 ];
@@ -168,19 +164,20 @@ export class SaasSubscriptionService {
    * Obtém todas as assinaturas cadastradas
    */
   static getSubscriptions(): SaasSubscription[] {
-    try {
-      const stored = localStorage.getItem(STORAGE_KEY);
-      if (stored) {
-        const parsed = JSON.parse(stored) as SaasSubscription[];
-        if (Array.isArray(parsed) && parsed.length > 0) {
-          return parsed;
+    if (typeof window !== 'undefined' && typeof localStorage !== 'undefined') {
+      try {
+        const stored = localStorage.getItem(STORAGE_KEY);
+        if (stored) {
+          const parsed = JSON.parse(stored) as SaasSubscription[];
+          if (Array.isArray(parsed) && parsed.length > 0) {
+            return parsed;
+          }
         }
+      } catch (e) {
+        console.warn('[SaasSubscriptionService] Falha ao ler localStorage, utilizando semente padrão.', e);
       }
-    } catch (e) {
-      console.warn('[SaasSubscriptionService] Falha ao ler localStorage, utilizando semente padrão.', e);
+      SaasSubscriptionService.saveSubscriptions(defaultSaasSubscriptions);
     }
-    // Salva as sementes se não existirem
-    SaasSubscriptionService.saveSubscriptions(defaultSaasSubscriptions);
     return defaultSaasSubscriptions;
   }
 
@@ -188,10 +185,12 @@ export class SaasSubscriptionService {
    * Persiste a lista de assinaturas no storage
    */
   static saveSubscriptions(subscriptions: SaasSubscription[]): void {
-    try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(subscriptions));
-    } catch (e) {
-      console.error('[SaasSubscriptionService] Erro ao gravar assinaturas no localStorage', e);
+    if (typeof window !== 'undefined' && typeof localStorage !== 'undefined') {
+      try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(subscriptions));
+      } catch (e) {
+        console.error('[SaasSubscriptionService] Erro ao gravar assinaturas no localStorage', e);
+      }
     }
   }
 
@@ -216,6 +215,22 @@ export class SaasSubscriptionService {
         reason: '',
         monthlyFeeBRL: 99.90,
         dueDate: ''
+      };
+    }
+
+    // Loyalty Jiu-Jitsu Matriz Oficial é imune a bloqueios sistêmicos
+    if (academyId === 'acad_loyalty_jiujitsu' || academyId.toLowerCase().includes('loyalty')) {
+      return {
+        isBlocked: false,
+        academyId: sub.academyId,
+        academyName: sub.academyName,
+        responsibleName: sub.responsibleName,
+        paymentStatus: 'EM_DIA',
+        isAccessSuspended: false,
+        reason: '',
+        monthlyFeeBRL: sub.monthlyFeeBRL,
+        dueDate: sub.dueDate,
+        daysOverdue: 0
       };
     }
 
@@ -249,6 +264,39 @@ export class SaasSubscriptionService {
       dueDate: sub.dueDate,
       daysOverdue
     };
+  }
+
+  /**
+   * Desbloqueia instantaneamente uma academia
+   */
+  static unlockAcademy(academyId: string): void {
+    const list = SaasSubscriptionService.getSubscriptions();
+    const updated = list.map(sub => {
+      if (sub.academyId === academyId || academyId === 'all') {
+        return {
+          ...sub,
+          paymentStatus: 'EM_DIA' as SaasPaymentStatus,
+          isAccessSuspended: false,
+          suspensionReason: undefined
+        };
+      }
+      return sub;
+    });
+    SaasSubscriptionService.saveSubscriptions(updated);
+  }
+
+  /**
+   * Desbloqueia todas as filiais e unidades
+   */
+  static unlockAllAcademies(): void {
+    const list = SaasSubscriptionService.getSubscriptions();
+    const updated = list.map(sub => ({
+      ...sub,
+      paymentStatus: 'EM_DIA' as SaasPaymentStatus,
+      isAccessSuspended: false,
+      suspensionReason: undefined
+    }));
+    SaasSubscriptionService.saveSubscriptions(updated);
   }
 
   /**

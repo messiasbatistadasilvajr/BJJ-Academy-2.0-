@@ -16,7 +16,7 @@ export function getRespectfulBillingMessage(
       return {
         type,
         title: 'Lembrete Amigável (3 dias antes)',
-        body: `Oss, ${firstName}! Tudo bem?\nPassando para lembrar que sua mensalidade na ${academyName} vence no dia ${dueDateStr} (${formattedAmount}).\nManter seu plano em dia nos ajuda a manter a estrutura e o tatame sempre impecáveis para a sua evolução! 🥋🔥`,
+        body: `Oss, ${firstName}! Tudo bem?\nPassando para lembrar que sua mensalidade na ${academyName} vence no dia ${dueDateStr} (${formattedAmount}).\n🔑 Chave PIX da Academia: ${pixKey}\n📲 Envie o comprovante para este número assim que realizar o pagamento.\nManter seu plano em dia nos ajuda a manter a estrutura e o tatame sempre impecáveis para a sua evolução! 🥋🔥`,
         pixKeyText: pixKey
       };
 
@@ -24,7 +24,7 @@ export function getRespectfulBillingMessage(
       return {
         type,
         title: 'Vencimento Hoje',
-        body: `Oss, guerreiro ${firstName}!\nSua mensalidade na ${academyName} vence hoje (${dueDateStr}) no valor de ${formattedAmount}.\nSegue a chave PIX para sua comodidade. Nos vemos no tatame mais tarde! 🥋🤝`,
+        body: `Oss, guerreiro ${firstName}!\nSua mensalidade na ${academyName} vence hoje (${dueDateStr}) no valor de ${formattedAmount}.\n🔑 Chave PIX da Academia: ${pixKey}\n📲 Envie o comprovante para este número para darmos baixa imediata. Nos vemos no tatame mais tarde! 🥋🤝`,
         pixKeyText: pixKey
       };
 
@@ -32,7 +32,7 @@ export function getRespectfulBillingMessage(
       return {
         type,
         title: 'Aviso Respeitoso (Após vencimento)',
-        body: `Olá, ${firstName}! Esperamos que você e sua família estejam ótimos.\nIdentificamos uma pendência da mensalidade com vencimento em ${dueDateStr} (${formattedAmount}) na ${academyName}.\nSabemos que a correria do dia a dia acontece! Segue o PIX para regularização fácil. Se precisar de qualquer suporte, nossa recepção está à disposição. Oss! 🥋🙏`,
+        body: `Olá, ${firstName}! Esperamos que você e sua família estejam ótimos.\nIdentificamos uma pendência da mensalidade com vencimento em ${dueDateStr} (${formattedAmount}) na ${academyName}.\n🔑 Chave PIX da Academia: ${pixKey}\n📲 Envie o comprovante para este número para regularização imediata do seu acesso. Qualquer dúvida, nossa recepção está à disposição. Oss! 🥋🙏`,
         pixKeyText: pixKey
       };
 

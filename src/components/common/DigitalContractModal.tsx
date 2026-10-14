@@ -1,11 +1,12 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { 
   X, FileText, CheckCircle, ShieldCheck, PenTool, 
-  RotateCcw, Upload, AlertCircle, HeartPulse, Check
+  RotateCcw, Upload, AlertCircle, HeartPulse, Check, Sparkles
 } from 'lucide-react';
 import { ContractWaiver } from '../../types';
 import { mockContract } from '../../data/mockData';
 import { bjjAudio } from '../../utils/audio';
+import { LoyaltyOfficialContractView } from './LoyaltyOfficialContractView';
 
 interface DigitalContractModalProps {
   isOpen: boolean;
@@ -18,6 +19,7 @@ export const DigitalContractModal: React.FC<DigitalContractModalProps> = ({
   onClose,
   studentName = 'Lucas Gracie Mendes'
 }) => {
+  const [activeTab, setActiveTab] = useState<'loyalty_pdf' | 'waiver'>('loyalty_pdf');
   const [contract, setContract] = useState<ContractWaiver>(mockContract);
   const [isDrawing, setIsDrawing] = useState(false);
   const [hasSignature, setHasSignature] = useState(true);
@@ -116,30 +118,78 @@ export const DigitalContractModal: React.FC<DigitalContractModalProps> = ({
     >
       <div className="bg-slate-900 border border-slate-800 rounded-t-3xl sm:rounded-3xl w-full max-w-2xl h-[92vh] sm:h-[85vh] flex flex-col overflow-hidden shadow-2xl">
         {/* Header */}
-        <div className="px-5 py-4 border-b border-slate-800 flex items-center justify-between bg-slate-900/90">
+        <div className="px-5 py-3 border-b border-slate-800 flex items-center justify-between bg-slate-900/90 flex-wrap gap-2">
           <div className="flex items-center gap-2.5">
             <div className="p-2 rounded-xl bg-red-500/10 text-red-500">
               <FileText size={20} />
             </div>
             <div>
               <h2 className="font-bold text-white text-base leading-tight">
-                Contrato & Termo de Isenção de Risco (Waiver)
+                Contrato Oficial Loyalty Jiu-Jitsu
               </h2>
               <p className="text-xs text-slate-400">
-                Assinatura Eletrônica Válida & Atestado Médico de Aptidão
+                Template Oficial com Preenchimento Automático • Fortaleza - CE
               </p>
             </div>
           </div>
-          <button 
-            onClick={onClose}
-            className="p-1.5 rounded-full bg-slate-800 text-slate-400 hover:text-white"
-          >
-            <X size={18} />
-          </button>
+
+          <div className="flex items-center gap-2">
+            {/* Tabs */}
+            <div className="flex bg-slate-950 border border-slate-800 rounded-xl p-1 text-xs font-bold">
+              <button
+                type="button"
+                onClick={() => setActiveTab('loyalty_pdf')}
+                className={`px-3 py-1 rounded-lg transition cursor-pointer ${
+                  activeTab === 'loyalty_pdf'
+                    ? 'bg-amber-600 text-white shadow'
+                    : 'text-slate-400 hover:text-white'
+                }`}
+              >
+                Contrato Loyalty (PDF 5 Págs)
+              </button>
+              <button
+                type="button"
+                onClick={() => setActiveTab('waiver')}
+                className={`px-3 py-1 rounded-lg transition cursor-pointer ${
+                  activeTab === 'waiver'
+                    ? 'bg-slate-800 text-white shadow'
+                    : 'text-slate-400 hover:text-white'
+                }`}
+              >
+                Termo & Assinatura Rápida
+              </button>
+            </div>
+
+            <button 
+              onClick={onClose}
+              className="p-1.5 rounded-full bg-slate-800 text-slate-400 hover:text-white cursor-pointer"
+            >
+              <X size={18} />
+            </button>
+          </div>
         </div>
 
         {/* Content */}
-        <div className="flex-1 overflow-y-auto p-4 space-y-4 text-xs">
+        {activeTab === 'loyalty_pdf' ? (
+          <div className="flex-1 overflow-y-auto">
+            <LoyaltyOfficialContractView
+              studentData={{
+                name: studentName,
+                address: 'Rua Cidade Palhano, nº 115',
+                neighborhood: 'Vila Velha',
+                cep: '60347-032',
+                city: 'Fortaleza',
+                state: 'CE',
+                planName: '(IRMÃOS) TEEN 3X',
+                monthlyFee: 180,
+                dueDay: 10,
+              }}
+              onClose={onClose}
+              isEmbedded={false}
+            />
+          </div>
+        ) : (
+          <div className="flex-1 overflow-y-auto p-4 space-y-4 text-xs">
           {/* Status badge */}
           <div className="flex items-center justify-between p-3 rounded-2xl bg-slate-800/80 border border-slate-700">
             <div>
@@ -258,6 +308,7 @@ export const DigitalContractModal: React.FC<DigitalContractModalProps> = ({
             <ShieldCheck size={16} /> Salvar & Validar Contrato Digital
           </button>
         </div>
+      )}
       </div>
     </div>
   );

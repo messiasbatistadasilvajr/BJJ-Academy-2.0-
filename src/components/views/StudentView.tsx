@@ -264,6 +264,7 @@ export const StudentView: React.FC<StudentViewProps> = ({
             </div>
           </div>
         )}
+
       </div>
 
       {/* Internal Navigation Subtabs */}

@@ -317,7 +317,7 @@ export interface Invoice {
   totalUpdatedAmount?: number;
   // Baixa Manual no Balcão & Prevenção de Duplicidade
   isManualReceived?: boolean;
-  manualPaymentMethod?: 'DINHEIRO' | 'CARTÃO (BALCÃO)';
+  manualPaymentMethod?: 'PIX' | 'DINHEIRO' | 'CARTÃO (BALCÃO)' | 'CARTÃO (MAQUININHA)';
   manualReceivedByUserId?: string;
   manualReceivedByUserName?: string;
   settledBy?: string;

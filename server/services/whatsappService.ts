@@ -15,7 +15,8 @@ export interface AlertaVencimentoParams {
   alunoNome: string;
   alunoTelefone: string;
   academiaNome: string;
-  linkPagamento: string;
+  chavePix?: string;
+  linkPagamento?: string;
   valor?: number;
   dataVencimento?: string;
   tenantId: string;
@@ -78,13 +79,25 @@ class WhatsAppService {
 
   /**
    * Template Oficial de Notificação Amigável do BJJACADEMY (Vencida)
+   * Sem link de boleto: envia a Chave PIX da academia e a instrução "Envie o comprovante para este número"
    */
-  public generateMessageTemplate(alunoNome: string, academiaNome: string, linkPagamento: string): string {
-    return `Olá, ${alunoNome}! 🥋 \nPassando para lembrar que a sua mensalidade na ${academiaNome} venceu. Para manter seu acesso liberado aos treinos e ao aplicativo do tatame sem interrupções, realize o pagamento utilizando o link abaixo:\n🔗 ${linkPagamento}\nOss!`;
+  public generateMessageTemplate(
+    alunoNome: string,
+    academiaNome: string,
+    chavePix: string = '58087630378',
+    valor?: number,
+    dataVencimento?: string
+  ): string {
+    const pixFinal = chavePix && !chavePix.startsWith('http') ? chavePix : '58087630378';
+    const valorInfo = typeof valor === 'number' ? `\n💰 *Valor:* R$ ${valor.toFixed(2).replace('.', ',')}` : '';
+    const vencInfo = dataVencimento ? ` (vencimento em ${dataVencimento})` : '';
+
+    return `Olá, ${alunoNome}! 🥋 \nPassando para lembrar que a sua mensalidade na *${academiaNome}*${vencInfo} está em aberto.${valorInfo}\n\nPara manter seu acesso liberado aos treinos no tatame, realize o pagamento via PIX utilizando a chave da academia abaixo:\n🔑 *Chave PIX da Academia:* \`${pixFinal}\`\n\n📲 *Envie o comprovante para este número* para darmos baixa imediata no seu acesso.\nOss! 🥋`;
   }
 
   /**
    * Template Oficial de Lembrete Preventivo (3 dias antes do vencimento)
+   * Sem link de boleto: envia a Chave PIX da academia e a instrução "Envie o comprovante para este número"
    */
   public generateAdvanceReminderTemplate(
     alunoNome: string,
@@ -92,25 +105,25 @@ class WhatsAppService {
     dataVencimento: string,
     valor: number,
     chavePix?: string,
-    linkPagamento?: string,
+    _linkPagamento?: string,
     diasParaVencer: number = 3
   ): string {
     const firstName = alunoNome.split(' ')[0] || alunoNome;
     const formattedAmount = `R$ ${valor.toFixed(2).replace('.', ',')}`;
-    const pixLine = chavePix ? `\n🔑 *Chave PIX Oficial:* \`${chavePix}\`` : '';
-    const linkLine = linkPagamento ? `\n🔗 *Pagar via Link:* ${linkPagamento}` : '';
+    const pixKeyOfficial = chavePix && !chavePix.startsWith('http') ? chavePix : '58087630378';
 
-    return `🥋 *LEMBRETE DE MENSALIDADE • ${academiaNome.toUpperCase()}*\n\nOss, ${firstName}! Tudo bem?\nPassando para avisar com antecedência que a sua mensalidade do tatame vence em *${diasParaVencer} dias* (${dataVencimento}, valor: *${formattedAmount}*).\n\nManter seu plano em dia nos ajuda a manter a melhor estrutura, higienização e tatame impecáveis para a sua evolução técnica!${pixLine}${linkLine}\n\nCaso já tenha efetuado o pagamento via PIX no app, por favor desconsidere esta mensagem. Nos vemos no tatame! Oss! 🥋🔥`;
+    return `🥋 *LEMBRETE DE MENSALIDADE • ${academiaNome.toUpperCase()}*\n\nOss, ${firstName}! Tudo bem?\nPassando para avisar com antecedência que a sua mensalidade do tatame vence em *${diasParaVencer} dias* (${dataVencimento}, valor: *${formattedAmount}*).\n\n🔑 *Chave PIX da Academia:* \`${pixKeyOfficial}\`\n📲 *Envie o comprovante para este número* assim que realizar o pagamento para registrarmos sua baixa.\n\nManter seu plano em dia nos ajuda a manter a melhor estrutura e tatame impecáveis para a sua evolução técnica! Nos vemos no tatame! Oss! 🥋🔥`;
   }
 
   /**
-   * Função assíncrona / worker acionada pelo evento PAYMENT_OVERDUE do aluno
+   * Função assíncrona / worker acionada pelo evento de mensalidade em aberto do aluno
    */
   public async enviarAlertaVencimentoAluno(params: AlertaVencimentoParams): Promise<WhatsAppDeliveryResult> {
-    const { alunoNome, alunoTelefone, academiaNome, linkPagamento, tenantId, alunoId } = params;
+    const { alunoNome, alunoTelefone, academiaNome, chavePix, linkPagamento, valor, dataVencimento, tenantId, alunoId } = params;
 
+    const pixToUse = chavePix || (linkPagamento && !linkPagamento.startsWith('http') ? linkPagamento : '58087630378');
     const formattedPhone = this.formatPhoneNumber(alunoTelefone);
-    const messageText = this.generateMessageTemplate(alunoNome, academiaNome, linkPagamento);
+    const messageText = this.generateMessageTemplate(alunoNome, academiaNome, pixToUse, valor, dataVencimento);
     const messageId = `wpp_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
 
     console.log(`[WhatsApp Service] Disparando alerta de vencimento para ${alunoNome} (${formattedPhone})...`);

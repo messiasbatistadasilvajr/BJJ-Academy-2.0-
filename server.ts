@@ -11,7 +11,8 @@ import { tenantValidationService } from './server/services/tenantValidationServi
 import { asaasSubaccountService } from './server/services/asaasSubaccountService';
 import { whatsappService } from './server/services/whatsappService';
 import { scheduledTasksService } from './server/services/scheduledTasksService';
-import { paymentGatewayWebhookService } from './server/services/paymentGatewayWebhookService';
+// Temporariamente desativado: sem uso do SaaS/Asaas no momento
+// import { paymentGatewayWebhookService } from './server/services/paymentGatewayWebhookService';
 import { fcmNotificationService } from './server/services/fcmNotificationService';
 import { lgpdComplianceService } from './server/services/lgpdComplianceService';
 import { requireAuth, requireManagerOrCeo, requireCeoOnly, requireSuperAdminOnly, enforceTenantIsolation } from './server/services/authServerMiddleware';
@@ -21,9 +22,9 @@ const PORT = 3000;
 async function startServer() {
   const app = express();
 
-  // Parse JSON payloads with reasonable size limit
-  app.use(express.json({ limit: '2mb' }));
-  app.use(express.urlencoded({ extended: true }));
+  // Parse JSON payloads with support for high-res photo uploads (30mb)
+  app.use(express.json({ limit: '30mb' }));
+  app.use(express.urlencoded({ extended: true, limit: '30mb' }));
 
   // Start background worker for Redis / Financial Queue
   financialWorker.start();
@@ -31,102 +32,26 @@ async function startServer() {
   scheduledTasksService.startScheduler();
 
   // -----------------------------------------------------------------
-  // 1. ASAAS WEBHOOK OFFICIAL INGESTION ENDPOINT
-  // Flow: Asaas Webhook -> API -> Validation -> Idempotency -> Queue -> Worker
+  // 1. ASAAS WEBHOOK OFFICIAL INGESTION ENDPOINT (DESATIVADO TEMPORARIAMENTE)
+  // Operação atual 100% via Baixa Manual (PIX Direto da Academia, Dinheiro ou Cartão na Maquininha)
   // -----------------------------------------------------------------
+  app.post('/api/webhooks/asaas', async (_req, res) => {
+    return res.status(200).json({
+      success: true,
+      status: 'WEBHOOK_DISABLED_MANUAL_MODE',
+      message: 'Webhooks do Asaas temporariamente desativados. A academia opera com recebimento direto (PIX, Dinheiro ou Cartão na maquininha) e baixa manual.'
+    });
+  });
+  /* ROTA DE WEBHOOK ASAAS COMENTADA TEMPORARIAMENTE:
   app.post('/api/webhooks/asaas', async (req, res) => {
     const startTime = Date.now();
     const tokenHeader = (req.headers['asaas-access-token'] || req.headers['authorization']) as string | undefined;
-
-    // Step 1: Validate webhook authenticity
     const authResult = validateWebhookAuth(tokenHeader);
     if (!authResult.isAuthorized) {
-      console.warn('[Asaas Webhook] Tentativa de acesso não autorizada ao webhook:', authResult.reason);
-      return res.status(401).json({
-        error: 'UNAUTHORIZED',
-        message: 'Token de autenticação do webhook Asaas ausente ou inválido.'
-      });
-    }
-
-    // Step 2: Validate payload schema & structure
-    const validation = validateAsaasPayload(req.body);
-    if (!validation.isValid || !validation.sanitizedPayload) {
-      console.warn('[Asaas Webhook] Payload inválido rejeitado:', validation.errorMessage);
-      return res.status(400).json({
-        error: validation.errorCode || 'BAD_REQUEST',
-        message: validation.errorMessage || 'Payload Asaas inválido.'
-      });
-    }
-
-    const payload = validation.sanitizedPayload;
-    const eventId = payload.id || `evt_${Date.now()}`;
-    const eventType = validation.eventType || 'UNKNOWN';
-    const chargeId = validation.chargeId || 'unknown';
-    const tenantId = payload.payment?.customer?.startsWith('acad_') ? payload.payment.customer : 'acad_matriz';
-
-    // Log safely (sanitized, no secrets)
-    console.log(`[Asaas Webhook] Evento recebido: ${eventType} | ChargeId: ${chargeId} | EventId: ${eventId}`);
-
-    // Step 3: Fast Idempotency Pre-Check
-    const idempotencyKey = idempotencyService.makeKey('asaas', `${eventId}_${eventType}`);
-    const existingEntry = await idempotencyService.getEntry(idempotencyKey);
-
-    if (existingEntry && existingEntry.status === 'completed') {
-      console.log(`[Asaas Webhook] Evento duplicado reconhecido via Idempotency: ${idempotencyKey}`);
-      return res.status(200).json({
-        success: true,
-        status: 'DUPLICATE_ACKNOWLEDGED',
-        message: 'Evento já recebido e processado com sucesso anteriormente.',
-        eventId
-      });
-    }
-
-    // Step 4: Audit Webhook Intake
-    financialAuditService.record({
-      tenantId,
-      action: 'WEBHOOK_RECEIVED',
-      entity: 'webhook',
-      entityId: eventId,
-      origin: 'asaas_webhook',
-      result: 'success',
-      details: {
-        eventType,
-        chargeId,
-        sanitizedPayload: JSON.parse(sanitizeLogOutput(payload))
-      }
-    });
-
-    // Step 5: Push into Queue for asynchronous worker processing (Fast HTTP Response)
-    try {
-      const job = await financialQueueService.enqueue('ASAAS_WEBHOOK_EVENT', payload);
-
-      financialAuditService.record({
-        tenantId,
-        action: 'WEBHOOK_QUEUED',
-        entity: 'webhook',
-        entityId: eventId,
-        origin: 'asaas_webhook',
-        result: 'success',
-        details: { jobId: job.id, eventType }
-      });
-
-      const latencyMs = Date.now() - startTime;
-      return res.status(200).json({
-        success: true,
-        status: 'QUEUED',
-        message: 'Evento Asaas validado e enfileirado no motor financeiro com sucesso.',
-        eventId,
-        jobId: job.id,
-        latencyMs
-      });
-    } catch (queueErr: any) {
-      console.error('[Asaas Webhook] Erro ao enfileirar job:', queueErr);
-      return res.status(500).json({
-        error: 'QUEUE_ERROR',
-        message: 'Falha temporária ao registrar transação na fila de processamento.'
-      });
+      return res.status(401).json({ error: 'UNAUTHORIZED' });
     }
   });
+  */
 
   // -----------------------------------------------------------------
   // 2. HEALTH CHECK & MOTOR METRICS
@@ -487,35 +412,13 @@ async function startServer() {
     }
   });
 
-  // 7.3 Webhook Asaas para Mensalidades das Academias (Tenants)
-  // Trata PAYMENT_RECEIVED (ativação imediata) e PAYMENT_OVERDUE (carência de 3 dias)
-  app.post('/api/webhooks/asaas/tenants', async (req, res) => {
-    const tokenHeader = (req.headers['asaas-access-token'] || req.headers['authorization']) as string | undefined;
-    const authResult = validateWebhookAuth(tokenHeader);
-
-    if (!authResult.isAuthorized) {
-      return res.status(401).json({
-        error: 'UNAUTHORIZED',
-        message: 'Token de webhook inválido.'
-      });
-    }
-
-    const { event, payment } = req.body;
-    if (!event || !payment) {
-      return res.status(400).json({ error: 'Payload incompleto.' });
-    }
-
-    try {
-      const result = asaasSubaccountService.handleTenantSubscriptionWebhook(event, payment);
-      return res.status(200).json({
-        success: true,
-        event,
-        ...result
-      });
-    } catch (err: any) {
-      console.error('[Tenant Webhook Error]:', err);
-      return res.status(500).json({ error: 'INTERNAL_ERROR', message: err.message });
-    }
+  // 7.3 Webhook Asaas para Mensalidades das Academias (DESATIVADO TEMPORARIAMENTE)
+  app.post('/api/webhooks/asaas/tenants', async (_req, res) => {
+    return res.status(200).json({
+      success: true,
+      status: 'WEBHOOK_DISABLED_MANUAL_MODE',
+      message: 'Webhook Asaas de tenants temporariamente desativado.'
+    });
   });
 
   // 7.4 Criação da Subconta Asaas da Academia (POST /v3/accounts)
@@ -576,59 +479,61 @@ async function startServer() {
     }
   });
 
-  // 7.5.1 Baixa Manual no Balcão com Cancelamento de PIX Online no Asaas (Prevenção de Duplicidade)
+  // 7.5.1 Baixa Manual na Recepção / Gerência (PIX, Dinheiro ou Cartão na maquininha física)
   app.post('/api/tenants/:tenantId/invoices/:invoiceId/manual-settle', requireManagerOrCeo, enforceTenantIsolation, async (req, res) => {
     const { tenantId, invoiceId } = req.params;
     const {
-      paymentMethod, // 'DINHEIRO' | 'CARTÃO (BALCÃO)'
+      paymentMethod, // 'PIX' | 'DINHEIRO' | 'CARTÃO (BALCÃO)' | 'CARTÃO (MAQUININHA)'
       amount,
       receivedByUserId,
       receivedByUserName,
       userRole,
-      asaasPaymentId
+      notes
     } = req.body;
 
     // RBAC: Estritamente bloqueado para ALUNOS
     if (userRole === 'ALUNO' || userRole === 'student' || userRole === 'parent') {
       return res.status(403).json({
         error: 'ACCESS_DENIED',
-        message: 'Acesso Negado. Operação de Baixa Manual permitida apenas para Dono ou Professor.'
+        message: 'Acesso Negado. Operação de Baixa Manual permitida apenas para Recepção, Gerente, Dono ou Professor.'
       });
     }
 
-    if (!paymentMethod || (paymentMethod !== 'DINHEIRO' && paymentMethod !== 'CARTÃO (BALCÃO)')) {
+    const allowedMethods = ['PIX', 'DINHEIRO', 'CARTÃO (BALCÃO)', 'CARTÃO (MAQUININHA)'];
+    if (!paymentMethod || !allowedMethods.includes(paymentMethod)) {
       return res.status(400).json({
         error: 'INVALID_PAYMENT_METHOD',
-        message: 'Forma de pagamento presencial inválida. Escolha DINHEIRO ou CARTÃO (BALCÃO).'
+        message: 'Forma de pagamento manual inválida. Escolha PIX, DINHEIRO ou CARTÃO (MAQUININHA).'
       });
     }
 
-    // Regra Crítica: Cancela o Pix aberto no Asaas se existir para impedir cobrança duplicada
-    let asaasCancellation = null;
-    const pixIdToCancel = asaasPaymentId || invoiceId;
-    if (pixIdToCancel) {
-      try {
-        asaasCancellation = await asaasSubaccountService.cancelAsaasPayment(
-          tenantId,
-          pixIdToCancel,
-          `Baixa manual presencial (${paymentMethod}) efetuada por ${receivedByUserName || 'Atendente'}`
-        );
-      } catch (cancelErr: any) {
-        console.warn('[Manual Settle Asaas Cancel Warning]:', cancelErr.message);
+    financialAuditService.record({
+      tenantId,
+      action: 'PAYMENT_RECEIVED',
+      entity: 'invoice',
+      entityId: invoiceId,
+      origin: 'manager_ui',
+      result: 'success',
+      details: {
+        paymentMethod,
+        amount: Number(amount || 100),
+        receivedByUserId,
+        receivedByUserName: receivedByUserName || 'Recepção / Gerência',
+        notes: notes || 'Baixa manual direta na recepção'
       }
-    }
+    });
 
     return res.status(200).json({
       success: true,
-      message: `Baixa manual de R$ ${amount || 100} em ${paymentMethod} confirmada. PIX online cancelado no Asaas.`,
+      message: `Baixa manual de R$ ${amount || 100} via ${paymentMethod} confirmada com sucesso.`,
       settlement: {
         invoiceId,
         tenantId,
         paymentMethod,
         amount: Number(amount || 100),
         settledAt: new Date().toISOString(),
-        receivedBy: receivedByUserName || 'Gestão da Academia',
-        asaasCancellation
+        receivedBy: receivedByUserName || 'Recepção / Gerência',
+        notes
       }
     });
   });
@@ -661,7 +566,7 @@ async function startServer() {
 
   // 7.7 Alertas de Vencimento via WhatsApp (Evolution API / Z-API)
   app.post('/api/whatsapp/send-overdue-alert', async (req, res) => {
-    const { alunoNome, alunoTelefone, academiaNome, linkPagamento, valor, dataVencimento, tenantId, alunoId } = req.body;
+    const { alunoNome, alunoTelefone, academiaNome, chavePix, valor, dataVencimento, tenantId, alunoId } = req.body;
 
     if (!alunoNome || !alunoTelefone) {
       return res.status(400).json({
@@ -676,7 +581,7 @@ async function startServer() {
         alunoNome,
         alunoTelefone,
         academiaNome: academiaNome || 'Loyalty Jiu-Jitsu',
-        linkPagamento: linkPagamento || 'https://sandbox.asaas.com/i/pay_exemplo_123',
+        chavePix: chavePix || '58087630378',
         valor,
         dataVencimento,
         tenantId: tenantId || 'acad_loyalty_jiujitsu'
@@ -796,8 +701,10 @@ async function startServer() {
   });
 
   // -----------------------------------------------------------------
-  // 7.10 ENDPOINT UNIFICADO DE WEBHOOKS (ASAAS / MERCADO PAGO / STRIPE)
+  // 7.10 ENDPOINT UNIFICADO DE WEBHOOKS (DESATIVADO TEMPORARIAMENTE)
+  // paymentGatewayWebhookService.ts comentado conforme diretriz de operação manual direta
   // -----------------------------------------------------------------
+  /*
   app.post('/api/webhooks/gateway/:provider', async (req, res) => {
     const provider = req.params.provider;
 
@@ -812,6 +719,7 @@ async function startServer() {
       return res.status(500).json({ error: 'INTERNAL_ERROR', message: err.message });
     }
   });
+  */
 
   // -----------------------------------------------------------------
   // 7.11 NOTIFICAÇÕES PUSH (FCM) ENDPOINTS

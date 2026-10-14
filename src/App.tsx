@@ -309,7 +309,9 @@ export default function App() {
     return 'acad_loyalty_jiujitsu';
   });
 
-  const activeAcademy = academies.find((a) => a.id === activeAcademyId) || academies[0];
+  const activeAcademy: RegisteredAcademy = (academies && academies.length > 0)
+    ? (academies.find((a) => a.id === activeAcademyId) || academies[0])
+    : mockRegisteredAcademies[0];
 
   // Sincronização automática das academias com a base de dados de assinaturas SaaS
   useEffect(() => {
@@ -319,8 +321,8 @@ export default function App() {
   }, [academies]);
 
   // Regra de Negócio Crítica (Bloqueio Automático por Inadimplência SaaS)
-  const currentAcademyLockout = SaasSubscriptionService.checkAcademyAccess(activeAcademy.id);
-  const isCurrentAcademyBlocked = activeAcademy.id !== 'all' && currentAcademyLockout.isBlocked;
+  const currentAcademyLockout = SaasSubscriptionService.checkAcademyAccess(activeAcademy?.id || 'acad_loyalty_jiujitsu');
+  const isCurrentAcademyBlocked = (activeAcademy?.id || '') !== 'all' && Boolean(currentAcademyLockout?.isBlocked);
 
   const [isOperatingHoursOpen, setIsOperatingHoursOpen] = useState(false);
   const [academyForHours, setAcademyForHours] = useState<RegisteredAcademy | null>(null);
@@ -348,6 +350,7 @@ export default function App() {
         safeLocalStorageSet('bjj_students_roster', updatedStudents);
         // If current active student is in the roster, keep active student profile fresh
         setStudent((curr) => {
+          if (!curr) return mockStudent;
           const matched = updatedStudents.find((s) => s.id === curr.id);
           return matched || curr;
         });
@@ -576,10 +579,10 @@ export default function App() {
   };
 
   // Photo of attendance taken
-  const handlePhotoTaken = (photoUrl: string) => {
+  const handlePhotoTaken = (_photoUrl: string) => {
     triggerPushNotification(
       '📸 Foto Registrada no Tatame!',
-      'Sua presença fotográfica foi salva no feed da academia com a chancela oficial BJJ Academy.'
+      'Sua presença fotográfica e registro do treino foram salvos com sucesso!'
     );
   };
 
@@ -1032,6 +1035,10 @@ export default function App() {
           onUpdateExpense={handleUpdateExpense}
           onDeleteExpense={handleDeleteExpense}
           onOpenExpenseManagement={() => setActiveRole('expense_management')}
+          onUpdateInvoices={(updated) => {
+            setInvoices(updated);
+            localStorage.setItem('bjj_invoices', JSON.stringify(updated));
+          }}
         />
       )}
 
@@ -1419,6 +1426,7 @@ export default function App() {
           academyVoiceEngine.announceAcademyMessage(activeAcademy, 'AI Coach BJJ', msg);
         }}
       />
+
 
       {/* Data Migration Modal (CSV Import/Export) */}
       <DataMigrationModal

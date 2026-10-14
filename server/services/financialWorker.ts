@@ -170,14 +170,14 @@ class FinancialWorker {
           'Atleta Loyalty BJJ';
         const studentPhone = (payment as any)?.mobilePhone || (payment as any)?.phone || '85998765432';
         const academyName = (payment as any)?.academyName || 'Loyalty Jiu-Jitsu';
-        const linkPagamento = payment?.invoiceUrl || payment?.bankSlipUrl || `https://sandbox.asaas.com/i/${paymentId}`;
+        const chavePix = (payment as any)?.pixKey || '58087630378';
 
         try {
           await whatsappService.enviarAlertaVencimentoAluno({
             alunoNome: studentName,
             alunoTelefone: studentPhone,
             academiaNome: academyName,
-            linkPagamento,
+            chavePix,
             valor: payment?.value,
             dataVencimento: payment?.dueDate,
             tenantId

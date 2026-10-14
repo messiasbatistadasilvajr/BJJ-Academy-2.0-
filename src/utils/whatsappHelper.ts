@@ -5,6 +5,14 @@ import { Invoice } from '../types';
  */
 export function sendReceiptViaWhatsApp(invoice: Invoice, academyName: string = 'BJJ Academy') {
   const amountFormatted = invoice.amount.toFixed(2).replace('.', ',');
+  const methodLabel =
+    invoice.manualPaymentMethod ||
+    (invoice.paymentMethod === 'dinheiro'
+      ? 'Dinheiro (Espécie)'
+      : invoice.paymentMethod === 'cartao_balcao' || invoice.paymentMethod === 'cartao'
+      ? 'Cartão (Maquininha Física)'
+      : 'PIX Direto da Academia');
+
   const text = 
 `🥋 *COMPROVANTE DE PAGAMENTO • BJJ ACADEMY*
 🏢 *Academia:* ${academyName}
@@ -13,7 +21,7 @@ export function sendReceiptViaWhatsApp(invoice: Invoice, academyName: string = '
 📝 *Referência:* ${invoice.title}
 💰 *Valor Pago:* R$ ${amountFormatted}
 📅 *Data de Liquidação:* ${invoice.paidDate || new Date().toLocaleDateString('pt-BR')}
-💳 *Forma de Pagamento:* PIX Instantâneo Asaas
+💳 *Forma de Pagamento:* ${methodLabel}
 🔒 *Autenticação Digital:* #BJJ-${Math.floor(100000 + Math.random() * 900000)}
 
 _Agradecemos a pontualidade. Bons treinos no tatame! Oss!_`;
@@ -23,7 +31,8 @@ _Agradecemos a pontualidade. Bons treinos no tatame! Oss!_`;
 }
 
 /**
- * Creates and opens a WhatsApp message with a gentle, polite invoice reminder (aviso de vencimento).
+ * Creates and opens a WhatsApp message with a gentle, polite invoice reminder (aviso de vencimento)
+ * containing the academy PIX key and the instruction "Envie o comprovante para este número".
  */
 export function sendReminderViaWhatsApp(
   invoice: Invoice,
@@ -43,7 +52,8 @@ export function sendReminderViaWhatsApp(
   }
 
   const amountFormatted = finalAmount.toFixed(2).replace('.', ',');
-  const pixInfo = (pixKey || invoice.pixCode) ? `\n🔑 *Chave PIX da Academia:* \`${pixKey || invoice.pixCode}\`` : '';
+  const effectivePix = pixKey || invoice.pixCode || '58087630378';
+  const pixInfo = `\n🔑 *Chave PIX da Academia:* \`${effectivePix}\`\n📲 *Importante:* Envie o comprovante para este número para darmos baixa imediata no seu acesso.`;
 
   const isOverdue = invoice.status === 'overdue';
   const header = isOverdue
@@ -51,8 +61,8 @@ export function sendReminderViaWhatsApp(
     : `🥋 *LEMBRETE DE MENSALIDADE • ${customAcademy.toUpperCase()}*`;
 
   const bodyText = isOverdue
-    ? `Sua mensalidade referente a *"${invoice.title}"* venceu na data *${invoice.dueDate}*.\n💰 *Valor Atualizado:* R$ ${amountFormatted}${pixInfo}\n\nPara manter seu plano e acesso liberado às aulas de kimono e no-gi, você pode realizar a transferência PIX diretamente pelo app.`
-    : `Passando para lembrar que a mensalidade do tatame referente a *"${invoice.title}"* vence em *${invoice.dueDate}*.\n💰 *Valor:* R$ ${amountFormatted}${pixInfo}\n\nCaso já tenha efetuado o pagamento via PIX no app, por favor desconsidere esta mensagem.`;
+    ? `Sua mensalidade referente a *"${invoice.title}"* venceu na data *${invoice.dueDate}*.\n💰 *Valor Atualizado:* R$ ${amountFormatted}${pixInfo}`
+    : `Passando para lembrar que a mensalidade do tatame referente a *"${invoice.title}"* vence em *${invoice.dueDate}*.\n💰 *Valor:* R$ ${amountFormatted}${pixInfo}`;
 
   const text = 
 `${header}
@@ -87,11 +97,12 @@ Oss, *${invoice.studentName}*! Tudo bem? 🥋
 Passando para avisar com antecedência que a sua mensalidade do tatame (*"${invoice.title}"*) vence em *3 dias* (${invoice.dueDate}).
 
 💰 *Valor:* R$ ${amountFormatted}
-🔑 *Chave PIX Oficial:* \`${pix}\`
+🔑 *Chave PIX da Academia:* \`${pix}\`
+📲 *Importante:* Envie o comprovante para este número assim que realizar o pagamento.
 
 Manter seu plano em dia nos ajuda a manter a melhor estrutura, tatame limpo e ambiente propício para a sua evolução rumo aos próximos graus! 🔥
 
-_Caso já tenha realizado o PIX pelo app, desconsidere esta mensagem. Nos vemos no tatame! Oss!_`;
+_Nos vemos no tatame! Oss!_`;
 
   const url = `https://api.whatsapp.com/send?${phoneParam}text=${encodeURIComponent(text)}`;
   window.open(url, '_blank');
@@ -260,5 +271,77 @@ export function sendBirthdayCongratulationsWhatsApp({
   const text = customMessage || generateBirthdayMessage({ name, role, academyName, belt });
   const url = `https://api.whatsapp.com/send?${phoneParam}text=${encodeURIComponent(text)}`;
   window.open(url, '_blank');
+}
+
+export interface LoyaltyContractWhatsAppParams {
+  studentName?: string;
+  responsibleName?: string;
+  phone: string;
+  cpf?: string;
+  parentCpf?: string;
+  planName?: string;
+  monthlyFee?: number;
+  dueDay?: number;
+  contractHash?: string;
+  academyName?: string;
+  validationUrl?: string;
+}
+
+/**
+ * Envia o Contrato Oficial de Prestação de Serviços da Loyalty Jiu-Jitsu
+ * formatado com link, dados da matrícula, parcelas e hash SHA-256 para o WhatsApp do pai/responsável.
+ */
+export function sendLoyaltyContractWhatsApp({
+  studentName,
+  responsibleName,
+  phone,
+  cpf,
+  parentCpf,
+  planName = '(IRMÃOS) TEEN 3X',
+  monthlyFee = 180,
+  dueDay = 10,
+  contractHash = '687cd89499b99dcd727cf2cea8e1aec50191ab14018fc86f27e525cf421c5bc5',
+  academyName = 'Loyalty Jiu-Jitsu',
+  validationUrl = 'https://valida.ae/cf863573c0b73bae72de28724757da0ae66e778affa22bb62'
+}: LoyaltyContractWhatsAppParams): { success: boolean; url: string } {
+  const cleanPhone = (phone || '').replace(/\D/g, '');
+  const phoneParam = cleanPhone.length >= 10 ? `phone=55${cleanPhone}&` : '';
+  const effectiveName = studentName?.trim() || '____________________';
+  const effectiveResp = responsibleName?.trim() ? `\n👤 *Responsável Legal:* ${responsibleName.trim()}` : '';
+  const monthlyFormatted = (monthlyFee || 180).toFixed(2).replace('.', ',');
+  const totalFormatted = ((monthlyFee || 180) * 12).toFixed(2).replace('.', ',');
+
+  const message = 
+`🥋 *CONTRATO DE PRESTAÇÃO DE SERVIÇOS • ${academyName.toUpperCase()}*
+📍 *Unidade Matriz Oficial:* Rua George Cerqueira, nº 976, Vila Velha, Fortaleza - CE
+🏢 *CNPJ:* 081.265.363-73 (Pedro Erick Emidio da Silva)
+
+Olá${responsibleName ? `, ${responsibleName}` : ''}! Segue a via digital do Contrato de Matrícula para conferência e arquivo:
+
+📋 *DADOS DA MATRÍCULA:*
+🥋 *Aluno:* ${effectiveName}${effectiveResp}
+${cpf ? `🆔 *CPF Aluno:* ${cpf}\n` : ''}${parentCpf ? `🆔 *CPF Responsável:* ${parentCpf}\n` : ''}📌 *Plano Contratado:* ${planName} (Vigência 12 Meses)
+🥋 *Modalidade:* Jiu-Jitsu (5 sessões por semana)
+💰 *Valor Mensal:* 12x de R$ ${monthlyFormatted} (Vencimento todo dia ${dueDay})
+💵 *Valor Global:* R$ ${totalFormatted}
+
+🔒 *AUTENTICAÇÃO & ASSINATURA ELETRÔNICA:*
+⚖️ *Validade Jurídica:* Lei Federal nº 14.063/2020 e Regulamento (UE) 910/2014
+🔐 *Hash SHA-256:* \`${contractHash.substring(0, 32)}...\`
+🔗 *Link de Validação & Auditoria:* ${validationUrl}
+
+📄 _O contrato em formato PDF com as 5 páginas oficiais (Cláusulas, Remuneração, Foro, Assinaturas e Relatório de Auditoria) foi gerado pelo sistema oficial da academia._
+
+Qualquer dúvida estamos à disposição na recepção ou por este canal. Bons treinos e OSS! 🥋`;
+
+  const url = `https://api.whatsapp.com/send?${phoneParam}text=${encodeURIComponent(message)}`;
+  if (typeof window !== 'undefined') {
+    try {
+      window.open(url, '_blank');
+    } catch (e) {
+      console.warn('Erro ao abrir WhatsApp via window.open:', e);
+    }
+  }
+  return { success: true, url };
 }
 

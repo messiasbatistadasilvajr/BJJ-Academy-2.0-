@@ -693,6 +693,7 @@ export const TeacherView: React.FC<TeacherViewProps> = ({
               </div>
               <span className="text-purple-400 text-xs font-bold">Abrir →</span>
             </button>
+
           </div>
 
           {/* Operational Buttons */}

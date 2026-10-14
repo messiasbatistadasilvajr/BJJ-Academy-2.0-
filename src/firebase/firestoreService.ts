@@ -347,8 +347,8 @@ export function subscribeToGeneralManager(
       }
     },
     (error) => {
+      console.warn(`[Firestore Listener] ${colPath}:`, error);
       if (onError) onError(error);
-      handleFirestoreError(error, OperationType.GET, colPath);
     }
   );
 }
@@ -387,8 +387,8 @@ export function subscribeToFinancialAudits(
       }
     },
     (error) => {
+      console.warn(`[Firestore Listener] ${colPath}:`, error);
       if (onError) onError(error);
-      handleFirestoreError(error, OperationType.GET, colPath);
     }
   );
 }
@@ -425,8 +425,8 @@ export function subscribeToPayableExpenses(
       }
     },
     (error) => {
+      console.warn(`[Firestore Listener] ${colPath}:`, error);
       if (onError) onError(error);
-      handleFirestoreError(error, OperationType.GET, colPath);
     }
   );
 }

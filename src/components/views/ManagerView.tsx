@@ -27,6 +27,7 @@ import { safeLocalStorageGet, safeLocalStorageSet } from '../../utils/safeStorag
 import { StudentEnrollmentButton } from '../common/StudentEnrollmentButton';
 import { saveCRMLeadToFirestore, subscribeToCRMLeads } from '../../firebase/firestoreService';
 import { ExpenseManagementView } from './ExpenseManagementView';
+import { FinancialView } from './FinancialView';
 import { ProShopOrderService } from '../../services/proShopOrderService';
 
 interface ManagerViewProps {
@@ -76,6 +77,7 @@ interface ManagerViewProps {
   onDeleteExpense?: (expenseId: string) => void;
   onOpenExpenseManagement?: () => void;
   onOpenProShopFulfillment?: () => void;
+  onUpdateInvoices?: (updatedInvoices: Invoice[]) => void;
 }
 
 export const ManagerView: React.FC<ManagerViewProps> = ({
@@ -125,6 +127,7 @@ export const ManagerView: React.FC<ManagerViewProps> = ({
   onUpdateExpense = () => {},
   onDeleteExpense = () => {},
   onOpenExpenseManagement,
+  onUpdateInvoices,
 }) => {
   const [activeTab, setActiveTab] = useState<'dashboard' | 'financeiro' | 'despesas' | 'crm' | 'push' | 'academies'>('dashboard');
 
@@ -1571,201 +1574,26 @@ export const ManagerView: React.FC<ManagerViewProps> = ({
               </div>
             </div>
 
-            {/* FINANCIAL SUMMARY CARDS */}
-            <div className="grid grid-cols-2 gap-2.5">
-              <div className="p-3.5 rounded-2xl bg-slate-900 border border-slate-800 space-y-1">
-                <div className="text-[10px] font-bold text-emerald-400 uppercase">Liquidado (Recebido)</div>
-                <div className="text-xl font-black text-white">{formatBRL(financialMetrics.paid)}</div>
-                <div className="text-[10px] text-slate-400">Mensalidades quitadas</div>
-              </div>
-
-              <div className="p-3.5 rounded-2xl bg-slate-900 border border-slate-800 space-y-1">
-                <div className="text-[10px] font-bold text-blue-400 uppercase">A Vencer (No Prazo)</div>
-                <div className="text-xl font-black text-white">{formatBRL(financialMetrics.pending)}</div>
-                <div className="text-[10px] text-slate-400">Previsão de entrada</div>
-              </div>
-
-              <div className="p-3.5 rounded-2xl bg-slate-900 border border-slate-800 space-y-1">
-                <div className="text-[10px] font-bold text-red-400 uppercase">Em Atraso (Original)</div>
-                <div className="text-xl font-black text-white">{formatBRL(financialMetrics.overdueOriginal)}</div>
-                <div className="text-[10px] text-red-400">Valor principal em atraso</div>
-              </div>
-
-              <div className="p-3.5 rounded-2xl bg-gradient-to-br from-amber-950/30 to-slate-900 border border-amber-600/40 space-y-1">
-                <div className="text-[10px] font-bold text-amber-400 uppercase flex items-center gap-1">
-                  <Calculator size={11} /> Atualizado c/ Juros
-                </div>
-                <div className="text-xl font-black text-amber-300">{formatBRL(financialMetrics.overdueWithFees)}</div>
-                <div className="text-[10px] text-amber-400/90 font-mono">
-                  +{formatBRL(financialMetrics.totalFine + financialMetrics.totalInterest)} (Multa 2% + Juros)
-                </div>
-              </div>
-            </div>
-
-            {/* ACTION BANNER FOR FULL FINANCIAL HUB */}
-            <div className="p-3.5 rounded-2xl bg-gradient-to-r from-emerald-950/60 to-teal-950/60 border border-emerald-700/50 flex items-center justify-between gap-2">
-              <div>
-                <h4 className="text-xs font-black text-white flex items-center gap-1.5">
-                  <DollarSign size={14} className="text-emerald-400" />
-                  Módulo Financeiro Completo
-                </h4>
-                <p className="text-[10px] text-emerald-300/80">
-                  Calculadora de atraso, emissão de cobranças e tabelas de planos.
-                </p>
-              </div>
-              <button
-                onClick={onOpenFinancial}
-                className="px-3 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-black text-xs shrink-0 shadow-md flex items-center gap-1 transition"
-              >
-                <span>Abrir Hub</span>
-                <ArrowUpRight size={13} />
-              </button>
-            </div>
-
-            {/* TRANSACTIONS & OVERDUE INVOICES */}
-            <div className="space-y-2">
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-                <h4 className="text-xs font-bold uppercase tracking-wider text-slate-400">
-                  Faturas & Mensalidades ({filteredInvoices.length})
-                </h4>
-                <div className="flex items-center gap-2">
-                  <button
-                    onClick={handleExportInvoicesCSV}
-                    className="px-2.5 py-1 rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-700 text-emerald-400 hover:text-emerald-300 text-[11px] font-bold flex items-center gap-1.5 transition shadow-sm"
-                    title="Exportar faturas em formato CSV para Excel"
-                  >
-                    <Download size={12} />
-                    <span>Exportar CSV</span>
-                  </button>
-                  <button
-                    onClick={onOpenFinancial}
-                    className="text-emerald-400 hover:text-emerald-300 text-[11px] font-bold flex items-center gap-0.5"
-                  >
-                    Ver todas no Hub <ArrowUpRight size={12} />
-                  </button>
-                </div>
-              </div>
-
-              <div className="space-y-2">
-                {filteredInvoices.map((inv) => {
-                  const calc = calculateLateFeeAndInterest(
-                    inv.amount,
-                    inv.dueDate,
-                    new Date(2026, 8, 2),
-                    inv.lateFeePercent || 2.0,
-                    (inv.dailyInterestPercent ? inv.dailyInterestPercent * 30 : 1.0)
-                  );
-
-                  return (
-                    <div
-                      key={inv.id}
-                      className={`p-3 rounded-2xl border transition-all ${
-                        inv.status === 'overdue'
-                          ? 'bg-red-950/20 border-red-800/50'
-                          : 'bg-slate-900 border-slate-800'
-                      }`}
-                    >
-                      <div className="flex items-start justify-between gap-2 text-xs">
-                        <div>
-                          <div className="flex items-center gap-1.5">
-                            <span className="font-bold text-white">{inv.studentName}</span>
-                            <span className="text-[9px] bg-slate-800 text-slate-300 px-1.5 py-0.2 rounded font-mono">
-                              {inv.invoiceNumber}
-                            </span>
-                          </div>
-                          <div className="text-[10px] text-slate-400">{inv.title}</div>
-                          <div className="text-[10px] text-amber-400/90 font-medium">
-                            {inv.academyName} • Venceu: {inv.dueDate}
-                          </div>
-                        </div>
-
-                        <div className="text-right">
-                          {inv.status === 'overdue' ? (
-                            <div>
-                              <div className="text-[10px] text-slate-400 line-through">
-                                {formatBRL(inv.amount)}
-                              </div>
-                              <div className="font-black text-red-400 text-sm">
-                                {formatBRL(calc.totalUpdatedAmount)}
-                              </div>
-                              <div className="text-[9px] text-amber-400 font-bold">
-                                +{formatBRL(calc.fineAmount + calc.interestAmount)} (Juros)
-                              </div>
-                            </div>
-                          ) : (
-                            <div className="font-black text-white text-sm">
-                              {formatBRL(inv.amount)}
-                            </div>
-                          )}
-
-                          <span className={`text-[9px] font-bold px-2 py-0.5 rounded-full inline-block mt-0.5 ${
-                            inv.status === 'paid'
-                              ? 'bg-emerald-950 text-emerald-400 border border-emerald-800'
-                              : inv.status === 'overdue'
-                              ? 'bg-red-950 text-red-400 border border-red-800'
-                              : 'bg-blue-950 text-blue-400 border border-blue-800'
-                          }`}>
-                            {inv.status === 'paid'
-                              ? 'Liquidado'
-                              : inv.status === 'overdue'
-                              ? `${calc.daysOverdue}d em atraso`
-                              : 'A vencer'}
-                          </span>
-                        </div>
-                      </div>
-
-                      {/* Paid invoice WhatsApp receipt action */}
-                      {inv.status === 'paid' && (
-                        <div className="mt-2 pt-2 border-t border-slate-800/80 flex items-center justify-between text-[10px]">
-                          <span className="text-emerald-400/80 font-medium">
-                            ✓ Pagamento confirmado
-                          </span>
-                          <button
-                            type="button"
-                            onClick={() => sendReceiptViaWhatsApp(inv)}
-                            className="px-2 py-0.5 rounded bg-emerald-950/60 hover:bg-emerald-900 text-emerald-300 border border-emerald-800/60 font-bold flex items-center gap-1 transition"
-                            title="Enviar Comprovante de Quitação via WhatsApp"
-                          >
-                            <MessageCircle size={10} />
-                            <span>Comprovante WhatsApp</span>
-                          </button>
-                        </div>
-                      )}
-
-                      {/* Overdue Calculation Details & WhatsApp button */}
-                      {inv.status === 'overdue' && (
-                        <div className="mt-2 pt-2 border-t border-red-900/30 flex items-center justify-between text-[10px]">
-                          <span className="text-slate-400">
-                            Multa 2%: {formatBRL(calc.fineAmount)} | Juros: {formatBRL(calc.interestAmount)}
-                          </span>
-                          <div className="flex items-center gap-1.5">
-                            <button
-                              onClick={() => {
-                                const text = `Cobrança ${inv.academyName}: Mensalidade de ${inv.studentName} em atraso. Valor original: ${formatBRL(inv.amount)}, atualizado com juros e multa: ${formatBRL(calc.totalUpdatedAmount)}. PIX: ${inv.pixCode || 'financeiro@bjjacademy.com.br'}`;
-                                navigator.clipboard.writeText(text);
-                                setCopiedPixId(inv.id);
-                                setTimeout(() => setCopiedPixId(null), 2000);
-                              }}
-                              className="px-2 py-0.5 rounded bg-slate-800 hover:bg-slate-700 text-amber-400 font-bold flex items-center gap-1"
-                            >
-                              {copiedPixId === inv.id ? <Check size={10} className="text-emerald-400" /> : <Copy size={10} />}
-                              <span>Copiar PIX</span>
-                            </button>
-                            <button
-                              onClick={() => sendReminderViaWhatsApp(inv, calc.totalUpdatedAmount)}
-                              className="px-2 py-0.5 rounded bg-emerald-600 hover:bg-emerald-500 text-white font-bold flex items-center gap-1"
-                            >
-                              <MessageSquare size={10} />
-                              <span>WhatsApp</span>
-                            </button>
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
+            {/* PAINEL DE BAIXA MANUAL E GESTÃO DE MENSALIDADES (FinancialView.tsx) */}
+            <FinancialView
+              invoices={filteredInvoices}
+              academies={academies}
+              activeAcademy={activeRegisteredAcademy}
+              activeAcademyId={activeAcademyId}
+              activeAcademyName={activeAcademyName}
+              defaultPixKey={activeRegisteredAcademy?.pixKey || gmData.pixKey || '58087630378'}
+              currentUserRole={isGeneralManager ? 'ceo' : 'manager'}
+              currentUserId="mgr_active"
+              currentUserName={isGeneralManager ? gmData.name : 'Recepção / Gerente'}
+              onUpdateInvoices={(updatedSubset) => {
+                if (onUpdateInvoices) {
+                  const mapUpdated = new Map(updatedSubset.map(i => [i.id, i]));
+                  const merged = invoices.map(inv => mapUpdated.get(inv.id) || inv);
+                  onUpdateInvoices(merged);
+                }
+              }}
+              onOpenFullHub={onOpenFinancial}
+            />
           </div>
         )}
 

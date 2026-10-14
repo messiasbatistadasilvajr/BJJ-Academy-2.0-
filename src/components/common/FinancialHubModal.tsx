@@ -99,9 +99,9 @@ export const FinancialHubModal: React.FC<FinancialHubModalProps> = ({
   const [isSavingSummary, setIsSavingSummary] = useState(false);
   const [summaryFeedback, setSummaryFeedback] = useState<string | null>(null);
 
-  // Modal de Baixa Manual no Balcão
+  // Modal de Baixa Manual no Balcão (PIX, Dinheiro ou Cartão na maquininha física)
   const [manualSettleInvoice, setManualSettleInvoice] = useState<Invoice | null>(null);
-  const [manualMethod, setManualMethod] = useState<'DINHEIRO' | 'CARTÃO (BALCÃO)'>('DINHEIRO');
+  const [manualMethod, setManualMethod] = useState<'PIX' | 'DINHEIRO' | 'CARTÃO (BALCÃO)'>('PIX');
   const [manualAmount, setManualAmount] = useState<number>(100);
   const [isProcessingManualSettle, setIsProcessingManualSettle] = useState(false);
   const [manualSettleFeedback, setManualSettleFeedback] = useState<string | null>(null);
@@ -352,12 +352,21 @@ export const FinancialHubModal: React.FC<FinancialHubModalProps> = ({
 
       // 2. Atualiza a fatura local e no Firestore
       const nowStr = new Date().toLocaleString('pt-BR');
+      const mappedMethod: Invoice['paymentMethod'] =
+        manualMethod === 'PIX'
+          ? 'pix'
+          : manualMethod === 'DINHEIRO'
+          ? 'dinheiro'
+          : 'cartao_balcao';
+
       const updatedInvoice: Invoice = {
         ...manualSettleInvoice,
         status: 'paid',
-        paidDate: `Presencial às ${nowStr.split(' ')[1] || '14:00'}`,
-        paymentMethod: manualMethod === 'DINHEIRO' ? 'dinheiro' : 'cartao_balcao',
+        paidDate: `Baixa Manual (${manualMethod}) às ${nowStr.split(' ')[1] || '14:00'}`,
+        paymentMethod: mappedMethod,
         amount: Number(manualAmount),
+        isManualReceived: true,
+        manualPaymentMethod: manualMethod,
         settledBy: currentUserName,
         settlementChannel: 'BALCAO_PRESENCIAL',
         asaasPixCancelled: true
@@ -371,7 +380,7 @@ export const FinancialHubModal: React.FC<FinancialHubModalProps> = ({
       // 3. Salva automaticamente no Resumo do Dia para manter caixa auditável
       await recordAutoDailyCash(updatedInvoice);
 
-      setManualSettleFeedback(`✅ Baixa de ${formatBRL(manualAmount)} em ${manualMethod} concluída! PIX online cancelado no Asaas.`);
+      setManualSettleFeedback(`✅ Baixa manual de ${formatBRL(manualAmount)} via ${manualMethod} concluída com sucesso!`);
       setTimeout(() => {
         setManualSettleFeedback(null);
         setManualSettleInvoice(null);
@@ -1273,12 +1282,13 @@ export const FinancialHubModal: React.FC<FinancialHubModalProps> = ({
                                   type="button"
                                   onClick={() => {
                                     setManualSettleInvoice(inv);
-                                    setManualAmount(inv.amount || 100);
-                                    setManualMethod('DINHEIRO');
+                                    setManualAmount(inv.status === 'overdue' ? calc.totalUpdatedAmount : (inv.amount || 100));
+                                    setManualMethod('PIX');
                                   }}
                                   className="px-3 py-1.5 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-bold text-xs shadow-md transition flex items-center gap-1"
                                 >
-                                  <span>Baixa Balcão</span>
+                                  <CheckCircle2 size={13} />
+                                  <span>Dar Baixa Manual</span>
                                 </button>
                               )}
 
@@ -1309,12 +1319,13 @@ export const FinancialHubModal: React.FC<FinancialHubModalProps> = ({
 
                             <button
                               onClick={() => {
-                                const msg = `Olá ${inv.studentName}! Notificação de cobrança da ${inv.academyName}: Sua mensalidade de ${formatBRL(inv.amount)} venceu em ${inv.dueDate} (${calc.daysOverdue} dias de atraso). O total atualizado com multa e juros é de ${formatBRL(calc.totalUpdatedAmount)}. Chave PIX: ${inv.pixCode || 'financeiro@bjjacademy.com.br'}`;
+                                const pixKeyToUse = currentAcademyData.pixKey || inv.pixCode || gmData.pixKey || '58087630378';
+                                const msg = `Olá, *${inv.studentName}*! 🥋\nPassando para avisar sobre a mensalidade da *${inv.academyName}* (vencimento em ${inv.dueDate}, ${calc.daysOverdue} dias em atraso).\n💰 *Total atualizado:* ${formatBRL(calc.totalUpdatedAmount)}\n🔑 *Chave PIX da Academia:* ${pixKeyToUse}\n\n📲 *Envie o comprovante para este número* para darmos baixa imediata no seu acesso. Oss!`;
                                 window.open(`https://wa.me/?text=${encodeURIComponent(msg)}`, '_blank');
                               }}
                               className="px-3 py-1 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-[11px] flex items-center gap-1 shadow-sm shrink-0 transition"
                             >
-                              <MessageSquare size={12} /> Cobrar via WhatsApp
+                              <MessageSquare size={12} /> Cobrar via WhatsApp (PIX)
                             </button>
                           </div>
                         )}
@@ -2442,9 +2453,22 @@ Status da Conciliação: Conciliado 100% com Extratos e Chave PIX.`;
               {/* Escolha da Forma de Pagamento */}
               <div className="space-y-2">
                 <label className="text-xs font-bold uppercase text-slate-300">
-                  Forma de Pagamento Recebida:
+                  Forma de Pagamento Recebida (Recepção / Gerência):
                 </label>
-                <div className="grid grid-cols-2 gap-3">
+                <div className="grid grid-cols-3 gap-2.5">
+                  <button
+                    type="button"
+                    onClick={() => setManualMethod('PIX')}
+                    className={`p-3 rounded-2xl border text-center transition flex flex-col items-center justify-center gap-1 ${
+                      manualMethod === 'PIX'
+                        ? 'bg-emerald-950/60 border-emerald-500 text-emerald-300 font-bold shadow-md'
+                        : 'bg-slate-950 border-slate-800 text-slate-400 hover:text-white'
+                    }`}
+                  >
+                    <span className="text-lg">📲</span>
+                    <span className="text-[11px]">PIX (DIRETO)</span>
+                  </button>
+
                   <button
                     type="button"
                     onClick={() => setManualMethod('DINHEIRO')}
@@ -2455,7 +2479,7 @@ Status da Conciliação: Conciliado 100% com Extratos e Chave PIX.`;
                     }`}
                   >
                     <span className="text-lg">💵</span>
-                    <span className="text-xs">DINHEIRO</span>
+                    <span className="text-[11px]">DINHEIRO</span>
                   </button>
 
                   <button
@@ -2468,7 +2492,7 @@ Status da Conciliação: Conciliado 100% com Extratos e Chave PIX.`;
                     }`}
                   >
                     <span className="text-lg">💳</span>
-                    <span className="text-xs">CARTÃO (BALCÃO)</span>
+                    <span className="text-[11px]">MAQUININHA</span>
                   </button>
                 </div>
               </div>
@@ -2476,7 +2500,7 @@ Status da Conciliação: Conciliado 100% com Extratos e Chave PIX.`;
               {/* Valor cobrado */}
               <div className="space-y-1">
                 <label className="text-xs font-bold uppercase text-slate-300">
-                  Valor Cobrado (R$):
+                  Valor Recebido (R$):
                 </label>
                 <input
                   type="number"
@@ -2486,11 +2510,11 @@ Status da Conciliação: Conciliado 100% com Extratos e Chave PIX.`;
                 />
               </div>
 
-              {/* Alerta de Segurança e Cancelamento de PIX */}
-              <div className="p-3 rounded-xl bg-amber-950/40 border border-amber-800/40 text-[11px] text-amber-200/90 flex items-start gap-2">
-                <ShieldAlert size={16} className="text-amber-400 shrink-0 mt-0.5" />
+              {/* Aviso de Operação Direta */}
+              <div className="p-3 rounded-xl bg-emerald-950/40 border border-emerald-800/40 text-[11px] text-emerald-200/90 flex items-start gap-2">
+                <ShieldCheck size={16} className="text-emerald-400 shrink-0 mt-0.5" />
                 <div>
-                  <strong>Prevenção de Cobrança Indevida:</strong> Ao confirmar esta baixa manual, o backend enviará um comando de cancelamento automático à API do Asaas referente ao PIX online em aberto desta fatura. O aluno não poderá pagar duas vezes pelo WhatsApp.
+                  <strong>Baixa Direta na Recepção:</strong> Confirme após verificar o comprovante PIX enviado pelo aluno no WhatsApp, recebimento em espécie ou aprovação na maquininha física.
                 </div>
               </div>
 

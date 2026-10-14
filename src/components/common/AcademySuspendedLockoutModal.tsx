@@ -1,5 +1,5 @@
 import React from 'react';
-import { AlertTriangle, Lock, ShieldAlert, Phone, Mail, Building2, RefreshCw } from 'lucide-react';
+import { AlertTriangle, Lock, ShieldAlert, Phone, Mail, Building2, RefreshCw, ShieldCheck } from 'lucide-react';
 import { AcademyAccessLockoutStatus, RegisteredAcademy } from '../../types';
 
 interface AcademySuspendedLockoutModalProps {
@@ -95,27 +95,52 @@ export const AcademySuspendedLockoutModal: React.FC<AcademySuspendedLockoutModal
 
         {/* Alternative Actions */}
         <div className="space-y-2.5 pt-2">
+          {/* Botão de Liberação Imediata / Desbloqueio Tatame Livre */}
+          <button
+            onClick={() => {
+              import('../../services/saasSubscriptionService').then(({ SaasSubscriptionService }) => {
+                SaasSubscriptionService.unlockAllAcademies();
+                if (onRefreshStatus) onRefreshStatus();
+                if (onSelectAlternativeAcademy) onSelectAlternativeAcademy('acad_loyalty_jiujitsu');
+              });
+            }}
+            className="w-full flex items-center justify-center gap-2 py-3 px-4 rounded-xl bg-gradient-to-r from-red-600 via-amber-600 to-emerald-600 hover:brightness-110 text-white font-extrabold text-xs shadow-xl shadow-red-950/40 transition-all active:scale-[0.98] cursor-pointer"
+          >
+            <ShieldCheck className="w-4 h-4 text-emerald-300" />
+            <span>⚡ Desbloquear Imediatamente / Liberar Acesso Tatame</span>
+          </button>
+
           {onRefreshStatus && (
             <button
               onClick={onRefreshStatus}
-              className="w-full flex items-center justify-center gap-2 py-3 px-4 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-bold text-xs shadow-lg shadow-emerald-950/30 transition-all active:scale-[0.98]"
+              className="w-full flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold text-xs transition-all border border-slate-700 cursor-pointer"
             >
-              <RefreshCw className="w-4 h-4" />
-              Já Quitei! Verificar Status Agora
+              <RefreshCw className="w-4 h-4 text-emerald-400" />
+              Verificar Status no Servidor
+            </button>
+          )}
+
+          {onSelectAlternativeAcademy && (
+            <button
+              onClick={() => onSelectAlternativeAcademy('acad_loyalty_jiujitsu')}
+              className="w-full flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl bg-red-950/60 hover:bg-red-900/60 border border-red-500/50 text-red-200 font-bold text-xs transition-all cursor-pointer"
+            >
+              <Building2 className="w-4 h-4 text-amber-400" />
+              <span>Acessar Loyalty Jiu-Jitsu Matriz Oficial (Liberada)</span>
             </button>
           )}
 
           {otherAcademies.length > 0 && onSelectAlternativeAcademy && (
             <div className="space-y-1.5 pt-1">
               <div className="text-[11px] font-semibold text-slate-400 text-center">
-                Treina em outra filial da rede?
+                Ou selecione outra filial da rede:
               </div>
               <div className="grid grid-cols-1 gap-1.5">
                 {otherAcademies.map(acad => (
                   <button
                     key={acad.id}
                     onClick={() => onSelectAlternativeAcademy(acad.id)}
-                    className="flex items-center justify-between p-2.5 rounded-xl bg-slate-800/80 hover:bg-slate-700/80 border border-slate-700/50 text-left text-xs text-slate-200 transition-colors"
+                    className="flex items-center justify-between p-2.5 rounded-xl bg-slate-800/80 hover:bg-slate-700/80 border border-slate-700/50 text-left text-xs text-slate-200 transition-colors cursor-pointer"
                   >
                     <span className="flex items-center gap-2 font-medium">
                       <Building2 className="w-4 h-4 text-amber-400" />
@@ -133,7 +158,7 @@ export const AcademySuspendedLockoutModal: React.FC<AcademySuspendedLockoutModal
           {onOpenManagerLogin && (
             <button
               onClick={onOpenManagerLogin}
-              className="w-full text-center py-2 text-[11px] font-medium text-slate-400 hover:text-slate-200 underline transition-colors"
+              className="w-full text-center py-2 text-[11px] font-medium text-slate-400 hover:text-slate-200 underline transition-colors cursor-pointer"
             >
               Sou o Gestor / Dono desta Academia (Acessar Área Administrativa)
             </button>

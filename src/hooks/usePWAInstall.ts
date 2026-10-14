@@ -24,27 +24,47 @@ export function usePWAInstall() {
   const [isIframe, setIsIframe] = useState(false);
 
   useEffect(() => {
-    // Detect iframe
-    const inIframe = typeof window !== 'undefined' && window.self !== window.top;
+    // Detect iframe safely (handles cross-origin SecurityError)
+    let inIframe = false;
+    try {
+      inIframe = typeof window !== 'undefined' && window.self !== window.top;
+    } catch {
+      inIframe = true;
+    }
     setIsIframe(inIframe);
 
     // Detect standalone mode (already installed as PWA or native webview)
-    const isStandalone =
-      window.matchMedia('(display-mode: standalone)').matches ||
-      (window.navigator as unknown as { standalone?: boolean }).standalone === true;
+    let isStandalone = false;
+    try {
+      if (typeof window !== 'undefined' && typeof window.matchMedia === 'function') {
+        isStandalone = window.matchMedia('(display-mode: standalone)').matches;
+      }
+      if (!isStandalone && typeof window !== 'undefined') {
+        isStandalone = (window.navigator as unknown as { standalone?: boolean })?.standalone === true;
+      }
+    } catch {
+      isStandalone = false;
+    }
     setIsInstalled(isStandalone);
 
-    // Detect OS
-    const userAgent = window.navigator.userAgent.toLowerCase();
-    const isIOSDevice = /iphone|ipad|ipod/.test(userAgent);
-    const isAndroidDevice = /android/.test(userAgent);
-    setIsIOS(isIOSDevice);
-    setIsAndroid(isAndroidDevice);
+    // Detect OS safely
+    try {
+      const userAgent = (typeof window !== 'undefined' && window.navigator?.userAgent) ? window.navigator.userAgent.toLowerCase() : '';
+      const isIOSDevice = /iphone|ipad|ipod/.test(userAgent);
+      const isAndroidDevice = /android/.test(userAgent);
+      setIsIOS(isIOSDevice);
+      setIsAndroid(isAndroidDevice);
+    } catch {
+      setIsIOS(false);
+      setIsAndroid(false);
+    }
 
     // Check if early prompt was already stored on window
-    if (window.__pwaPrompt) {
-      setDeferredPrompt(window.__pwaPrompt);
-    }
+    try {
+      if (typeof window !== 'undefined' && window.__pwaPrompt) {
+        setDeferredPrompt(window.__pwaPrompt);
+      }
+    } catch {}
 
     const handleBeforeInstallPrompt = (e: Event) => {
       e.preventDefault();
