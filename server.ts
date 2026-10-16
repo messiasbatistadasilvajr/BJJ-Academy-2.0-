@@ -16,6 +16,8 @@ import { scheduledTasksService } from './server/services/scheduledTasksService';
 import { fcmNotificationService } from './server/services/fcmNotificationService';
 import { lgpdComplianceService } from './server/services/lgpdComplianceService';
 import { requireAuth, requireManagerOrCeo, requireCeoOnly, requireSuperAdminOnly, enforceTenantIsolation } from './server/services/authServerMiddleware';
+import { cloudflareR2Service } from './server/services/cloudflareR2Service';
+import { backupR2Service } from './server/services/backupR2Service';
 
 const PORT = 3000;
 
@@ -791,6 +793,143 @@ async function startServer() {
       message: 'Conta e dados pessoais excluídos com sucesso. Registros contábeis anonimizados conforme LGPD.',
       audit: auditRecord
     });
+  });
+
+  // -----------------------------------------------------------------
+  // 7.13 CLOUDFLARE R2 OBJECT STORAGE & MÍDIAS EXTERNAS
+  // -----------------------------------------------------------------
+  // Upload de arquivo (foto de aluno, contrato PDF, documento, comprovante)
+  app.post('/api/storage/upload', async (req, res) => {
+    try {
+      const { base64, originalName, mimeType, tenantId, folder, metadata } = req.body;
+      if (!base64 || !originalName) {
+        return res.status(400).json({ error: 'BAD_REQUEST', message: 'base64 e originalName são obrigatórios.' });
+      }
+
+      // Converte data URL ou base64 puro para Buffer
+      const cleanBase64 = base64.includes(';base64,') ? base64.split(';base64,')[1] : base64;
+      const buffer = Buffer.from(cleanBase64, 'base64');
+
+      const result = await cloudflareR2Service.upload({
+        buffer,
+        originalName,
+        mimeType: mimeType || 'image/jpeg',
+        tenantId: tenantId || 'global',
+        folder: folder || 'media',
+        metadata
+      });
+
+      return res.json({ success: true, file: result });
+    } catch (err: any) {
+      console.error('[Cloudflare R2 API] Erro no upload:', err);
+      return res.status(500).json({ error: 'UPLOAD_FAILED', message: err.message });
+    }
+  });
+
+  // Download / visualização de arquivo do storage
+  app.get('/api/storage/file', async (req, res) => {
+    try {
+      const key = (req.query.key as string) || '';
+      if (!key) {
+        return res.status(400).send('Key is required');
+      }
+
+      const fileData = await cloudflareR2Service.getFile(key);
+      if (!fileData) {
+        return res.status(404).send('File not found in storage bucket');
+      }
+
+      res.setHeader('Content-Type', fileData.contentType);
+      res.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
+      return res.send(fileData.buffer);
+    } catch (err: any) {
+      console.error('[Cloudflare R2 API] Erro ao buscar arquivo:', err);
+      return res.status(500).send(err.message);
+    }
+  });
+
+  // Lista de arquivos armazenados no bucket R2
+  app.get('/api/storage/files', async (req, res) => {
+    try {
+      const prefix = (req.query.prefix as string) || undefined;
+      const maxKeys = parseInt((req.query.maxKeys as string) || '100', 10);
+      const list = await cloudflareR2Service.listFiles(prefix, maxKeys);
+      return res.json({ success: true, ...list });
+    } catch (err: any) {
+      return res.status(500).json({ error: 'LIST_FAILED', message: err.message });
+    }
+  });
+
+  // Deleta arquivo do bucket
+  app.delete('/api/storage/file', async (req, res) => {
+    try {
+      const key = (req.query.key as string) || (req.body.key as string) || '';
+      if (!key) return res.status(400).json({ error: 'key is required' });
+      const success = await cloudflareR2Service.deleteFile(key);
+      return res.json({ success });
+    } catch (err: any) {
+      return res.status(500).json({ error: 'DELETE_FAILED', message: err.message });
+    }
+  });
+
+  // Health check e status de cota gratuita do Cloudflare R2
+  app.get('/api/storage/health', async (_req, res) => {
+    try {
+      const health = await cloudflareR2Service.getHealth();
+      return res.json({ success: true, health });
+    } catch (err: any) {
+      return res.status(500).json({ error: 'HEALTH_CHECK_FAILED', message: err.message });
+    }
+  });
+
+  // -----------------------------------------------------------------
+  // 7.14 BACKUP AUTOMÁTICO & DISASTER RECOVERY NO CLOUDFLARE R2
+  // -----------------------------------------------------------------
+  // Executar snapshot imediato do banco/app para o R2
+  app.post('/api/backup/run', async (req, res) => {
+    try {
+      const { tenantId, notes, customPayload } = req.body;
+      const backup = await backupR2Service.createBackup({ tenantId, notes, customPayload });
+      return res.json({ success: true, backup });
+    } catch (err: any) {
+      console.error('[Backup R2 API] Erro ao criar backup:', err);
+      return res.status(500).json({ error: 'BACKUP_FAILED', message: err.message });
+    }
+  });
+
+  // Listar histórico de backups salvos no R2
+  app.get('/api/backup/list', async (_req, res) => {
+    try {
+      const backups = await backupR2Service.listBackups();
+      return res.json({ success: true, backups });
+    } catch (err: any) {
+      return res.status(500).json({ error: 'BACKUP_LIST_FAILED', message: err.message });
+    }
+  });
+
+  // Restaurar banco/app a partir de um snapshot do R2 (Disaster Recovery)
+  app.post('/api/backup/restore', async (req, res) => {
+    try {
+      const { backupId } = req.body;
+      if (!backupId) {
+        return res.status(400).json({ error: 'BAD_REQUEST', message: 'backupId é obrigatório.' });
+      }
+      const result = await backupR2Service.restoreBackup(backupId);
+      return res.json({ success: true, ...result });
+    } catch (err: any) {
+      console.error('[Disaster Recovery API] Erro ao restaurar backup:', err);
+      return res.status(500).json({ error: 'RESTORE_FAILED', message: err.message });
+    }
+  });
+
+  // Status e agendamento da rotina de backup automático
+  app.get('/api/backup/schedule', (_req, res) => {
+    try {
+      const schedule = backupR2Service.getScheduleStatus();
+      return res.json({ success: true, schedule });
+    } catch (err: any) {
+      return res.status(500).json({ error: 'SCHEDULE_STATUS_FAILED', message: err.message });
+    }
   });
 
   // -----------------------------------------------------------------

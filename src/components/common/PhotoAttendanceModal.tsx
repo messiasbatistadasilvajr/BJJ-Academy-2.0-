@@ -1,9 +1,10 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { X, Camera, Sparkles, CheckCircle2, RefreshCw, Upload, Users, ShieldCheck, Check, AlertCircle } from 'lucide-react';
+import { X, Camera, Sparkles, CheckCircle2, RefreshCw, Upload, Users, ShieldCheck, Check, AlertCircle, Cloud } from 'lucide-react';
 import { BeltBadge } from './BeltBadge';
 import { DetectedAthlete, BeltColor, ClassSession } from '../../types';
 import confetti from 'canvas-confetti';
+import { R2StorageClient } from '../../services/r2StorageClient';
 
 interface PhotoAttendanceModalProps {
   isOpen: boolean;
@@ -54,12 +55,14 @@ export const PhotoAttendanceModal: React.FC<PhotoAttendanceModalProps> = ({
   const [isScanning, setIsScanning] = useState<boolean>(false);
   const [athletes, setAthletes] = useState<DetectedAthlete[]>(SAMPLE_TATAME_PHOTOS[0].athletes);
   const [scanCompleted, setScanCompleted] = useState<boolean>(true);
+  const [isR2Stored, setIsR2Stored] = useState<boolean>(false);
 
   if (!isOpen) return null;
 
   const handleScanSample = (sample: typeof SAMPLE_TATAME_PHOTOS[0]) => {
     setSelectedPhoto(sample.imageUrl);
     setPhotoTitle(sample.title);
+    setIsR2Stored(false);
     setIsScanning(true);
     setScanCompleted(false);
 
@@ -79,8 +82,20 @@ export const PhotoAttendanceModal: React.FC<PhotoAttendanceModalProps> = ({
       const url = URL.createObjectURL(file);
       setSelectedPhoto(url);
       setPhotoTitle(file.name);
+      setIsR2Stored(false);
       setIsScanning(true);
       setScanCompleted(false);
+
+      // Upload assíncrono para o bucket Cloudflare R2 fora da máquina
+      R2StorageClient.uploadMedia(file, {
+        originalName: file.name,
+        mimeType: file.type,
+        folder: 'attendance'
+      }).then(() => {
+        setIsR2Stored(true);
+      }).catch((err) => {
+        console.warn('[Photo Attendance] R2 upload notification:', err);
+      });
 
       setTimeout(() => {
         // Map registered students of current class
@@ -226,14 +241,21 @@ export const PhotoAttendanceModal: React.FC<PhotoAttendanceModalProps> = ({
 
               {/* Tag overlay on image */}
               {!isScanning && (
-                <div className="absolute bottom-3 left-3 right-3 flex items-center justify-between bg-slate-950/80 backdrop-blur-md px-3 py-2 rounded-xl border border-slate-800 text-xs">
+                <div className="absolute bottom-3 left-3 right-3 flex items-center justify-between bg-slate-950/85 backdrop-blur-md px-3 py-2 rounded-xl border border-slate-800 text-xs flex-wrap gap-2">
                   <span className="font-bold text-white truncate flex items-center gap-1.5">
                     <Camera className="w-3.5 h-3.5 text-indigo-400" />
                     {photoTitle}
                   </span>
-                  <span className="text-[10px] text-emerald-400 font-black shrink-0 bg-emerald-950 px-2 py-0.5 rounded-full border border-emerald-800">
-                    {athletes.length} Atletas Reconhecidos
-                  </span>
+                  <div className="flex items-center gap-1.5">
+                    {isR2Stored && (
+                      <span className="text-[10px] text-amber-300 font-black shrink-0 bg-amber-950/80 px-2 py-0.5 rounded-full border border-amber-500/40 flex items-center gap-1">
+                        <Cloud size={10} className="text-amber-400" /> Cloudflare R2
+                      </span>
+                    )}
+                    <span className="text-[10px] text-emerald-400 font-black shrink-0 bg-emerald-950 px-2 py-0.5 rounded-full border border-emerald-800">
+                      {athletes.length} Atletas Reconhecidos
+                    </span>
+                  </div>
                 </div>
               )}
             </div>

@@ -5,7 +5,7 @@ import {
   Sparkles, Cloud, RefreshCw, AlertCircle, Zap, 
   Lock, UserCheck, UserX, ArrowUpRight, Baby,
   HeartHandshake, FileText, Calendar, ShieldCheck,
-  Printer, Send, Eye, FileCheck
+  Printer, Send, Eye, FileCheck, Upload, Camera, HardDrive
 } from 'lucide-react';
 import { StudentProfile, BeltColor, RegisteredAcademy, SaasPlanTier, SAAS_PLAN_DETAILS, SAAS_PLAN_LIMITS } from '../../types';
 import { BeltBadge } from './BeltBadge';
@@ -15,6 +15,7 @@ import { PlanUpgradeModal } from './PlanUpgradeModal';
 import { validateCPF, formatCPF, formatPhone } from '../../utils/brazilianDocValidators';
 import { LoyaltyOfficialContractView, ContractStudentData } from './LoyaltyOfficialContractView';
 import { sendLoyaltyContractWhatsApp } from '../../utils/whatsappHelper';
+import { R2StorageClient } from '../../services/r2StorageClient';
 
 interface StudentManagementModalProps {
   isOpen: boolean;
@@ -27,6 +28,7 @@ interface StudentManagementModalProps {
   activeAcademy?: RegisteredAcademy;
   onUpdateAcademy?: (academy: RegisteredAcademy) => void;
   initialRegistering?: boolean;
+  onOpenR2Backup?: () => void;
 }
 
 export const StudentManagementModal: React.FC<StudentManagementModalProps> = ({
@@ -40,6 +42,7 @@ export const StudentManagementModal: React.FC<StudentManagementModalProps> = ({
   activeAcademy,
   onUpdateAcademy,
   initialRegistering = false,
+  onOpenR2Backup,
 }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [isRegistering, setIsRegistering] = useState(initialRegistering);
@@ -63,6 +66,33 @@ export const StudentManagementModal: React.FC<StudentManagementModalProps> = ({
   const [category, setCategory] = useState<'Adulto Médio' | 'Infantil B' | 'Master 1 Pesado' | 'Juvenil Leve'>('Adulto Médio');
   const [weightKg, setWeightKg] = useState<number>(75);
   const [studentStatus, setStudentStatus] = useState<'ATIVO' | 'INATIVO'>('ATIVO');
+
+  // Cloudflare R2 External Media State (Avatar do aluno fora da máquina)
+  const [avatarUrl, setAvatarUrl] = useState<string>('');
+  const [isUploadingAvatar, setIsUploadingAvatar] = useState<boolean>(false);
+  const [avatarUploadSuccess, setAvatarUploadSuccess] = useState<boolean>(false);
+
+  const handleAvatarUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setIsUploadingAvatar(true);
+    setAvatarUploadSuccess(false);
+    try {
+      const res = await R2StorageClient.uploadMedia(file, {
+        originalName: file.name,
+        mimeType: file.type,
+        folder: 'avatars',
+        tenantId: activeAcademy?.id || 'global'
+      });
+      setAvatarUrl(res.url);
+      setAvatarUploadSuccess(true);
+    } catch (err) {
+      console.error('[Student Modal] Falha no upload para Cloudflare R2:', err);
+    } finally {
+      setIsUploadingAvatar(false);
+      e.target.value = '';
+    }
+  };
 
   // Kids / Minor Responsible State (Mandatory when isMinor is true)
   const [isMinor, setIsMinor] = useState<boolean>(false);
@@ -185,7 +215,7 @@ export const StudentManagementModal: React.FC<StudentManagementModalProps> = ({
       name: name.trim(),
       email: email.trim() || (isMinor && parentEmail.trim() ? parentEmail.trim() : `${name.trim().toLowerCase().replace(/\s+/g, '.')}@bjjacademy.com`),
       phone: phone.trim() || (isMinor && parentPhone.trim() ? parentPhone.trim() : '(11) 99999-0000'),
-      avatar: isMinor ? '/bjj_media/bjj_kid_student.jpg' : '/bjj_media/bjj_student_male.jpg',
+      avatar: avatarUrl.trim() || (isMinor ? '/bjj_media/bjj_kid_student.jpg' : '/bjj_media/bjj_student_male.jpg'),
       belt,
       stripes,
       degreesNeededForNext: 4,
@@ -301,6 +331,8 @@ export const StudentManagementModal: React.FC<StudentManagementModalProps> = ({
       setParentProfession('');
       setEmergencyContactName('');
       setEmergencyContactPhone('');
+      setAvatarUrl('');
+      setAvatarUploadSuccess(false);
       setFormValidationError(null);
     } catch (err) {
       console.error('Erro ao salvar aluno na nuvem:', err);
@@ -355,24 +387,24 @@ export const StudentManagementModal: React.FC<StudentManagementModalProps> = ({
         className="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4"
         id="modal-student-management"
       >
-        <div className="bg-slate-900 border border-slate-800 rounded-3xl w-full max-w-2xl overflow-hidden shadow-2xl flex flex-col max-h-[90vh]">
+        <div className={`bg-slate-900 border border-slate-800 rounded-3xl w-full ${contractSubTab === 'contract' ? 'max-w-5xl' : 'max-w-2xl'} transition-all duration-300 overflow-hidden shadow-2xl flex flex-col max-h-[92vh]`}>
           {/* Header */}
           <div className="px-6 py-4 border-b border-slate-800 flex items-center justify-between bg-slate-900/90 shrink-0">
-            <div className="flex items-center gap-3">
-              <div className="p-2.5 rounded-2xl bg-blue-500/10 text-blue-400 border border-blue-500/20">
-                <Users size={22} />
+            <div className="flex items-center gap-3.5">
+              <div className="p-3 rounded-2xl bg-blue-500/10 text-blue-400 border border-blue-500/20 shadow-sm">
+                <Users size={24} />
               </div>
               <div>
                 <div className="flex items-center gap-2">
-                  <h2 className="font-bold text-white text-base leading-tight">
+                  <h2 className="font-black text-white text-lg leading-tight">
                     Gestão de Alunos & Tatame
                   </h2>
-                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-blue-500/20 text-blue-400 border border-blue-500/30">
-                    <Cloud size={10} />
+                  <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-bold bg-blue-500/20 text-blue-300 border border-blue-500/30">
+                    <Cloud size={11} />
                     Multi-Tenant DB
                   </span>
                 </div>
-                <p className="text-xs text-slate-400 mt-0.5">
+                <p className="text-xs sm:text-sm text-slate-300 font-medium mt-0.5">
                   {students.length} cadastrados ({activeStudentsCount} ativos) • {currentAcademy.name}
                 </p>
               </div>
@@ -467,6 +499,19 @@ export const StudentManagementModal: React.FC<StudentManagementModalProps> = ({
               </div>
             </div>
 
+            {onOpenR2Backup && (
+              <button
+                type="button"
+                onClick={onOpenR2Backup}
+                className="px-3 py-2 rounded-xl text-xs font-black transition flex items-center gap-1.5 shrink-0 bg-gradient-to-r from-amber-500/15 to-orange-500/15 border border-amber-500/40 text-amber-300 hover:bg-amber-500/25 cursor-pointer shadow-sm"
+                title="Mídias Externas no Cloudflare R2 e Backup Automático do Banco"
+              >
+                <Cloud size={14} className="text-amber-400" />
+                <span className="hidden sm:inline">Mídias R2 & Backup</span>
+                <span className="text-[9px] font-mono px-1.5 py-0.2 rounded-full bg-amber-500/25 text-amber-200">10 GB Free</span>
+              </button>
+            )}
+
             <button
               onClick={() => {
                 if (isPlanAtLimit) {
@@ -526,39 +571,39 @@ export const StudentManagementModal: React.FC<StudentManagementModalProps> = ({
               <div className="space-y-4">
                 {/* Aggregated View Switcher: Cadastro x Contrato Oficial Loyalty (PDF) */}
                 <div className="flex items-center justify-between gap-2 border-b border-slate-800 pb-3 flex-wrap">
-                  <div className="flex items-center gap-1.5 p-1 bg-slate-900 border border-slate-800 rounded-xl">
+                  <div className="flex items-center gap-2 p-1.5 bg-slate-900 border border-slate-800 rounded-2xl shadow-sm">
                     <button
                       type="button"
                       onClick={() => setContractSubTab('form')}
-                      className={`px-3.5 py-1.5 rounded-lg text-xs font-bold flex items-center gap-1.5 transition cursor-pointer ${
+                      className={`px-4 py-2 rounded-xl text-xs sm:text-sm font-black flex items-center gap-2 transition cursor-pointer ${
                         contractSubTab === 'form'
                           ? 'bg-blue-600 text-white shadow-md'
-                          : 'text-slate-400 hover:text-white'
+                          : 'text-slate-300 hover:text-white'
                       }`}
                     >
-                      <UserPlus size={14} />
+                      <UserPlus size={16} />
                       <span>1. Formulário de Cadastro</span>
                     </button>
                     <button
                       type="button"
                       onClick={() => setContractSubTab('contract')}
-                      className={`px-3.5 py-1.5 rounded-lg text-xs font-bold flex items-center gap-1.5 transition cursor-pointer ${
+                      className={`px-4 py-2 rounded-xl text-xs sm:text-sm font-black flex items-center gap-2 transition cursor-pointer ${
                         contractSubTab === 'contract'
                           ? 'bg-amber-600 text-white shadow-md'
-                          : 'text-slate-400 hover:text-amber-300'
+                          : 'text-slate-300 hover:text-amber-300'
                       }`}
                     >
-                      <FileText size={14} className="text-amber-400" />
+                      <FileText size={16} className="text-amber-400" />
                       <span>2. Contrato Loyalty (PDF Exemplo)</span>
                       {name.trim() && (
-                        <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" title="Nome do aluno vinculado" />
+                        <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse" title="Nome do aluno vinculado" />
                       )}
                     </button>
                   </div>
 
                   <div className="flex items-center gap-2">
-                    <span className="text-[11px] text-slate-400">
-                      Cota atual: <strong className="text-slate-200">{activeStudentsCount}/{planLimit === 999999 ? '∞' : planLimit}</strong>
+                    <span className="text-xs text-slate-300 font-semibold">
+                      Cota atual: <strong className="text-white">{activeStudentsCount}/{planLimit === 999999 ? '∞' : planLimit}</strong>
                     </span>
                   </div>
                 </div>
@@ -652,6 +697,68 @@ export const StudentManagementModal: React.FC<StudentManagementModalProps> = ({
                     </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+                  {/* Foto do Aluno com Armazenamento Externo no Cloudflare R2 */}
+                  <div className="sm:col-span-2 p-3.5 rounded-2xl bg-gradient-to-r from-amber-950/40 via-slate-900 to-slate-900 border border-amber-500/40 flex items-center justify-between gap-3 flex-wrap">
+                    <div className="flex items-center gap-3">
+                      <div className="relative w-14 h-14 rounded-2xl overflow-hidden bg-slate-950 border-2 border-amber-500/60 shrink-0 flex items-center justify-center shadow-md">
+                        {avatarUrl ? (
+                          <img src={avatarUrl} alt="Avatar" className="w-full h-full object-cover" />
+                        ) : (
+                          <img 
+                            src={isMinor ? '/bjj_media/bjj_kid_student.jpg' : '/bjj_media/bjj_student_male.jpg'} 
+                            alt="Padrão" 
+                            className="w-full h-full object-cover opacity-70" 
+                          />
+                        )}
+                        {isUploadingAvatar && (
+                          <div className="absolute inset-0 bg-slate-950/80 backdrop-blur-xs flex items-center justify-center">
+                            <RefreshCw className="w-5 h-5 text-amber-400 animate-spin" />
+                          </div>
+                        )}
+                      </div>
+                      <div>
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <span className="text-xs font-black text-white">Foto do Aluno (Mídia Externa)</span>
+                          <span className="px-2 py-0.5 rounded-full text-[9px] font-black bg-amber-500/20 text-amber-300 border border-amber-500/40 uppercase">
+                            Cloudflare R2 • 10 GB Grátis
+                          </span>
+                        </div>
+                        <p className="text-[11px] text-slate-300 mt-0.5">
+                          {avatarUploadSuccess 
+                            ? '✓ Foto gravada com sucesso no bucket externo Cloudflare R2!' 
+                            : 'Upload direto para bucket S3 fora da máquina com zero custo de tráfego.'}
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-2">
+                      <label className="px-3 py-1.5 rounded-xl bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-400 text-slate-950 text-xs font-black flex items-center gap-1.5 cursor-pointer transition shadow-md">
+                        <Upload size={13} />
+                        <span>{avatarUrl ? 'Trocar Foto' : 'Enviar Foto'}</span>
+                        <input 
+                          type="file" 
+                          accept="image/*" 
+                          onChange={handleAvatarUpload} 
+                          className="hidden" 
+                          disabled={isUploadingAvatar}
+                        />
+                      </label>
+                      {avatarUrl && (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setAvatarUrl('');
+                            setAvatarUploadSuccess(false);
+                          }}
+                          className="p-1.5 rounded-xl bg-slate-800 text-slate-400 hover:text-white border border-slate-700"
+                          title="Remover foto personalizada"
+                        >
+                          <Trash2 size={13} />
+                        </button>
+                      )}
+                    </div>
+                  </div>
+
                   <div className="sm:col-span-2">
                     <label className="block text-slate-300 font-semibold mb-1">Nome Completo do Aluno *</label>
                     <input

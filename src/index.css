@@ -1,7 +1,20 @@
 @import "tailwindcss";
 
 @layer base {
-  html, body, #root {
+  html {
+    font-size: 16px;
+    height: 100%;
+    width: 100%;
+    margin: 0;
+    padding: 0;
+    overflow-x: hidden;
+  }
+  @media (min-width: 640px) {
+    html {
+      font-size: 16.5px;
+    }
+  }
+  body, #root {
     height: 100%;
     width: 100%;
     margin: 0;
@@ -13,7 +26,31 @@
     -webkit-tap-highlight-color: transparent;
     touch-action: manipulation;
     -webkit-font-smoothing: antialiased;
+    color: #f1f5f9;
   }
+}
+
+/* Melhoria Global de Legibilidade e Visualização (Alimentação do Tamanho de Fonte) */
+.text-\[9px\] {
+  font-size: 0.72rem !important; /* ~11.5px */
+  line-height: 1.25;
+  letter-spacing: 0.025em;
+}
+.text-\[10px\] {
+  font-size: 0.80rem !important; /* ~13px */
+  line-height: 1.3;
+}
+.text-\[11px\] {
+  font-size: 0.86rem !important; /* ~14px */
+  line-height: 1.35;
+}
+.text-xs {
+  font-size: 0.92rem !important; /* ~15px */
+  line-height: 1.4;
+}
+.text-sm {
+  font-size: 1rem !important; /* 16px */
+  line-height: 1.45;
 }
 
 /* Custom scrollbar hiding for native mobile horizontal swipe lists */

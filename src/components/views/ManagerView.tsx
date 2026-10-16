@@ -9,7 +9,7 @@ import {
   Lock, Unlock, Calculator, Building2, ShieldAlert, Copy, Check,
   QrCode, CheckCheck, Edit3, Sparkles, Download, AlertCircle, MessageCircle, Cake,
   Database, Cloud, Crown, Clock, Swords, Star, Tv, TrendingDown,
-  Package
+  Package, Upload, HardDrive
 } from 'lucide-react';
 import { 
   ClassSession, Invoice, Announcement, PushNotification, 
@@ -78,6 +78,7 @@ interface ManagerViewProps {
   onOpenExpenseManagement?: () => void;
   onOpenProShopFulfillment?: () => void;
   onUpdateInvoices?: (updatedInvoices: Invoice[]) => void;
+  onOpenR2Backup?: () => void;
 }
 
 export const ManagerView: React.FC<ManagerViewProps> = ({
@@ -128,6 +129,7 @@ export const ManagerView: React.FC<ManagerViewProps> = ({
   onDeleteExpense = () => {},
   onOpenExpenseManagement,
   onUpdateInvoices,
+  onOpenR2Backup,
 }) => {
   const [activeTab, setActiveTab] = useState<'dashboard' | 'financeiro' | 'despesas' | 'crm' | 'push' | 'academies'>('dashboard');
 
@@ -426,35 +428,35 @@ export const ManagerView: React.FC<ManagerViewProps> = ({
   const defaultRate = 4.2;
 
   return (
-    <div className="flex flex-col h-full bg-slate-950/65 backdrop-blur-[0.5px] text-slate-100 overflow-y-auto pb-20 no-scrollbar">
-      {/* Manager Top Bar */}
-      <div className="px-5 pt-4 pb-4 bg-gradient-to-b from-slate-900/90 via-slate-900/80 to-slate-950/75 border-b border-slate-800">
+    <div className="flex flex-col h-full bg-slate-950/30 backdrop-blur-[0.5px] text-slate-100 overflow-y-auto pb-20 no-scrollbar">
+      {/* Manager Top Bar com Transparência de Vidro para Manter a Imagem de BJJ 100% Visível */}
+      <div className="px-5 pt-4 pb-4 bg-gradient-to-b from-slate-950/20 via-slate-950/45 to-slate-950/70 border-b border-white/10">
         {/* CEO Exclusive Executive Welcome & Global RBAC Priority Header */}
         {isCEO && (
-          <div className="mb-3.5 p-3 rounded-2xl bg-gradient-to-r from-amber-500/25 via-amber-600/15 to-red-600/20 border-2 border-amber-400/60 shadow-xl shadow-amber-950/40 animate-fadeIn backdrop-blur-sm">
-            <div className="flex items-center justify-between gap-2 flex-wrap">
-              <div className="flex items-center gap-2.5">
-                <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-amber-400 to-amber-600 text-slate-950 flex items-center justify-center font-black text-lg shadow-md ring-2 ring-amber-300/50">
+          <div className="mb-3.5 p-3.5 rounded-2xl bg-gradient-to-r from-amber-500/25 via-amber-600/15 to-red-600/20 border-2 border-amber-400/60 shadow-xl shadow-amber-950/40 animate-fadeIn backdrop-blur-md">
+            <div className="flex items-center justify-between gap-2.5 flex-wrap">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-amber-400 to-amber-600 text-slate-950 flex items-center justify-center font-black text-xl shadow-md ring-2 ring-amber-300/50 shrink-0">
                   👑
                 </div>
                 <div>
                   <div className="flex items-center gap-2 flex-wrap">
-                    <h1 className="text-sm sm:text-base font-black text-white tracking-tight">
+                    <h1 className="text-base sm:text-lg font-black text-white tracking-tight">
                       Olá, CEO Messias! Oss. 🥋
                     </h1>
-                    <span className="text-[9px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full bg-gradient-to-r from-amber-400 to-amber-500 text-slate-950 shadow-sm">
+                    <span className="text-[10px] font-black uppercase tracking-wider px-2.5 py-0.5 rounded-full bg-gradient-to-r from-amber-400 to-amber-500 text-slate-950 shadow-md">
                       PODER TOTAL & IRRESTRITO
                     </span>
                   </div>
-                  <p className="text-[11px] text-amber-200/90 font-medium mt-0.5">
+                  <p className="text-xs sm:text-sm text-amber-200 font-medium mt-0.5">
                     Acesso Master Ativo • Visão global de todas as academias (Multi-Tenant), Faturamento Consolidado, Split Asaas e Monitor de Churn por IA.
                   </p>
                 </div>
               </div>
 
-              <div className="flex items-center gap-1.5 text-[10px] font-mono">
-                <span className="px-2.5 py-1 rounded-lg bg-slate-950/80 text-emerald-400 border border-emerald-500/30 flex items-center gap-1 font-bold">
-                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-ping" />
+              <div className="flex items-center gap-1.5 text-xs font-mono">
+                <span className="px-3 py-1 rounded-lg bg-slate-950/90 text-emerald-400 border border-emerald-500/40 flex items-center gap-1.5 font-bold shadow-sm">
+                  <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping" />
                   RBAC: CEO_MASTER
                 </span>
               </div>
@@ -640,8 +642,8 @@ export const ManagerView: React.FC<ManagerViewProps> = ({
           </div>
         </div>
 
-        {/* Quick Tabs */}
-        <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar pt-1">
+        {/* Quick Tabs com Fontes Maiores e Mais Nítidas */}
+        <div className="flex items-center gap-2 overflow-x-auto no-scrollbar pt-1.5">
           {[
             { id: 'dashboard', label: 'Métricas & Tatame', icon: BarChart3 },
             { id: 'financeiro', label: 'Receita & Asaas', icon: DollarSign },
@@ -656,13 +658,13 @@ export const ManagerView: React.FC<ManagerViewProps> = ({
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id as any)}
-                className={`px-3 py-1.5 rounded-full text-xs font-semibold shrink-0 flex items-center gap-1.5 transition ${
+                className={`px-3.5 py-2 rounded-xl text-xs sm:text-sm font-extrabold shrink-0 flex items-center gap-1.5 transition ${
                   isActive
-                    ? 'bg-amber-500 text-slate-950 shadow-md font-bold'
-                    : 'bg-slate-900 text-slate-400 hover:text-white'
+                    ? 'bg-amber-500 text-slate-950 shadow-lg font-black ring-1 ring-amber-300'
+                    : 'bg-slate-900/80 text-slate-300 hover:text-white hover:bg-slate-800'
                 }`}
               >
-                <Icon className="w-3.5 h-3.5" />
+                <Icon className="w-4 h-4" />
                 {tab.label}
               </button>
             );
@@ -818,10 +820,44 @@ export const ManagerView: React.FC<ManagerViewProps> = ({
                   e.stopPropagation();
                   onOpenStudentManagement && onOpenStudentManagement();
                 }}
-                className="px-3 py-1.5 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-xs font-bold shrink-0 transition-colors flex items-center gap-1"
+                className="px-3 py-1.5 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-xs font-bold shrink-0 transition-colors flex items-center gap-1 cursor-pointer"
               >
                 <Users size={13} />
                 <span>Gerenciar</span>
+              </button>
+            </div>
+
+            {/* Cloudflare R2 Mídias Externas & Backup Automático (Disaster Recovery) */}
+            <div 
+              onClick={onOpenR2Backup}
+              className="p-3.5 rounded-2xl bg-gradient-to-r from-amber-950/60 via-slate-900 to-slate-900 border border-amber-500/40 flex items-center justify-between gap-3 cursor-pointer hover:border-amber-400/60 transition-colors shadow-lg shadow-amber-950/20"
+            >
+              <div className="flex items-center gap-3">
+                <div className="p-2.5 rounded-xl bg-amber-500/10 text-amber-400 border border-amber-500/30 shrink-0">
+                  <Cloud size={20} />
+                </div>
+                <div>
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <span className="text-xs font-extrabold text-white">Mídias Fora da Máquina & Backup (Cloudflare R2)</span>
+                    <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[9px] font-bold bg-amber-500/20 text-amber-300 border border-amber-500/40">
+                      <span className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse"></span>
+                      10 GB GRÁTIS • S3
+                    </span>
+                  </div>
+                  <p className="text-[11px] text-slate-300 mt-0.5">
+                    Fotos de alunos e docs no R2 • Backup automático com recuperação rápida (Disaster Recovery) em caso de erro no deploy
+                  </p>
+                </div>
+              </div>
+              <button 
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onOpenR2Backup && onOpenR2Backup();
+                }}
+                className="px-3 py-1.5 bg-gradient-to-r from-amber-600 to-orange-600 hover:from-amber-500 hover:to-orange-500 text-white rounded-xl text-xs font-black shrink-0 transition-colors flex items-center gap-1.5 shadow-md shadow-amber-950/50 cursor-pointer"
+              >
+                <Upload size={13} />
+                <span>R2 & Backup</span>
               </button>
             </div>
 

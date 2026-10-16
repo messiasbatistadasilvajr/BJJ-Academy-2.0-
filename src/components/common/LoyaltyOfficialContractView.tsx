@@ -154,7 +154,7 @@ export const LoyaltyOfficialContractView: React.FC<LoyaltyOfficialContractViewPr
     if (value && value.trim().length > 0) {
       return (
         <span 
-          className="font-bold text-slate-900 border-b border-red-500/40 bg-amber-100/50 px-1 rounded transition-all"
+          className="font-black text-slate-950 border-b-2 border-red-600 bg-amber-100/90 px-1.5 py-0.5 rounded transition-all text-[15px] inline-block shadow-sm"
           title={`Preenchido automaticamente a partir do cadastro (${label || 'Dado'}): ${value}`}
         >
           {value}
@@ -163,7 +163,7 @@ export const LoyaltyOfficialContractView: React.FC<LoyaltyOfficialContractViewPr
     }
     return (
       <span 
-        className="font-mono text-slate-400 bg-slate-100/80 px-1.5 py-0.2 rounded border border-dashed border-slate-300 text-[11px]"
+        className="font-mono text-slate-400 bg-slate-100/90 px-2 py-0.5 rounded border border-dashed border-slate-300 text-xs inline-block"
         title="Em branco: Será preenchido automaticamente ao digitar no formulário de cadastro de novo aluno"
       >
         {isUnderline ? placeholder : '____________________'}
@@ -360,7 +360,7 @@ export const LoyaltyOfficialContractView: React.FC<LoyaltyOfficialContractViewPr
         {/* PÁGINA 1: PARTES & OBJETO DO CONTRATO                                */}
         {/* --------------------------------------------------------------------- */}
         {(viewMode === 'all_pages' || currentPage === 1) && (
-          <article className="print-page w-full max-w-[800px] min-h-[1130px] bg-white text-slate-900 rounded-2xl sm:rounded-3xl p-6 sm:p-12 shadow-2xl relative flex flex-col justify-between text-[13px] leading-relaxed font-sans border border-slate-200">
+          <article className="print-page w-full max-w-[850px] min-h-[1130px] bg-white text-slate-900 rounded-2xl sm:rounded-3xl p-6 sm:p-12 shadow-2xl relative flex flex-col justify-between text-[15px] sm:text-[15.5px] leading-relaxed font-sans border border-slate-200">
             <div>
               {/* Header com Logo Loyalty Jiu-Jitsu */}
               <div className="flex items-center justify-between pb-6 border-b border-slate-200 mb-6">
@@ -488,7 +488,7 @@ export const LoyaltyOfficialContractView: React.FC<LoyaltyOfficialContractViewPr
         {/* PÁGINA 2: USO DE IMAGEM, REGRAS & CRONOGRAMA DE 12 PARCELAS          */}
         {/* --------------------------------------------------------------------- */}
         {(viewMode === 'all_pages' || currentPage === 2) && (
-          <article className="print-page w-full max-w-[800px] min-h-[1130px] bg-white text-slate-900 rounded-2xl sm:rounded-3xl p-6 sm:p-12 shadow-2xl relative flex flex-col justify-between text-[13px] leading-relaxed font-sans border border-slate-200">
+          <article className="print-page w-full max-w-[850px] min-h-[1130px] bg-white text-slate-900 rounded-2xl sm:rounded-3xl p-6 sm:p-12 shadow-2xl relative flex flex-col justify-between text-[15px] sm:text-[15.5px] leading-relaxed font-sans border border-slate-200">
             <div>
               {/* Header Mini */}
               <div className="flex items-center justify-between pb-3 border-b border-slate-200 mb-6">
@@ -577,7 +577,7 @@ export const LoyaltyOfficialContractView: React.FC<LoyaltyOfficialContractViewPr
         {/* PÁGINA 3: RENOVAÇÃO, RESCISÃO, FORO & DECLARAÇÕES DE SAÚDE           */}
         {/* --------------------------------------------------------------------- */}
         {(viewMode === 'all_pages' || currentPage === 3) && (
-          <article className="print-page w-full max-w-[800px] min-h-[1130px] bg-white text-slate-900 rounded-2xl sm:rounded-3xl p-6 sm:p-12 shadow-2xl relative flex flex-col justify-between text-[13px] leading-relaxed font-sans border border-slate-200">
+          <article className="print-page w-full max-w-[850px] min-h-[1130px] bg-white text-slate-900 rounded-2xl sm:rounded-3xl p-6 sm:p-12 shadow-2xl relative flex flex-col justify-between text-[15px] sm:text-[15.5px] leading-relaxed font-sans border border-slate-200">
             <div>
               {/* Header Mini */}
               <div className="flex items-center justify-between pb-3 border-b border-slate-200 mb-6">
@@ -673,7 +673,7 @@ export const LoyaltyOfficialContractView: React.FC<LoyaltyOfficialContractViewPr
         {/* PÁGINA 4: ASSINATURAS, CONTRATADO & TESTEMUNHAS                       */}
         {/* --------------------------------------------------------------------- */}
         {(viewMode === 'all_pages' || currentPage === 4) && (
-          <article className="print-page w-full max-w-[800px] min-h-[1130px] bg-white text-slate-900 rounded-2xl sm:rounded-3xl p-6 sm:p-12 shadow-2xl relative flex flex-col justify-between text-[13px] leading-relaxed font-sans border border-slate-200">
+          <article className="print-page w-full max-w-[850px] min-h-[1130px] bg-white text-slate-900 rounded-2xl sm:rounded-3xl p-6 sm:p-12 shadow-2xl relative flex flex-col justify-between text-[15px] sm:text-[15.5px] leading-relaxed font-sans border border-slate-200">
             <div>
               {/* Header Mini */}
               <div className="flex items-center justify-between pb-3 border-b border-slate-200 mb-8">
@@ -844,7 +844,7 @@ export const LoyaltyOfficialContractView: React.FC<LoyaltyOfficialContractViewPr
         {/* PÁGINA 5: RELATÓRIO DE AUDITORIA E VALIDAÇÃO ELETRÔNICA               */}
         {/* --------------------------------------------------------------------- */}
         {(viewMode === 'all_pages' || currentPage === 5) && (
-          <article className="print-page w-full max-w-[800px] min-h-[1130px] bg-white text-slate-900 rounded-2xl sm:rounded-3xl p-6 sm:p-12 shadow-2xl relative flex flex-col justify-between text-[13px] leading-relaxed font-sans border border-slate-200">
+          <article className="print-page w-full max-w-[850px] min-h-[1130px] bg-white text-slate-900 rounded-2xl sm:rounded-3xl p-6 sm:p-12 shadow-2xl relative flex flex-col justify-between text-[15px] sm:text-[15.5px] leading-relaxed font-sans border border-slate-200">
             <div>
               {/* Header com Logo Autentique / Certificação Digital */}
               <div className="flex items-center justify-between pb-4 border-b border-slate-200 mb-6">

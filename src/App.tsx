@@ -42,6 +42,7 @@ import { BirthdayAlertModal } from './components/common/BirthdayAlertModal';
 import { IBJJFBeltGuideModal } from './components/common/IBJJFBeltGuideModal';
 import { StudentManagementModal } from './components/common/StudentManagementModal';
 import { CloudDatabaseStatusModal } from './components/common/CloudDatabaseStatusModal';
+import { CloudflareR2BackupModal } from './components/common/CloudflareR2BackupModal';
 import { CEOProfileModal } from './components/common/CEOProfileModal';
 import { CEOLoginModal } from './components/common/CEOLoginModal';
 import { ManagerLoginModal } from './components/common/ManagerLoginModal';
@@ -233,6 +234,7 @@ export default function App() {
   const [studentManagementInitialRegistering, setStudentManagementInitialRegistering] = useState<boolean>(false);
   const [studentManagementTargetAcademy, setStudentManagementTargetAcademy] = useState<RegisteredAcademy | undefined>(undefined);
   const [isCloudStatusOpen, setIsCloudStatusOpen] = useState(false);
+  const [isR2BackupModalOpen, setIsR2BackupModalOpen] = useState(false);
 
   const handleOpenStudentEnrollment = (targetAcademy?: RegisteredAcademy) => {
     if (targetAcademy) {
@@ -825,6 +827,7 @@ export default function App() {
       onOpenExpenseManagement={() => setActiveRole('expense_management')}
       onOpenSuperAdminSaas={() => setActiveRole('saas_superadmin')}
       onOpenProShopFulfillment={() => setIsProShopFulfillmentOpen(true)}
+      onOpenR2Backup={() => setIsR2BackupModalOpen(true)}
     >
       {/* Offline Mode Banner */}
       {!isOnline && (
@@ -1039,6 +1042,7 @@ export default function App() {
             setInvoices(updated);
             localStorage.setItem('bjj_invoices', JSON.stringify(updated));
           }}
+          onOpenR2Backup={() => setIsR2BackupModalOpen(true)}
         />
       )}
 
@@ -1539,6 +1543,15 @@ export default function App() {
         activeAcademy={studentManagementTargetAcademy || activeAcademy}
         onUpdateAcademy={handleUpdateAcademy}
         initialRegistering={studentManagementInitialRegistering}
+        onOpenR2Backup={() => setIsR2BackupModalOpen(true)}
+      />
+
+      {/* ☁️ Cloudflare R2 External Media & Disaster Recovery Backup Modal */}
+      <CloudflareR2BackupModal
+        isOpen={isR2BackupModalOpen}
+        onClose={() => setIsR2BackupModalOpen(false)}
+        activeAcademyName={(studentManagementTargetAcademy || activeAcademy).shortName || (studentManagementTargetAcademy || activeAcademy).name}
+        activeAcademyId={(studentManagementTargetAcademy || activeAcademy).id}
       />
 
       {/* ☁️ Cloud Database Architecture & Real-Time Sync Status Modal */}

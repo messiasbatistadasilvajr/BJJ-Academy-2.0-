@@ -1,0 +1,166 @@
+{
+  "backupId": "bjj_bkp_1792169122912_92i9",
+  "system": "BJJ ACADEMY MOBILE 2.0",
+  "version": "2.0.0",
+  "createdAt": "2026-10-16T16:45:22.912Z",
+  "checksum": "",
+  "stats": {
+    "studentsCount": 6,
+    "academiesCount": 6,
+    "invoicesCount": 3,
+    "expensesCount": 3,
+    "classesCount": 0,
+    "totalRecords": 18
+  },
+  "data": {
+    "students": [
+      {
+        "id": "stu_001",
+        "name": "Lucas \"Pitbull\" Silva",
+        "belt": "blue",
+        "stripes": 3,
+        "category": "Adulto Médio",
+        "status": "active"
+      },
+      {
+        "id": "stu_002",
+        "name": "Beatriz \"Leoa\" Ferreira",
+        "belt": "purple",
+        "stripes": 1,
+        "category": "Adulto Leve",
+        "status": "active"
+      },
+      {
+        "id": "stu_003",
+        "name": "Rafael \"Guará\" Santos",
+        "belt": "brown",
+        "stripes": 2,
+        "category": "Master 1 Pesado",
+        "status": "active"
+      },
+      {
+        "id": "stu_004",
+        "name": "Gabriel \"Tigre\" Mendes",
+        "belt": "white",
+        "stripes": 4,
+        "category": "Kids Sub-13",
+        "status": "active"
+      },
+      {
+        "id": "stu_005",
+        "name": "Enzo \"Formiguinha\" Rocha",
+        "belt": "grey",
+        "stripes": 2,
+        "category": "Kids Sub-9",
+        "status": "active"
+      },
+      {
+        "id": "stu_006",
+        "name": "Thiago \"Mutante\" Lima",
+        "belt": "blue",
+        "stripes": 0,
+        "category": "Adulto Pesadíssimo",
+        "status": "active"
+      }
+    ],
+    "academies": [
+      {
+        "id": "acad_loyalty_jiujitsu",
+        "name": "Loyalty Jiu-Jitsu Matriz",
+        "branch": "Matriz Oficial",
+        "city": "Fortaleza",
+        "state": "CE",
+        "cnpj": "081.265.363-73"
+      },
+      {
+        "id": "acad_bjj_jardins",
+        "name": "BJJ Academy Jardins",
+        "branch": "Unidade Jardins",
+        "city": "São Paulo",
+        "state": "SP"
+      },
+      {
+        "id": "acad_gracie_ipanema",
+        "name": "Gracie Barra Ipanema",
+        "branch": "Zona Sul",
+        "city": "Rio de Janeiro",
+        "state": "RJ"
+      },
+      {
+        "id": "acad_alliance_campinas",
+        "name": "Alliance Campinas",
+        "branch": "Cambuí",
+        "city": "Campinas",
+        "state": "SP"
+      },
+      {
+        "id": "acad_checkmat_curitiba",
+        "name": "Checkmat Curitiba",
+        "branch": "Batel",
+        "city": "Curitiba",
+        "state": "PR"
+      },
+      {
+        "id": "acad_nova_uniao_bh",
+        "name": "Nova União Savassi",
+        "branch": "Savassi",
+        "city": "Belo Horizonte",
+        "state": "MG"
+      }
+    ],
+    "invoices": [
+      {
+        "id": "inv_001",
+        "studentId": "stu_001",
+        "studentName": "Lucas Silva",
+        "amount": 180,
+        "dueDate": "2026-10-10",
+        "status": "paid"
+      },
+      {
+        "id": "inv_002",
+        "studentId": "stu_002",
+        "studentName": "Beatriz Ferreira",
+        "amount": 180,
+        "dueDate": "2026-10-10",
+        "status": "paid"
+      },
+      {
+        "id": "inv_003",
+        "studentId": "stu_004",
+        "studentName": "Gabriel Mendes",
+        "amount": 180,
+        "dueDate": "2026-10-10",
+        "status": "pending"
+      }
+    ],
+    "expenses": [
+      {
+        "id": "exp_001",
+        "description": "Aluguel do Galpão Tatame Matriz",
+        "amount": 4500,
+        "category": "aluguel",
+        "dueDate": "2026-10-10",
+        "status": "paid"
+      },
+      {
+        "id": "exp_002",
+        "description": "Manutenção e Higienização Tatame",
+        "amount": 650,
+        "category": "manutencao",
+        "dueDate": "2026-10-15",
+        "status": "paid"
+      },
+      {
+        "id": "exp_003",
+        "description": "Remessa Kimonos Oficiais Pro-Shop",
+        "amount": 2800,
+        "category": "proshop",
+        "dueDate": "2026-10-20",
+        "status": "pending"
+      }
+    ],
+    "classes": [],
+    "saasSubscriptions": []
+  }
+}

@@ -357,35 +357,35 @@ export const ExpenseManagementView: React.FC<ExpenseManagementViewProps> = ({
   return (
     <div className="space-y-4 pb-12">
       {/* ===================================================================== */}
-      {/* 1. TOP HEADER DA GESTÃO DE DESPESAS */}
+      {/* 1. TOP HEADER DA GESTÃO DE DESPESAS COM FUNDO DE VIDRO */}
       {/* ===================================================================== */}
-      <div className="p-4 rounded-3xl bg-slate-900/90 border border-slate-800 shadow-xl backdrop-blur-md space-y-3.5">
+      <div className="p-4 sm:p-5 rounded-3xl bg-slate-950/40 border border-white/10 shadow-xl backdrop-blur-md space-y-3.5">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-3">
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-3.5">
             {onBackToDashboard && (
               <button
                 onClick={onBackToDashboard}
-                className="p-2 rounded-2xl bg-slate-800 border border-slate-700 text-slate-300 hover:text-white hover:bg-slate-700 transition shrink-0"
+                className="p-2.5 rounded-2xl bg-slate-800/90 border border-slate-700 text-slate-200 hover:text-white hover:bg-slate-700 transition shrink-0"
                 title="Voltar ao Painel Geral"
               >
-                <ArrowLeft size={16} />
+                <ArrowLeft size={18} />
               </button>
             )}
 
-            <div className="w-11 h-11 rounded-2xl bg-gradient-to-br from-rose-600 to-red-800 border border-red-500/50 flex items-center justify-center text-white shadow-lg shrink-0">
-              <TrendingDown size={22} className="stroke-[2.5]" />
+            <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-rose-600 to-red-800 border border-red-500/50 flex items-center justify-center text-white shadow-lg shrink-0 ring-1 ring-white/20">
+              <TrendingDown size={24} className="stroke-[2.5]" />
             </div>
 
             <div>
               <div className="flex items-center gap-2">
-                <h1 className="text-lg md:text-xl font-black text-white tracking-tight">
+                <h1 className="text-xl md:text-2xl font-black text-white tracking-tight">
                   Gestão de Despesas & Custos
                 </h1>
-                <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-red-950 border border-red-700/60 text-red-300 flex items-center gap-1">
-                  <Lock size={10} /> Área Restrita
+                <span className="text-xs font-bold px-2.5 py-0.5 rounded-full bg-red-950/90 border border-red-700/80 text-red-300 flex items-center gap-1 shadow-sm">
+                  <Lock size={12} /> Área Restrita
                 </span>
               </div>
-              <p className="text-xs text-slate-400">
+              <p className="text-xs sm:text-sm text-slate-300 font-medium mt-0.5">
                 Acompanhamento e controle rigoroso do fluxo de saída de caixa da academia
               </p>
             </div>

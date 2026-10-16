@@ -80,60 +80,60 @@ export const StudentView: React.FC<StudentViewProps> = ({
   };
 
   return (
-    <div className="flex flex-col h-full bg-slate-950/65 backdrop-blur-[0.5px] text-slate-100 overflow-y-auto pb-20 no-scrollbar">
-      {/* Student Hero Header */}
-      <div className="relative px-5 pt-4 pb-5 bg-gradient-to-b from-slate-900/90 via-slate-900/80 to-slate-950/75 border-b border-slate-800/80">
+    <div className="flex flex-col h-full bg-slate-950/30 backdrop-blur-[0.5px] text-slate-100 overflow-y-auto pb-20 no-scrollbar">
+      {/* Student Hero Header com Transparência de Vidro para Exibir a Imagem de BJJ no Topo */}
+      <div className="relative px-5 pt-4 pb-5 bg-gradient-to-b from-slate-950/20 via-slate-950/45 to-slate-950/70 border-b border-white/10">
         <div className="flex items-start justify-between gap-3 mb-3">
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-3.5">
             <div className="relative">
               <img
                 src={student.avatar}
                 alt={student.name}
-                className="w-14 h-14 rounded-2xl object-cover border-2 border-red-600/80 shadow-lg"
+                className="w-16 h-16 rounded-2xl object-cover border-2 border-red-600/80 shadow-xl"
               />
               <span className="absolute -bottom-1 -right-1 p-1 rounded-full bg-slate-900 border border-slate-700 text-amber-400">
-                <Flame className="w-3 h-3 fill-amber-400" />
+                <Flame className="w-3.5 h-3.5 fill-amber-400" />
               </span>
             </div>
             <div>
               <div className="flex items-center gap-2">
-                <h2 className="text-base font-bold text-white tracking-tight">{student.name}</h2>
+                <h2 className="text-lg sm:text-xl font-black text-white tracking-tight">{student.name}</h2>
                 <button
                   onClick={onOpenBiometrics}
                   title="Bloquear/Autenticar com Biometria"
-                  className="p-1 rounded-lg bg-slate-800 text-slate-300 hover:text-red-400 hover:bg-slate-700 transition"
+                  className="p-1.5 rounded-lg bg-slate-800/90 text-slate-200 hover:text-red-400 hover:bg-slate-700 transition"
                 >
-                  <Lock className="w-3.5 h-3.5" />
+                  <Lock className="w-4 h-4" />
                 </button>
               </div>
-              <p className="text-[11px] text-slate-400 font-medium">
+              <p className="text-xs text-slate-300 font-semibold mt-0.5">
                 Matrícula #9821 • {student.category}
               </p>
-              <div className="mt-1">
+              <div className="mt-1.5">
                 <BeltBadge belt={student.belt} stripes={student.stripes} size="sm" />
               </div>
             </div>
           </div>
 
           <div className="text-right shrink-0">
-            <div className="inline-flex flex-col items-end px-2.5 py-1 rounded-xl bg-slate-800/60 border border-slate-700/60">
-              <span className="text-[9px] text-slate-400 font-bold uppercase">Ranking</span>
-              <span className="text-xs font-black text-amber-400">#{student.rankingPosition} Geral</span>
+            <div className="inline-flex flex-col items-end px-3 py-1.5 rounded-xl bg-slate-900/80 border border-slate-700/80 shadow-sm">
+              <span className="text-[10px] text-slate-300 font-extrabold uppercase">Ranking</span>
+              <span className="text-sm font-black text-amber-400">#{student.rankingPosition} Geral</span>
             </div>
           </div>
         </div>
 
         {/* 🎂 Birthday Congratulations Banner */}
-        <div className="mb-3 p-3 rounded-2xl bg-gradient-to-r from-amber-500/20 via-yellow-500/10 to-amber-950/40 border border-amber-500/40 shadow-sm flex items-center gap-3">
-          <div className="w-10 h-10 rounded-2xl bg-amber-500/20 border border-amber-500/40 text-amber-300 flex items-center justify-center shrink-0">
-            <Cake className="w-5 h-5 animate-bounce text-amber-400" />
+        <div className="mb-3 p-3.5 rounded-2xl bg-gradient-to-r from-amber-500/25 via-yellow-500/15 to-amber-950/40 border border-amber-500/50 shadow-md flex items-center gap-3">
+          <div className="w-11 h-11 rounded-2xl bg-amber-500/20 border border-amber-500/40 text-amber-300 flex items-center justify-center shrink-0">
+            <Cake className="w-6 h-6 animate-bounce text-amber-400" />
           </div>
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-1.5">
-              <span className="text-xs font-black text-amber-300">🎉 Parabéns pelo seu dia, {student.name.split(' ')[0]}!</span>
-              <span className="text-[9px] bg-amber-500 text-slate-950 font-black px-1.5 py-0.2 rounded-full">HOJE</span>
+              <span className="text-sm font-black text-amber-300">🎉 Parabéns pelo seu dia, {student.name.split(' ')[0]}!</span>
+              <span className="text-xs bg-amber-400 text-slate-950 font-black px-2 py-0.5 rounded-full uppercase">HOJE</span>
             </div>
-            <p className="text-[11px] text-slate-300 leading-tight mt-0.5">
+            <p className="text-xs text-slate-200 font-medium leading-tight mt-0.5">
               Toda a família da <strong className="text-amber-200">{academyName || 'BJJ Academy'}</strong> te parabeniza por mais um ano de vida, saúde e muita garra no tatame! OSS! 🥋🎈
             </p>
           </div>
@@ -267,8 +267,8 @@ export const StudentView: React.FC<StudentViewProps> = ({
 
       </div>
 
-      {/* Internal Navigation Subtabs */}
-      <div className="flex items-center gap-1 px-4 py-2.5 bg-slate-900/50 border-b border-slate-800/80 overflow-x-auto no-scrollbar">
+      {/* Internal Navigation Subtabs com Fontes Maiores e Estilo de Vidro */}
+      <div className="flex items-center gap-1.5 px-4 py-3 bg-slate-950/40 border-b border-white/10 overflow-x-auto no-scrollbar">
         {[
           { id: 'treinos', label: 'Agenda & Treinos', icon: Calendar },
           { id: 'graduacao', label: 'Graduações', icon: Award },
@@ -282,13 +282,13 @@ export const StudentView: React.FC<StudentViewProps> = ({
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id as any)}
-              className={`px-3 py-1.5 rounded-full text-xs font-semibold shrink-0 flex items-center gap-1.5 transition ${
+              className={`px-3.5 py-2 rounded-xl text-xs sm:text-sm font-black shrink-0 flex items-center gap-1.5 transition ${
                 isActive
-                  ? 'bg-red-600 text-white shadow-md shadow-red-950'
-                  : 'bg-slate-900 text-slate-400 hover:text-white hover:bg-slate-800'
+                  ? 'bg-red-600 text-white shadow-lg shadow-red-950 ring-1 ring-white/20'
+                  : 'bg-slate-900/80 text-slate-300 hover:text-white hover:bg-slate-800'
               }`}
             >
-              <Icon className="w-3.5 h-3.5" />
+              <Icon className="w-4 h-4" />
               {tab.label}
             </button>
           );

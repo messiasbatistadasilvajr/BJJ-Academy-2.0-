@@ -51,6 +51,16 @@ O **BJJ Academy Mobile** é uma aplicação completa com arquitetura híbrida (F
 * **Controle de Contas a Pagar (`payable_expenses`)**: Lançamento de despesas fixas e variáveis da academia (aluguel, tatame, energia, comissão de professores) com cálculo automático de lucro líquido real.
 * **Motor de Assinaturas SaaS & Bloqueio Automático (`saas_subscriptions`)**: Painel exclusivo Super Admin/CEO com planos Starter, Pro e Enterprise, simulador de receita recorrente (MRR/ARR) e bloqueio automático por inadimplência.
 
+### ☁️ 9. Mídias Fora da Máquina (Cloudflare R2 Object Storage / S3 API)
+* **Arquitetura Desacoplada de Mídias**: Desde o primeiro dia de código, fotos de alunos (`avatars`), fotos de chamada com visão computacional (`attendance`), comprovantes e documentos são armazenados fora da máquina em bucket de alta performance compatível com a API S3 (`@aws-sdk/client-s3`).
+* **Cota Gratuita Generosa (Zero Egress Fee)**: Aproveitamento integral do plano gratuito do **Cloudflare R2** com **10 GB de armazenamento inclusos**, 10.000.000 de operações de leitura/mês, 1.000.000 de operações de escrita/mês e **R$ 0,00 de taxa de saída (sem cobrança de tráfego)**.
+* **Fallback e Emulação Resiliente**: O backend possui espelhamento resiliente local para desenvolvimento sem necessidade de credenciais imediatas, migrando de forma transparente quando as chaves forem informadas no `.env`.
+
+### 🛡️ 10. Backup Automático & Disaster Recovery (Recuperação Rápida em Erro de Deploy)
+* **Snapshots Versionados no Cloudflare R2**: Rotina diária periódica em background que extrai o estado consolidado da aplicação (alunos, academias, faturas, despesas, presenças, planos) com checksum **SHA-256** e cataloga no bucket R2.
+* **Snapshot Manual Pré-Deploy**: Botão de 1 clique na interface e endpoint `POST /api/backup/run` para capturar o ponto de restauração imediatamente antes de qualquer atualização ou deploy.
+* **Recuperação em 1 Clique (Disaster Recovery)**: Endpoint `POST /api/backup/restore` e modal interativo que recupera instantaneamente todos os registros caso ocorra qualquer imprevisto ou erro em deploy.
+
 ---
 
 ## ⚙️ Arquitetura Técnica e Módulos Implementados
@@ -130,6 +140,8 @@ O **BJJ Academy Mobile** é uma aplicação completa com arquitetura híbrida (F
 │   ├── services/
 │   │   ├── asaasSubaccountService.ts       # Subcontas Asaas & Split de pagamento
 │   │   ├── asaasValidator.ts               # Validação de segurança e autenticidade de Webhooks
+│   │   ├── backupR2Service.ts              # Backup automático diário & Disaster Recovery no Cloudflare R2
+│   │   ├── cloudflareR2Service.ts          # Mídias externas S3/R2 (10 GB Free Tier, Zero Egress Fee)
 │   │   ├── fcmNotificationService.ts       # Disparo de Push Notifications FCM
 │   │   ├── financialAuditService.ts        # Trilha de auditoria contábil imutável
 │   │   ├── financialWorker.ts              # Worker assíncrono para fila de processamento
@@ -146,14 +158,16 @@ O **BJJ Academy Mobile** é uma aplicação completa com arquitetura híbrida (F
 ├── src/
 │   ├── components/
 │   │   ├── common/                     # Modais e componentes transversais
+│   │   │   ├── BJJFixedBackground.tsx       # Imagem fixa BJJ responsive portrait/landscape 100% nítida
 │   │   │   ├── BirthdayAlertModal.tsx       # Alerta de aniversariantes
 │   │   │   ├── CBJJGraduationModal.tsx      # Emissão oficial de diplomas com QR Code
 │   │   │   ├── CloudDatabaseStatusModal.tsx # Monitor de conexão e sincronia Firebase
+│   │   │   ├── CloudflareR2BackupModal.tsx  # Central de Mídias Externas & Disaster Recovery R2
 │   │   │   ├── DataIntegrityModal.tsx       # Diagnóstico de integridade Firestore ↔ Local
 │   │   │   ├── DeviceFrame.tsx              # Simulador de dispositivo e alternador de papéis
 │   │   │   ├── IBJJFBeltGuideModal.tsx      # Guia de regras de graduação IBJJF
 │   │   │   ├── SparringJournalModal.tsx     # Diário técnico de sparrings e rolas
-│   │   │   ├── StudentManagementModal.tsx   # Gestão de alunos sincronizados na nuvem
+│   │   │   ├── StudentManagementModal.tsx   # Gestão de alunos e upload de fotos para Cloudflare R2
 │   │   │   └── SystemDiagnosticsModal.tsx   # Painel interativo de testes do sistema E2E
 │   │   └── views/                      # Telas dedicadas de cada papel
 │   │       ├── AcademyRegistrationView.tsx  # Cadastro de novas academias/filiais
@@ -168,6 +182,9 @@ O **BJJ Academy Mobile** é uma aplicação completa com arquitetura híbrida (F
 │   │   ├── fcmService.ts               # Registro de tokens FCM no cliente
 │   │   ├── firestoreService.ts         # Sincronização em tempo real multi-coleções
 │   │   └── storageService.ts           # Upload seguro de avatares, certificados e recibos
+│   ├── services/
+│   │   ├── r2StorageClient.ts          # Cliente frontend para Upload e Disaster Recovery no Cloudflare R2
+│   │   └── studentEnrollmentService.ts # Validação de limites e cotas de alunos
 │   ├── utils/
 │   │   ├── dataIntegrityChecker.ts     # Verificação de paridade de dados local/nuvem
 │   │   ├── safeStorage.ts              # Persistência IndexedDB e LocalStorage com fallback
@@ -248,7 +265,9 @@ O **BJJ Academy Mobile** é uma aplicação completa com arquitetura híbrida (F
 | `saas_subscriptions` | Controle sigiloso de assinaturas SaaS e planos das academias (restrito ao CEO/Super Admin). |
 | `sparringSessions` | Registros do diário de treino e rolas de cada praticante. |
 | `birthdays` | Base de aniversariantes para ações de retenção e engajamento comunitário. |
-| **Firebase Storage** | Bucket com isolamento para `/avatars`, `/certificates` oficiais e `/receipts`. |
+| **Cloudflare R2 Storage** | Object storage externo fora da máquina (10 GB Free Tier, Zero Egress Fee) para fotos de alunos (`avatars`) e presenças (`attendance`). |
+| **Cloudflare R2 Backups** | Snapshots diários e sob demanda do banco de dados completo para Disaster Recovery em 1 clique. |
+| **Firebase Storage** | Bucket complementar para `/certificates` oficiais e `/receipts`. |
 | **Firebase Cloud Messaging** | Mensageria push para avisos de mensalidade, graduação e retorno ao tatame. |
 
 ---

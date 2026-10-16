@@ -1,0 +1,68 @@
+[
+  {
+    "backupId": "bjj_bkp_1792169660811_fley",
+    "filename": "bjj_snapshot_2026-10-16T16-54-20-811Z.json",
+    "key": "backups/global/1792169660812_677qq_bjj_snapshot_2026-10-16T16-54-20-811Z.json",
+    "sizeBytes": 4014,
+    "timestamp": "2026-10-16T16:54:20.811Z",
+    "totalRecords": 18,
+    "collectionsIncluded": [
+      "students",
+      "academies",
+      "invoices",
+      "expenses",
+      "classes",
+      "saasSubscriptions"
+    ],
+    "checksum": "01e6b1ab9aa3b0eb9cb1319cb5c26a6a119a15eb87da7e9bd5b26c2b2e5545b7",
+    "systemVersion": "2.0.0",
+    "provider": "r2_emulated_ready",
+    "url": "/api/storage/file?key=backups%2Fglobal%2F1792169660812_677qq_bjj_snapshot_2026-10-16T16-54-20-811Z.json",
+    "status": "completed",
+    "notes": "Teste automatizado QA de snapshot"
+  },
+  {
+    "backupId": "bjj_bkp_1792169122912_92i9",
+    "filename": "bjj_snapshot_2026-10-16T16-45-22-912Z.json",
+    "key": "backups/global/1792169122912_lq9f8_bjj_snapshot_2026-10-16T16-45-22-912Z.json",
+    "sizeBytes": 4014,
+    "timestamp": "2026-10-16T16:45:22.912Z",
+    "totalRecords": 18,
+    "collectionsIncluded": [
+      "students",
+      "academies",
+      "invoices",
+      "expenses",
+      "classes",
+      "saasSubscriptions"
+    ],
+    "checksum": "e764ad7a1e04f8acb71a5baa41790c52d2401e1f881ea425f91975831a614133",
+    "systemVersion": "2.0.0",
+    "provider": "r2_emulated_ready",
+    "url": "/api/storage/file?key=backups%2Fglobal%2F1792169122912_lq9f8_bjj_snapshot_2026-10-16T16-45-22-912Z.json",
+    "status": "completed",
+    "notes": "Teste de snapshot pré-deploy"
+  },
+  {
+    "backupId": "bjj_bkp_1792169118517_p63h",
+    "filename": "bjj_snapshot_2026-10-16T16-45-18-517Z.json",
+    "key": "backups/global/1792169118518_p6m65_bjj_snapshot_2026-10-16T16-45-18-517Z.json",
+    "sizeBytes": 4014,
+    "timestamp": "2026-10-16T16:45:18.517Z",
+    "totalRecords": 18,
+    "collectionsIncluded": [
+      "students",
+      "academies",
+      "invoices",
+      "expenses",
+      "classes",
+      "saasSubscriptions"
+    ],
+    "checksum": "ae24c74d3ab2c2226fd2e84abb56bd806f41c8493777d446af1930684601f1c2",
+    "systemVersion": "2.0.0",
+    "provider": "r2_emulated_ready",
+    "url": "/api/storage/file?key=backups%2Fglobal%2F1792169118518_p6m65_bjj_snapshot_2026-10-16T16-45-18-517Z.json",
+    "status": "completed",
+    "notes": "Snapshot inicial baseline do sistema (Dia 1 de código)"
+  }
+]

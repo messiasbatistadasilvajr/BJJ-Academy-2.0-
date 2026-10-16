@@ -761,10 +761,10 @@ export const AcademyRegistrationView: React.FC<AcademyRegistrationViewProps> = (
   const currentLogoPreset = PRESET_LOGOS.find(l => l.id === selectedLogoPreset) || PRESET_LOGOS[0];
 
   return (
-    <div className="w-full h-full overflow-y-auto p-3 sm:p-6 space-y-4 pb-20 no-scrollbar animate-in fade-in bg-slate-950/60 backdrop-blur-[0.5px]">
+    <div className="w-full h-full overflow-y-auto p-3 sm:p-6 space-y-4 pb-20 no-scrollbar animate-in fade-in bg-slate-950/30 backdrop-blur-[0.5px]">
       
-      {/* TOP HERO BANNER */}
-      <div className="p-4 sm:p-6 rounded-3xl bg-gradient-to-br from-slate-900 via-slate-900/95 to-slate-950 border border-slate-800 shadow-2xl relative overflow-hidden">
+      {/* TOP HERO BANNER com Transparência de Vidro */}
+      <div className="p-4 sm:p-6 rounded-3xl bg-gradient-to-br from-slate-950/30 via-slate-950/50 to-slate-950/75 border border-white/10 shadow-2xl relative overflow-hidden backdrop-blur-md">
         {/* Decorative ambient martial glow */}
         <div className="absolute top-0 right-0 w-80 h-80 bg-red-600/10 rounded-full blur-3xl pointer-events-none" />
         <div className="absolute bottom-0 left-0 w-80 h-80 bg-amber-600/10 rounded-full blur-3xl pointer-events-none" />
@@ -775,24 +775,24 @@ export const AcademyRegistrationView: React.FC<AcademyRegistrationViewProps> = (
               <button
                 type="button"
                 onClick={onBackToManager}
-                className="inline-flex items-center gap-1 text-xs font-bold text-slate-400 hover:text-white transition mb-1"
+                className="inline-flex items-center gap-1.5 text-xs sm:text-sm font-bold text-slate-300 hover:text-white transition mb-1"
               >
-                <ArrowLeft size={14} />
+                <ArrowLeft size={16} />
                 <span>Voltar ao Painel do Gestor</span>
               </button>
             )}
-            <div className="flex items-center gap-3">
-              <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-red-600 via-amber-600 to-yellow-600 flex items-center justify-center text-2xl shadow-lg shadow-red-950/50 shrink-0">
+            <div className="flex items-center gap-3.5">
+              <div className="w-13 h-13 rounded-2xl bg-gradient-to-br from-red-600 via-amber-600 to-yellow-600 flex items-center justify-center text-2xl shadow-xl shadow-red-950/50 shrink-0 ring-1 ring-white/20">
                 🏛️
               </div>
               <div>
-                <h1 className="text-xl sm:text-2xl font-black text-white tracking-tight flex items-center gap-2">
+                <h1 className="text-xl sm:text-2xl font-black text-white tracking-tight flex items-center gap-2 flex-wrap">
                   <span>Cadastro de Novas Academias</span>
-                  <span className="px-2 py-0.5 rounded-full text-[10px] font-black bg-amber-500/20 text-amber-300 border border-amber-500/40 uppercase tracking-wide">
+                  <span className="px-2.5 py-0.5 rounded-full text-xs font-black bg-amber-500/20 text-amber-300 border border-amber-500/40 uppercase tracking-wide">
                     Multi-Unidades 2.0
                   </span>
                 </h1>
-                <p className="text-xs text-slate-400">
+                <p className="text-xs sm:text-sm text-slate-300 font-medium mt-0.5">
                   Gerencie filiais, tatames credenciados, chaves PIX de recebimento e taxas da plataforma BJJ.
                 </p>
               </div>

@@ -16,6 +16,7 @@
     "cap:build": "npm run build && cap sync"
   },
   "dependencies": {
+    "@aws-sdk/client-s3": "^3.1152.0",
     "@capacitor/app": "^8.1.1",
     "@capacitor/core": "^8.5.1",
     "@capacitor/haptics": "^8.0.2",

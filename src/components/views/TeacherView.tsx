@@ -331,23 +331,23 @@ export const TeacherView: React.FC<TeacherViewProps> = ({
   };
 
   return (
-    <div className="flex flex-col h-full bg-slate-950/65 backdrop-blur-[0.5px] text-slate-100 overflow-y-auto pb-20 no-scrollbar">
-      {/* Teacher Operational Top Header */}
-      <div className="px-5 pt-4 pb-3 bg-gradient-to-b from-red-950/40 via-slate-900/85 to-slate-950/75 border-b border-slate-800 space-y-3">
+    <div className="flex flex-col h-full bg-slate-950/30 backdrop-blur-[0.5px] text-slate-100 overflow-y-auto pb-20 no-scrollbar">
+      {/* Teacher Operational Top Header com Transparência de Vidro */}
+      <div className="px-5 pt-4 pb-3.5 bg-gradient-to-b from-slate-950/20 via-slate-950/45 to-slate-950/70 border-b border-white/10 space-y-3">
         {/* Blindagem Pedagógica Banner */}
-        <div className="p-2.5 rounded-2xl bg-emerald-950/50 border border-emerald-500/40 flex items-center justify-between gap-2 shadow-sm">
-          <div className="flex items-center gap-2">
-            <div className="w-7 h-7 rounded-xl bg-emerald-500/20 text-emerald-400 border border-emerald-500/40 flex items-center justify-center font-bold text-xs shrink-0">
+        <div className="p-3 rounded-2xl bg-emerald-950/40 border border-emerald-500/40 flex items-center justify-between gap-2.5 shadow-sm">
+          <div className="flex items-center gap-2.5">
+            <div className="w-8 h-8 rounded-xl bg-emerald-500/20 text-emerald-400 border border-emerald-500/40 flex items-center justify-center font-bold text-sm shrink-0">
               🛡️
             </div>
             <div>
-              <div className="text-[11px] font-black text-emerald-300 flex items-center gap-1.5">
+              <div className="text-xs font-black text-emerald-300 flex items-center gap-1.5">
                 <span>Blindagem do Professor Ativa</span>
-                <span className="text-[9px] bg-emerald-500/20 text-emerald-300 px-1.5 py-0.2 rounded-full font-bold">
+                <span className="text-[10px] bg-emerald-500/20 text-emerald-300 px-2 py-0.5 rounded-full font-extrabold">
                   TATAME & ALUNOS
                 </span>
               </div>
-              <p className="text-[10px] text-emerald-200/80 leading-tight">
+              <p className="text-xs text-emerald-200/90 leading-tight mt-0.5">
                 Acesso exclusivo a Aulas, Alunos, Graduações, Mensagens e Lembretes de Torneios na unidade <strong>{academyName}</strong>. Finanças restritas à gerência.
               </p>
             </div>
@@ -355,8 +355,8 @@ export const TeacherView: React.FC<TeacherViewProps> = ({
         </div>
 
         <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2.5">
-            <div className="w-9 h-9 rounded-2xl bg-red-600/20 border border-red-500/40 flex items-center justify-center text-red-500 font-black overflow-hidden">
+          <div className="flex items-center gap-3">
+            <div className="w-11 h-11 rounded-2xl bg-red-600/20 border border-red-500/40 flex items-center justify-center text-red-500 font-black overflow-hidden shadow-md">
               {activeInstructor?.avatar ? (
                 <img src={activeInstructor.avatar} alt="Professor" className="w-full h-full object-cover" />
               ) : (
@@ -365,20 +365,20 @@ export const TeacherView: React.FC<TeacherViewProps> = ({
             </div>
             <div>
               <div className="flex items-center gap-2">
-                <span className="text-[10px] font-bold text-red-400 uppercase tracking-wider">
+                <span className="text-xs font-black text-red-400 uppercase tracking-wider">
                   Tatame Operacional • {activeInstructor?.role || 'Professor'}
                 </span>
                 {activeInstructor?.isClassActive && (
-                  <span className="inline-flex items-center gap-1 text-[9px] font-bold px-1.5 py-0.2 rounded-full bg-emerald-500/20 border border-emerald-500/40 text-emerald-300">
+                  <span className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-500/20 border border-emerald-500/40 text-emerald-300">
                     <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
                     Aula Iniciada
                   </span>
                 )}
               </div>
-              <h2 className="text-sm font-bold text-white flex items-center gap-2">
+              <h2 className="text-base sm:text-lg font-black text-white flex items-center gap-2">
                 <span>{activeInstructor?.name || 'Mestre Rodrigo "Cavalo" (3º Grau)'}</span>
                 {activeInstructor?.belt && (
-                  <span className="text-[10px] text-slate-400 font-normal">
+                  <span className="text-xs text-slate-300 font-normal">
                     (Faixa {activeInstructor.belt})
                   </span>
                 )}

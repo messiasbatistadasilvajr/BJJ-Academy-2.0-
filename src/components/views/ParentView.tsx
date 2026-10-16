@@ -72,52 +72,52 @@ export const ParentView: React.FC<ParentViewProps> = ({
   }
 
   return (
-    <div className="flex flex-col h-full bg-slate-950/65 backdrop-blur-[0.5px] text-slate-100 overflow-y-auto pb-20 no-scrollbar">
-      {/* Portal do Responsável Top Header */}
-      <div className="px-5 pt-4 pb-4 bg-gradient-to-b from-blue-950/40 via-slate-900/85 to-slate-950/75 border-b border-slate-800">
-        <div className="flex items-center justify-between mb-3">
-          <div className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-xl bg-blue-600/20 border border-blue-500/40 flex items-center justify-center text-blue-400">
-              <Users className="w-4 h-4" />
+    <div className="flex flex-col h-full bg-slate-950/30 backdrop-blur-[0.5px] text-slate-100 overflow-y-auto pb-20 no-scrollbar">
+      {/* Portal do Responsável Top Header com Transparência de Vidro */}
+      <div className="px-5 pt-4 pb-4 bg-gradient-to-b from-slate-950/20 via-slate-950/45 to-slate-950/70 border-b border-white/10">
+        <div className="flex items-center justify-between mb-3.5">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-2xl bg-blue-600/20 border border-blue-500/40 flex items-center justify-center text-blue-400 shadow-md">
+              <Users className="w-5 h-5" />
             </div>
             <div>
-              <span className="text-[10px] font-bold text-blue-400 uppercase tracking-wider">
+              <span className="text-xs font-black text-blue-400 uppercase tracking-wider">
                 Portal do Responsável
               </span>
-              <h2 className="text-sm font-bold text-white">Marcelo Mendes (Pai)</h2>
+              <h2 className="text-base sm:text-lg font-black text-white">Marcelo Mendes (Pai)</h2>
             </div>
           </div>
-          <span className="text-[10px] bg-blue-950 border border-blue-800 text-blue-300 px-2 py-0.5 rounded-full font-semibold">
+          <span className="text-xs bg-blue-950/90 border border-blue-700/80 text-blue-200 px-3 py-1 rounded-full font-bold shadow-sm">
             {dependents.length} Filhos Ativos
           </span>
         </div>
 
-        {/* Children Selector Chips */}
-        <div className="flex items-center gap-2 pt-1 overflow-x-auto no-scrollbar">
+        {/* Children Selector Chips com Fontes Maiores */}
+        <div className="flex items-center gap-2.5 pt-1 overflow-x-auto no-scrollbar">
           {dependents.map((dep, idx) => {
             const isSelected = selectedChildIndex === idx;
             return (
               <button
                 key={dep.id}
                 onClick={() => setSelectedChildIndex(idx)}
-                className={`flex items-center gap-2.5 p-2 pr-3 rounded-2xl border transition shrink-0 ${
+                className={`flex items-center gap-3 p-2.5 pr-4 rounded-2xl border transition shrink-0 cursor-pointer ${
                   isSelected
-                    ? 'bg-blue-600/20 border-blue-500 shadow-md shadow-blue-950'
-                    : 'bg-slate-900 border-slate-800 hover:border-slate-700'
+                    ? 'bg-blue-600/30 border-blue-400 shadow-lg shadow-blue-950 ring-1 ring-blue-300/40'
+                    : 'bg-slate-900/80 border-slate-700/80 hover:border-slate-600'
                 }`}
               >
                 <img
                   src={dep.avatar}
                   alt={dep.name}
-                  className={`w-9 h-9 rounded-xl object-cover border ${
+                  className={`w-11 h-11 rounded-xl object-cover border-2 shadow-sm ${
                     isSelected ? 'border-blue-400' : 'border-slate-700'
                   }`}
                 />
                 <div className="text-left">
-                  <div className={`text-xs font-bold ${isSelected ? 'text-white' : 'text-slate-300'}`}>
+                  <div className={`text-sm font-black ${isSelected ? 'text-white' : 'text-slate-200'}`}>
                     {dep.name.split(' ')[0]}
                   </div>
-                  <div className="text-[10px] text-slate-400 font-medium">
+                  <div className="text-xs text-slate-300 font-semibold mt-0.5">
                     {dep.age} anos • {dep.category}
                   </div>
                 </div>

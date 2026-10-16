@@ -50,6 +50,7 @@ interface DeviceFrameProps {
   onSelectAcademy?: (academyId: string) => void;
   onOpenOperatingHours?: (academy: RegisteredAcademy) => void;
   onOpenStudentEnrollment?: (academy?: RegisteredAcademy) => void;
+  onOpenR2Backup?: () => void;
 }
 
 export const DeviceFrame: React.FC<DeviceFrameProps> = ({
@@ -91,6 +92,7 @@ export const DeviceFrame: React.FC<DeviceFrameProps> = ({
   onSelectAcademy,
   onOpenOperatingHours,
   onOpenStudentEnrollment,
+  onOpenR2Backup,
 }) => {
   const isSuperAdminOrCEO = isSuperAdminOrCeoRole(activeRole);
 
@@ -160,74 +162,74 @@ export const DeviceFrame: React.FC<DeviceFrameProps> = ({
   if (shouldUseMobileNative) {
     return (
       <div className="fixed inset-0 w-full h-[100dvh] bg-slate-950 text-slate-100 flex flex-col items-center justify-start overflow-hidden font-sans select-none z-10">
-        {/* Imagem Fixa Global de Fundo: Dois Lutadores de Jiu-Jitsu */}
-        <BJJFixedBackground opacity={0.28} className="fixed" />
+        {/* Imagem Fixa Global de Fundo: Dois Lutadores de Jiu-Jitsu (100% Visível no Topo) */}
+        <BJJFixedBackground opacity={0.48} className="fixed" />
 
         {/* Responsive Mobile Container: 100% width on phone, neatly centered on tablet/desktop */}
-        <div className="w-full max-w-lg h-full flex flex-col relative z-20 overflow-hidden shadow-2xl bg-slate-950/80 sm:border-x sm:border-slate-800/80">
-          {/* Compact Mobile Top App Bar */}
-          <header className="h-12 shrink-0 px-2.5 sm:px-3 bg-slate-900/95 border-b border-slate-800/80 backdrop-blur-md flex items-center justify-between gap-1.5 z-30 shadow-md">
+        <div className="w-full max-w-lg h-full flex flex-col relative z-20 overflow-hidden shadow-2xl bg-slate-950/20 backdrop-blur-[0.5px] sm:border-x sm:border-slate-800/80">
+          {/* Enhanced Mobile Top App Bar com Transparência de Vidro (Imagem 100% Visível no Topo) e Fontes Ampliadas */}
+          <header className="h-15 shrink-0 px-3 sm:px-4 bg-slate-950/40 border-b border-white/10 backdrop-blur-md flex items-center justify-between gap-2.5 z-30 shadow-lg">
             {/* Logo + Academy selector pill */}
-            <div className="flex items-center gap-1.5 min-w-0">
-              <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-red-600 to-red-800 p-0.5 shadow flex items-center justify-center font-black text-[11px] text-white shrink-0">
+            <div className="flex items-center gap-2.5 min-w-0">
+              <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-red-600 to-red-800 p-0.5 shadow-md flex items-center justify-center font-black text-sm text-white shrink-0 ring-1 ring-white/20">
                 BJJ
               </div>
               <button
                 onClick={() => setIsMobileBranchOpen(true)}
-                className="flex items-center gap-1 px-2 py-1 rounded-lg bg-slate-800/90 hover:bg-slate-800 border border-slate-700/70 text-slate-200 text-xs font-semibold truncate max-w-[105px] sm:max-w-[140px] transition"
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-900/80 hover:bg-slate-800 border border-slate-700/80 text-white text-sm font-extrabold truncate max-w-[130px] sm:max-w-[170px] transition cursor-pointer shadow-sm"
                 title="Alternar academia ou filial"
               >
                 <span className="truncate">{currentAcademy?.shortName || currentAcademy?.name || activeAcademyName || 'BJJ Academy'}</span>
-                <ChevronDown className="w-3 h-3 text-slate-400 shrink-0" />
+                <ChevronDown className="w-4 h-4 text-slate-300 shrink-0" />
               </button>
             </div>
 
-            {/* Center Role Switcher Pill */}
+            {/* Center Role Switcher Pill (Alimentado com Fonte Maior e Mais Nítida) */}
             <button
               onClick={() => setIsMobileRolesOpen(true)}
-              className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-slate-800/90 hover:bg-slate-700 border border-slate-700 text-xs font-bold transition shadow-sm truncate max-w-[110px] sm:max-w-[130px]"
+              className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-slate-900/90 hover:bg-slate-800 border border-slate-600/80 text-sm font-black transition shadow-md truncate max-w-[135px] sm:max-w-[165px] cursor-pointer"
               title="Alternar Perfil de Acesso"
             >
-              <CurrentRoleIcon className={`w-3.5 h-3.5 ${currentRoleObj.color} shrink-0`} />
-              <span className="truncate text-white text-[11px] sm:text-xs">{currentRoleObj.label.replace('👑 ', '').replace('🥋 ', '')}</span>
-              <ChevronDown className="w-3 h-3 text-slate-400 shrink-0" />
+              <CurrentRoleIcon className={`w-4 h-4 ${currentRoleObj.color} shrink-0`} />
+              <span className="truncate text-white text-sm font-black">{currentRoleObj.label.replace('👑 ', '').replace('🥋 ', '')}</span>
+              <ChevronDown className="w-4 h-4 text-slate-300 shrink-0" />
             </button>
 
             {/* Right Action Icons: Direct Desktop Switcher, Modules & More Menu */}
-            <div className="flex items-center gap-1 shrink-0">
+            <div className="flex items-center gap-1.5 shrink-0">
               {/* Instant 1-tap Desktop Toggle */}
               <button
                 onClick={onToggleDesktopView}
-                className="px-2 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 border border-slate-700 text-cyan-300 hover:text-white text-xs font-bold flex items-center gap-1 transition shadow-sm"
+                className="px-2.5 py-1.5 rounded-xl bg-slate-900/90 hover:bg-slate-800 border border-slate-700 text-cyan-300 hover:text-white text-xs font-black flex items-center gap-1 transition shadow-sm cursor-pointer"
                 title="Alternar para Painel Desktop (Computador)"
               >
                 <Monitor className="w-3.5 h-3.5 text-cyan-400" />
-                <span className="text-[10px] font-bold hidden xs:inline">PC</span>
+                <span className="text-xs font-black hidden xs:inline">PC</span>
               </button>
 
               {/* Toggle to smartphone shell mockup if on desktop */}
               {!isMobileScreen && (
                 <button
                   onClick={() => setMobilePresentation('mockup')}
-                  className="p-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-300 hover:text-white text-xs transition"
+                  className="p-2 rounded-xl bg-slate-900/90 hover:bg-slate-800 border border-slate-700 text-slate-200 hover:text-white text-xs transition cursor-pointer"
                   title="Ver com Moldura de Celular (Simulador)"
                 >
-                  <Tablet className="w-3.5 h-3.5" />
+                  <Tablet className="w-4 h-4" />
                 </button>
               )}
 
               <button
                 onClick={() => setIsMobileModulesOpen(true)}
-                className="p-1.5 rounded-lg bg-gradient-to-r from-red-600/30 to-amber-600/20 hover:bg-red-600/40 border border-red-500/40 text-amber-300 text-xs font-bold flex items-center gap-1 transition"
+                className="p-2 rounded-xl bg-gradient-to-r from-red-600/40 to-amber-600/30 hover:bg-red-600/50 border border-red-500/50 text-amber-300 text-xs font-black flex items-center gap-1.5 transition cursor-pointer shadow-sm"
                 title="Abrir Módulos do Tatame"
               >
-                <Sparkles className="w-3.5 h-3.5 text-amber-400" />
-                <span className="text-[11px] font-bold hidden sm:inline">Módulos</span>
+                <Sparkles className="w-4 h-4 text-amber-400" />
+                <span className="text-xs font-black hidden sm:inline">Módulos</span>
               </button>
 
               <button
                 onClick={() => setIsMobileMenuOpen(true)}
-                className="p-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-300 transition"
+                className="p-2 rounded-xl bg-slate-900/90 hover:bg-slate-800 border border-slate-700 text-white transition cursor-pointer"
                 title="Menu e ferramentas adicionais"
               >
                 <Menu className="w-4 h-4" />
@@ -531,6 +533,31 @@ export const DeviceFrame: React.FC<DeviceFrameProps> = ({
                   <span className="text-xs font-bold text-yellow-300">Voz da Academia (Notificações Faladas)</span>
                   <span className="text-[10px] text-slate-400">Locução inteligente no tatame</span>
                 </button>
+
+                {onOpenR2Backup && (
+                  <button
+                    onClick={() => {
+                      setIsMobileModulesOpen(false);
+                      onOpenR2Backup();
+                    }}
+                    className="p-3.5 rounded-2xl bg-gradient-to-r from-amber-950/60 via-slate-900 to-orange-950/60 border border-amber-500/50 hover:border-amber-400 flex flex-col items-start gap-1.5 transition text-left col-span-2 shadow-lg shadow-amber-950/20 cursor-pointer"
+                  >
+                    <div className="flex items-center justify-between w-full">
+                      <div className="flex items-center gap-2">
+                        <div className="p-1 rounded-lg bg-amber-500/20 text-amber-300 border border-amber-500/40">
+                          <Cloud className="w-4 h-4 text-amber-400" />
+                        </div>
+                        <span className="text-xs font-black text-amber-200">Mídias Externas & Backup (Cloudflare R2)</span>
+                      </div>
+                      <span className="text-[10px] font-black px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/40">
+                        10 GB Grátis
+                      </span>
+                    </div>
+                    <span className="text-[10px] text-slate-300">
+                      Upload fora da máquina + Backup do banco/app para recuperação em erro de deploy
+                    </span>
+                  </button>
+                )}
               </div>
             </div>
           </div>
@@ -781,6 +808,25 @@ export const DeviceFrame: React.FC<DeviceFrameProps> = ({
                   </button>
                 )}
 
+                {/* Cloudflare R2 Mídias & Backup Automático */}
+                {onOpenR2Backup && (
+                  <button
+                    onClick={() => {
+                      setIsMobileMenuOpen(false);
+                      onOpenR2Backup();
+                    }}
+                    className="w-full flex items-center justify-between p-3 rounded-2xl bg-gradient-to-r from-amber-950/50 via-slate-950/70 to-slate-950/70 border border-amber-500/40 text-amber-300 text-xs font-bold hover:border-amber-400 cursor-pointer"
+                  >
+                    <div className="flex items-center gap-2.5">
+                      <Cloud className="w-4 h-4 text-amber-400" />
+                      <span>Mídias Externas & Backup (Cloudflare R2)</span>
+                    </div>
+                    <span className="text-[10px] font-black px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/40">
+                      10 GB
+                    </span>
+                  </button>
+                )}
+
                 {/* Student Management */}
                 {onOpenStudentManagement && (
                   <button
@@ -856,37 +902,37 @@ export const DeviceFrame: React.FC<DeviceFrameProps> = ({
   // =========================================================================
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col items-center justify-start py-2 sm:py-3 px-2 sm:px-4 font-sans selection:bg-red-600 selection:text-white relative overflow-x-hidden">
-      {/* Imagem Fixa Global de Fundo: Dois Lutadores de Jiu-Jitsu */}
-      <BJJFixedBackground opacity={0.25} className="fixed" />
+      {/* Imagem Fixa Global de Fundo: Dois Lutadores de Jiu-Jitsu (100% Visível) */}
+      <BJJFixedBackground opacity={0.65} className="fixed" />
 
-      {/* Top Global Control Toolbar */}
-      <header className="w-full max-w-5xl mb-2.5 p-2.5 sm:p-3 rounded-2xl bg-slate-900/90 border border-slate-800 backdrop-blur-md shadow-xl flex flex-wrap items-center justify-between gap-2.5 relative z-20">
+      {/* Top Global Control Toolbar com Fundo de Vidro e Fontes Ampliadas */}
+      <header className="w-full max-w-5xl mb-2.5 p-3.5 sm:p-4 rounded-2xl bg-slate-950/40 border border-slate-700/60 backdrop-blur-md shadow-xl flex flex-wrap items-center justify-between gap-3 relative z-20">
         {/* Brand & Badge */}
-        <div className="flex items-center gap-2.5">
-          <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-red-600 to-red-800 p-0.5 shadow-md flex items-center justify-center font-black text-xs text-white">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-red-600 to-red-800 p-0.5 shadow-md flex items-center justify-center font-black text-sm text-white ring-1 ring-white/20">
             BJJ
           </div>
           <div>
             <div className="flex items-center gap-2">
-              <h1 className="text-xs sm:text-sm font-extrabold text-white tracking-tight">
+              <h1 className="text-base sm:text-lg font-black text-white tracking-tight">
                 BJJ ACADEMY <span className="text-red-500">MOBILE 2.0</span>
               </h1>
-              <span className="hidden sm:inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-slate-800 text-slate-300 border border-slate-700">
+              <span className="hidden sm:inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-black bg-slate-800 text-slate-100 border border-slate-600">
                 Capacitor + PWA
               </span>
-              <span className="hidden md:inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-cyan-950/60 text-cyan-300 border border-cyan-800/60" title="Desenvolvido por Programador de Software com 50% de apoio de IA">
-                <Code className="w-3 h-3 text-cyan-400" />
+              <span className="hidden md:inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-black bg-cyan-950/60 text-cyan-300 border border-cyan-800/60" title="Desenvolvido por Programador de Software com 50% de apoio de IA">
+                <Code className="w-3.5 h-3.5 text-cyan-400" />
                 <span>50% Dev + 50% IA</span>
               </span>
             </div>
-            <p className="text-[10px] text-slate-400 hidden sm:block">
+            <p className="text-xs sm:text-sm text-slate-300 font-medium hidden sm:block">
               Web • PWA • Android • iOS • Desenvolvido por Programador (50% IA Assist)
             </p>
           </div>
         </div>
 
-        {/* Profile Switcher Pills */}
-        <div className="flex items-center bg-slate-950 p-1 rounded-xl border border-slate-800 overflow-x-auto max-w-full no-scrollbar">
+        {/* Profile Switcher Pills com Fontes Maiores */}
+        <div className="flex items-center bg-slate-950/80 p-1.5 rounded-xl border border-slate-700/80 overflow-x-auto max-w-full no-scrollbar gap-1.5 shadow-inner">
           {roles.map((r) => {
             const Icon = r.icon;
             const isSelected = activeRole === r.id;
@@ -895,20 +941,20 @@ export const DeviceFrame: React.FC<DeviceFrameProps> = ({
               <button
                 key={r.id}
                 onClick={() => onSelectRole(r.id)}
-                className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-bold transition shrink-0 ${
+                className={`flex items-center gap-1.5 px-3.5 py-2 rounded-lg text-xs sm:text-sm font-black transition shrink-0 cursor-pointer ${
                   isSelected
                     ? isAcademyTab 
                       ? 'bg-gradient-to-r from-red-600 to-amber-600 text-white shadow-md font-black ring-1 ring-amber-400/50' 
-                      : 'bg-slate-800 text-white shadow-sm'
+                      : 'bg-slate-800 text-white shadow-sm ring-1 ring-white/10'
                     : isAcademyTab
                       ? 'text-amber-300 bg-amber-950/40 hover:bg-amber-900/60 border border-amber-500/30'
-                      : 'text-slate-400 hover:text-white'
+                      : 'text-slate-300 hover:text-white hover:bg-slate-800/50'
                 }`}
               >
-                <Icon className={`w-3.5 h-3.5 ${isSelected ? (isAcademyTab ? 'text-white' : r.color) : (isAcademyTab ? 'text-amber-400' : 'text-slate-400')}`} />
+                <Icon className={`w-4 h-4 ${isSelected ? (isAcademyTab ? 'text-white' : r.color) : (isAcademyTab ? 'text-amber-400' : 'text-slate-400')}`} />
                 <span>{r.label}</span>
                 {r.badge && (
-                  <span className={`text-[9px] font-black px-1.5 py-0.5 rounded-full uppercase ${
+                  <span className={`text-[10px] font-black px-2 py-0.5 rounded-full uppercase ${
                     isSelected ? 'bg-slate-950/60 text-amber-300' : 'bg-amber-500/20 text-amber-300 border border-amber-500/40'
                   }`}>
                     {r.badge}
@@ -979,6 +1025,19 @@ export const DeviceFrame: React.FC<DeviceFrameProps> = ({
             <Database className="w-3.5 h-3.5 text-emerald-400" />
             <span className="hidden sm:inline">Nuvem</span>
           </button>
+
+          {/* Cloudflare R2 External Media & Disaster Recovery Backup */}
+          {onOpenR2Backup && (
+            <button
+              onClick={onOpenR2Backup}
+              className="px-2.5 py-1.5 rounded-xl bg-gradient-to-r from-amber-500/15 to-orange-500/15 hover:from-amber-500/25 hover:to-orange-500/25 border border-amber-500/40 text-amber-300 hover:text-amber-100 text-xs font-black flex items-center gap-1.5 transition shadow-sm cursor-pointer"
+              title="Cloudflare R2: Mídias Externas (10 GB Free) & Backup Automático com Disaster Recovery"
+            >
+              <Cloud className="w-3.5 h-3.5 text-amber-400" />
+              <span className="hidden sm:inline">R2 & Backup</span>
+              <span className="hidden xl:inline text-[9px] px-1.5 py-0.2 rounded-full bg-amber-500/30 text-amber-200 font-mono">10 GB</span>
+            </button>
+          )}
 
           {/* Student Roster / Management Button */}
           <button
@@ -1204,23 +1263,23 @@ export const DeviceFrame: React.FC<DeviceFrameProps> = ({
       <main className="w-full flex justify-center items-center flex-1 py-1">
         {isDesktopView ? (
           // Expanded Desktop Layout (for Managers / Front Desk / Fullscreen)
-          <div className="w-full max-w-5xl h-[82vh] bg-slate-900/90 border border-slate-800 rounded-3xl overflow-hidden shadow-2xl flex flex-col relative">
-            <div className="h-10 px-5 bg-slate-950/90 backdrop-blur-md border-b border-slate-800 flex items-center justify-between text-xs text-slate-400 relative z-20">
-              <div className="flex items-center gap-2">
-                <span className="w-3 h-3 rounded-full bg-red-500/80 inline-block" />
-                <span className="w-3 h-3 rounded-full bg-amber-500/80 inline-block" />
-                <span className="w-3 h-3 rounded-full bg-emerald-500/80 inline-block" />
-                <span className="ml-3 font-mono text-[11px] text-slate-300">
+          <div className="w-full max-w-5xl h-[calc(100vh-175px)] min-h-[580px] bg-slate-950/40 border border-slate-700/70 rounded-3xl overflow-hidden shadow-2xl flex flex-col relative backdrop-blur-md">
+            <div className="h-11 px-5 bg-slate-950/70 backdrop-blur-md border-b border-white/10 flex items-center justify-between text-xs text-slate-300 relative z-20">
+              <div className="flex items-center gap-2.5">
+                <span className="w-3.5 h-3.5 rounded-full bg-red-500/80 inline-block" />
+                <span className="w-3.5 h-3.5 rounded-full bg-amber-500/80 inline-block" />
+                <span className="w-3.5 h-3.5 rounded-full bg-emerald-500/80 inline-block" />
+                <span className="ml-3 font-mono text-xs font-bold text-slate-200">
                   https://app.bjjacademy.com.br/{activeRole}
                 </span>
               </div>
-              <span className="text-[10px] text-slate-400">
+              <span className="text-xs font-semibold text-slate-300 hidden sm:inline">
                 Visualização Computador • Gestão Integral do Tatame • BJJ ACADEMY
               </span>
             </div>
             <div className="flex-1 overflow-hidden relative flex flex-col">
               {/* Imagem Fixa de Fundo: Dois Lutadores de Jiu-Jitsu no Tatame */}
-              <BJJFixedBackground opacity={0.36} />
+              <BJJFixedBackground opacity={0.65} />
               
               <div className="relative z-10 flex-1 h-full overflow-hidden flex flex-col">
                 {children}
@@ -1234,34 +1293,34 @@ export const DeviceFrame: React.FC<DeviceFrameProps> = ({
             <div className="flex items-center gap-2 mb-2">
               <button
                 onClick={() => setMobilePresentation('fluid')}
-                className="px-3 py-1 rounded-full bg-slate-900 hover:bg-slate-800 border border-slate-700 text-[11px] text-slate-300 hover:text-cyan-300 flex items-center gap-1.5 transition shadow-sm"
+                className="px-3.5 py-1.5 rounded-full bg-slate-900/90 hover:bg-slate-800 border border-slate-700 text-xs font-bold text-slate-200 hover:text-cyan-300 flex items-center gap-1.5 transition shadow-sm"
               >
-                <Smartphone className="w-3 h-3 text-cyan-400" />
+                <Smartphone className="w-3.5 h-3.5 text-cyan-400" />
                 <span>📱 Modo Mobile Fluido</span>
               </button>
               <button
                 onClick={onToggleDesktopView}
-                className="px-3 py-1 rounded-full bg-slate-900 hover:bg-slate-800 border border-slate-700 text-[11px] text-slate-300 hover:text-white flex items-center gap-1.5 transition shadow-sm"
+                className="px-3.5 py-1.5 rounded-full bg-slate-900/90 hover:bg-slate-800 border border-slate-700 text-xs font-bold text-slate-200 hover:text-white flex items-center gap-1.5 transition shadow-sm"
               >
-                <Monitor className="w-3 h-3 text-slate-400" />
+                <Monitor className="w-3.5 h-3.5 text-slate-300" />
                 <span>💻 Painel Desktop</span>
               </button>
             </div>
 
             {/* Outer Smartphone Shell (Calibrated height to fit screen comfortably without page scroll) */}
-            <div className={`relative w-[395px] max-w-[94vw] h-[min(844px,calc(100vh-140px))] bg-slate-950 rounded-[44px] p-2.5 shadow-[0_25px_70px_rgba(0,0,0,0.8)] border-[4px] ${
+            <div className={`relative w-[395px] max-w-[94vw] h-[min(844px,calc(100vh-140px))] bg-slate-950/90 rounded-[44px] p-2.5 shadow-[0_25px_70px_rgba(0,0,0,0.8)] border-[4px] ${
               os === 'ios' ? 'border-slate-800/90 ring-1 ring-slate-700/50' : 'border-slate-700'
             } flex flex-col overflow-hidden`}>
               
               {/* Native Screen Bezel and Display */}
-              <div className="relative w-full h-full rounded-[36px] bg-slate-950 overflow-hidden flex flex-col border border-slate-900">
+              <div className="relative w-full h-full rounded-[36px] bg-slate-950/40 overflow-hidden flex flex-col border border-slate-900">
                 {/* Native OS Status Bar */}
                 <NativeStatusBar os={os} dynamicIslandContent={dynamicIslandNotice} />
 
                 {/* Inner View Content with Fixed BJJ Fighters Background */}
                 <div className="flex-1 overflow-hidden relative flex flex-col">
                   {/* Imagem Fixa de Fundo: Dois Lutadores de Jiu-Jitsu no Tatame */}
-                  <BJJFixedBackground opacity={0.36} />
+                  <BJJFixedBackground opacity={0.72} />
 
                   <div className="relative z-10 flex-1 h-full overflow-hidden flex flex-col">
                     {children}
