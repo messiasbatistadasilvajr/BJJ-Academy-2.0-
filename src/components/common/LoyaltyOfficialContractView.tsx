@@ -65,11 +65,11 @@ export const LoyaltyOfficialContractView: React.FC<LoyaltyOfficialContractViewPr
   const studentName = studentData.name?.trim() || '';
   const studentCpf = studentData.cpf?.trim() || '';
   const studentRg = studentData.rg?.trim() || '';
-  const studentAddress = studentData.address?.trim() || 'Rua Cidade Palhano, nº 115';
-  const studentNeighborhood = studentData.neighborhood?.trim() || 'Vila Velha';
-  const studentCep = studentData.cep?.trim() || '60347-032';
-  const studentCity = studentData.city?.trim() || 'Fortaleza';
-  const studentState = studentData.state?.trim() || 'CE';
+  const studentAddress = studentData.address?.trim() || '';
+  const studentNeighborhood = studentData.neighborhood?.trim() || '';
+  const studentCep = studentData.cep?.trim() || '';
+  const studentCity = studentData.city?.trim() || '';
+  const studentState = studentData.state?.trim() || '';
   const studentPhone = studentData.phone?.trim() || '';
 
   const isMinor = studentData.isMinor || false;
@@ -77,16 +77,17 @@ export const LoyaltyOfficialContractView: React.FC<LoyaltyOfficialContractViewPr
   const parentCpf = studentData.parentCpf?.trim() || '';
   const parentRg = studentData.parentRg?.trim() || '';
   const parentPhone = studentData.parentPhone?.trim() || '';
-  const parentRelationship = studentData.parentRelationship?.trim() || 'Mãe';
+  const parentRelationship = studentData.parentRelationship?.trim() || '';
+  const parentAddress = studentData.parentAddress?.trim() || studentAddress || '';
 
   // Effective phone for WhatsApp (Preferencia para pai/responsável se for menor, ou do aluno)
-  const targetZapPhone = isMinor && parentPhone ? parentPhone : (parentPhone || studentPhone || '(85) 98746-2960');
-  const targetResponsibleOrStudentName = isMinor && parentName ? parentName : (parentName || studentName || 'Responsável');
+  const targetZapPhone = isMinor && parentPhone ? parentPhone : (parentPhone || studentPhone || '');
+  const targetResponsibleOrStudentName = isMinor && parentName ? parentName : (parentName || studentName || 'Futuro Aluno');
 
-  const planName = studentData.planName || '(IRMÃOS) TEEN 3X';
-  const monthlyFee = Number(studentData.monthlyFee) || 180.00;
-  const totalAmount = monthlyFee * 12;
-  const dueDay = studentData.dueDay || 10;
+  const planName = studentData.planName?.trim() || '';
+  const monthlyFee = studentData.monthlyFee && Number(studentData.monthlyFee) > 0 ? Number(studentData.monthlyFee) : null;
+  const totalAmount = monthlyFee ? monthlyFee * 12 : null;
+  const dueDay = studentData.dueDay && Number(studentData.dueDay) > 0 ? Number(studentData.dueDay) : null;
 
   // Electronic Signature Audit Meta (Conforme Autentique / Lei 14.063/2020)
   const sha256Hash = '687cd89499b99dcd727cf2cea8e1aec50191ab14018fc86f27e525cf421c5bc5';
@@ -99,15 +100,16 @@ export const LoyaltyOfficialContractView: React.FC<LoyaltyOfficialContractViewPr
     const now = new Date();
     const startYear = now.getFullYear();
     const startMonth = now.getMonth(); // 0 to 11
+    const effectiveDay = dueDay || 10;
 
     for (let i = 0; i < 12; i++) {
-      const d = new Date(startYear, startMonth + i, dueDay);
-      const dayStr = String(dueDay).padStart(2, '0');
+      const d = new Date(startYear, startMonth + i, effectiveDay);
+      const dayStr = dueDay ? String(dueDay).padStart(2, '0') : '__';
       const monthStr = String(d.getMonth() + 1).padStart(2, '0');
       const yearStr = d.getFullYear();
       list.push({
         index: i + 1,
-        dueDate: `${dayStr}/${monthStr}/${yearStr}`,
+        dueDate: dueDay ? `${dayStr}/${monthStr}/${yearStr}` : `dia ___/${monthStr}/${yearStr}`,
         amount: monthlyFee
       });
     }
@@ -119,14 +121,14 @@ export const LoyaltyOfficialContractView: React.FC<LoyaltyOfficialContractViewPr
   // Handle WhatsApp trigger
   const handleSendToWhatsApp = () => {
     sendLoyaltyContractWhatsApp({
-      studentName: studentName || 'Novo Aluno(a)',
+      studentName: studentName || 'Futuro Aluno(a)',
       responsibleName: isMinor ? parentName : (parentName || studentName),
       phone: targetZapPhone,
       cpf: studentCpf,
       parentCpf: parentCpf,
       planName,
-      monthlyFee,
-      dueDay,
+      monthlyFee: monthlyFee || undefined,
+      dueDay: dueDay || undefined,
       contractHash: sha256Hash,
       academyName: 'Loyalty Jiu-Jitsu',
       validationUrl
@@ -149,24 +151,33 @@ export const LoyaltyOfficialContractView: React.FC<LoyaltyOfficialContractViewPr
     }
   };
 
-  // Component to render dynamic fill with fallback underline
-  const RenderFill = ({ value, placeholder, isUnderline = true, label }: { value?: string; placeholder: string; isUnderline?: boolean; label?: string }) => {
+  // Component to render dynamic fill with fallback clean underline for manual completion
+  const RenderFill = ({ 
+    value, 
+    placeholder = '________________________________________________', 
+    label 
+  }: { 
+    value?: string; 
+    placeholder?: string; 
+    label?: string;
+  }) => {
     if (value && value.trim().length > 0) {
       return (
         <span 
           className="font-black text-slate-950 border-b-2 border-red-600 bg-amber-100/90 px-1.5 py-0.5 rounded transition-all text-[15px] inline-block shadow-sm"
-          title={`Preenchido automaticamente a partir do cadastro (${label || 'Dado'}): ${value}`}
+          title={`Preenchido no ato da matrícula (${label || 'Dado'}): ${value}`}
         >
           {value}
         </span>
       );
     }
+    // Deixando em branco para preenchimento posterior no ato da matrícula
     return (
       <span 
-        className="font-mono text-slate-400 bg-slate-100/90 px-2 py-0.5 rounded border border-dashed border-slate-300 text-xs inline-block"
-        title="Em branco: Será preenchido automaticamente ao digitar no formulário de cadastro de novo aluno"
+        className="font-mono text-slate-800 tracking-wider inline-block text-sm select-none"
+        title="Em branco: Será preenchido no ato da matrícula"
       >
-        {isUnderline ? placeholder : '____________________'}
+        {placeholder}
       </span>
     );
   };
@@ -406,22 +417,22 @@ export const LoyaltyOfficialContractView: React.FC<LoyaltyOfficialContractViewPr
 
                 <p className="text-justify leading-relaxed">
                   <strong>CONTRATANTE:</strong>{' '}
-                  <RenderFill value={studentName} placeholder="Nome do contratante (Aluno)" label="Aluno" />, RG nº{' '}
-                  <RenderFill value={studentRg} placeholder="________" isUnderline={false} label="RG Aluno" />, CPF nº{' '}
-                  <RenderFill value={studentCpf} placeholder="000.000.000-00" label="CPF Aluno" />, residente e domiciliado no endereço{' '}
-                  <RenderFill value={studentAddress} placeholder="Rua / Endereço Completo, nº" label="Endereço" />, bairro{' '}
-                  <RenderFill value={studentNeighborhood} placeholder="Bairro" label="Bairro" />, CEP{' '}
-                  <RenderFill value={studentCep} placeholder="60347-000" label="CEP" /> na cidade de {studentCity} - {studentState}.
+                  <RenderFill value={studentName} placeholder="________________________________________________" label="Aluno" />, RG nº{' '}
+                  <RenderFill value={studentRg} placeholder="____________________" label="RG Aluno" />, CPF nº{' '}
+                  <RenderFill value={studentCpf} placeholder="___.___.___-__" label="CPF Aluno" />, residente e domiciliado no endereço{' '}
+                  <RenderFill value={studentAddress} placeholder="____________________________________________________, Nº ________" label="Endereço" />, bairro{' '}
+                  <RenderFill value={studentNeighborhood} placeholder="____________________" label="Bairro" />, CEP{' '}
+                  <RenderFill value={studentCep} placeholder="________-____" label="CEP" /> na cidade de {studentCity ? <span className="font-bold">{studentCity}</span> : '____________________'} - {studentState ? <span className="font-bold">{studentState}</span> : '____'}.
                 </p>
 
                 <p className="text-justify leading-relaxed">
                   <strong>RESPONSÁVEL:</strong>{' '}
-                  <RenderFill value={parentName} placeholder="Nome do Responsável Legal (Mãe/Pai/Tutor)" label="Responsável" />, RG nº{' '}
-                  <RenderFill value={parentRg} placeholder="________" isUnderline={false} label="RG Responsável" />, CPF nº{' '}
-                  <RenderFill value={parentCpf} placeholder="000.000.000-00" label="CPF Responsável" />, residente e domiciliado no endereço{' '}
-                  <RenderFill value={studentData.parentAddress || studentAddress} placeholder="Endereço do Responsável" label="Endereço Resp." />, bairro{' '}
-                  <RenderFill value={studentNeighborhood} placeholder="Bairro" label="Bairro Resp." />, CEP{' '}
-                  <RenderFill value={studentCep} placeholder="CEP" label="CEP Resp." /> na cidade de {studentCity} - {studentState}.
+                  <RenderFill value={parentName} placeholder="________________________________________________" label="Responsável" />, RG nº{' '}
+                  <RenderFill value={parentRg} placeholder="____________________" label="RG Responsável" />, CPF nº{' '}
+                  <RenderFill value={parentCpf} placeholder="___.___.___-__" label="CPF Responsável" />, residente e domiciliado no endereço{' '}
+                  <RenderFill value={studentData.parentAddress || studentAddress} placeholder="____________________________________________________, Nº ________" label="Endereço Resp." />, bairro{' '}
+                  <RenderFill value={studentNeighborhood} placeholder="____________________" label="Bairro Resp." />, CEP{' '}
+                  <RenderFill value={studentCep} placeholder="________-____" label="CEP Resp." /> na cidade de {studentCity ? <span className="font-bold">{studentCity}</span> : '____________________'} - {studentState ? <span className="font-bold">{studentState}</span> : '____'}.
                 </p>
 
                 <p className="text-justify leading-relaxed text-slate-800 bg-slate-50 p-2.5 rounded-lg border border-slate-200">
@@ -440,7 +451,13 @@ export const LoyaltyOfficialContractView: React.FC<LoyaltyOfficialContractViewPr
                 </h3>
 
                 <p className="text-justify leading-relaxed">
-                  <strong>Cláusula 1ª.</strong> O objeto do presente contrato é a prestação, pela <strong>CONTRATADA</strong> ao <strong>CONTRATANTE</strong>, dos serviços de sessões coletivas de atividades físicas, estando com sua proposta em conformidade com o CREF/ CONFEF, através de seus profissionais e das aulas de atividade física. O <strong>CONTRATANTE</strong>, através do presente, está se matriculando na <strong>CONTRATADA</strong> para o período de <strong>12 meses</strong>, no contrato <strong>{planName}</strong>, com a(s) seguinte(s) modalidade(s):
+                  <strong>Cláusula 1ª.</strong> O objeto do presente contrato é a prestação, pela <strong>CONTRATADA</strong> ao <strong>CONTRATANTE</strong>, dos serviços de sessões coletivas de atividades físicas, estando com sua proposta em conformidade com o CREF/ CONFEF, através de seus profissionais e das aulas de atividade física. O <strong>CONTRATANTE</strong>, através do presente, está se matriculando na <strong>CONTRATADA</strong> para o período de <strong>12 meses</strong>, no contrato{' '}
+                  {planName ? (
+                    <strong className="text-slate-950 font-black border-b border-black">{planName}</strong>
+                  ) : (
+                    <span className="font-mono text-slate-800 font-bold">____________________________________</span>
+                  )}
+                  , com a(s) seguinte(s) modalidade(s):
                 </p>
 
                 <div className="bg-slate-50 p-3 rounded-lg border border-slate-200 font-mono text-xs space-y-1">
@@ -528,7 +545,13 @@ export const LoyaltyOfficialContractView: React.FC<LoyaltyOfficialContractViewPr
                 </h3>
 
                 <p className="text-justify leading-relaxed">
-                  <strong>Cláusula 5ª.</strong> Pela prestação dos serviços, referentes ao período contratado conforme previsto na cláusula “1”, o <strong>CONTRATANTE</strong>, pagará à <strong>CONTRATADA</strong> o valor total de <strong>R${totalAmount.toFixed(2).replace('.', ',')}</strong>, que deverá ser pago conforme a(s) parcela(s) a seguir:
+                  <strong>Cláusula 5ª.</strong> Pela prestação dos serviços, referentes ao período contratado conforme previsto na cláusula “1”, o <strong>CONTRATANTE</strong>, pagará à <strong>CONTRATADA</strong> o valor total de{' '}
+                  {totalAmount && totalAmount > 0 ? (
+                    <strong className="text-slate-950 font-black">R$ {totalAmount.toFixed(2).replace('.', ',')}</strong>
+                  ) : (
+                    <span className="font-mono font-bold text-slate-900">R$ __________________ (por extenso: ________________________________________________)</span>
+                  )}
+                  , que deverá ser pago conforme a(s) parcela(s) a seguir:
                 </p>
 
                 {/* Tabela de 12 Parcelas Oficiais com Datas de Vencimento */}
@@ -537,12 +560,21 @@ export const LoyaltyOfficialContractView: React.FC<LoyaltyOfficialContractViewPr
                     Cronograma de Parcelas do Contrato Anual (12 Meses):
                   </div>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-1 text-slate-800">
-                    {installments.map((inst) => (
-                      <div key={inst.index} className="flex items-center justify-between py-0.5 border-b border-slate-100 last:border-none">
-                        <span>• R$ {inst.amount.toFixed(2).replace('.', ',')}</span>
-                        <span className="text-slate-600">vencimento em <strong>{inst.dueDate}</strong></span>
-                      </div>
-                    ))}
+                    {monthlyFee && monthlyFee > 0 ? (
+                      installments.map((inst) => (
+                        <div key={inst.index} className="flex items-center justify-between py-0.5 border-b border-slate-100 last:border-none">
+                          <span>• R$ {inst.amount ? inst.amount.toFixed(2).replace('.', ',') : '________________'}</span>
+                          <span className="text-slate-600">vencimento em <strong>{inst.dueDate}</strong></span>
+                        </div>
+                      ))
+                    ) : (
+                      Array.from({ length: 12 }, (_, i) => (
+                        <div key={i + 1} className="flex items-center justify-between py-0.5 border-b border-slate-100 last:border-none text-slate-700">
+                          <span>• Parcela {String(i + 1).padStart(2, '0')}: R$ ________________</span>
+                          <span className="text-slate-500">vencimento: dia ______ de cada mês</span>
+                        </div>
+                      ))
+                    )}
                   </div>
                 </div>
 
@@ -700,9 +732,9 @@ export const LoyaltyOfficialContractView: React.FC<LoyaltyOfficialContractViewPr
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-8 sm:gap-12">
                   <div className="text-center space-y-1">
                     <div className="h-14 flex items-end justify-center pb-1">
-                      {isSigned || parentName ? (
+                      {isSigned && (parentName || studentName) ? (
                         <div className="font-serif italic text-blue-900 font-bold text-base border-b-2 border-slate-400 w-full pb-1">
-                          {isMinor && parentName ? parentName : (parentName || studentName || 'Maria Kátia Garcia Moreira Silva')}
+                          {isMinor && parentName ? parentName : (parentName || studentName)}
                         </div>
                       ) : (
                         <div className="border-b-2 border-slate-800 w-full" />
@@ -712,7 +744,9 @@ export const LoyaltyOfficialContractView: React.FC<LoyaltyOfficialContractViewPr
                       Nome do contratante
                     </div>
                     <div className="text-[11px] text-slate-500">
-                      {isMinor && parentName ? `${parentName} (Resp. Legal)` : (studentName || 'Nome em branco')}
+                      {isMinor && parentName 
+                        ? `${parentName} (Resp. Legal)` 
+                        : (studentName || '________________________________________')}
                     </div>
                   </div>
 
@@ -913,17 +947,23 @@ export const LoyaltyOfficialContractView: React.FC<LoyaltyOfficialContractViewPr
 
                 <div className="flex items-center gap-4 p-4 rounded-xl bg-slate-50 border border-slate-200">
                   <div className="w-32 h-14 bg-white rounded-lg border border-slate-300 flex items-center justify-center text-blue-900 font-serif italic text-lg px-2">
-                    {isMinor && parentName ? parentName.split(' ')[0] : (studentName ? studentName.split(' ')[0] : 'Maria S')}
+                    {isSigned && (parentName || studentName) 
+                      ? (isMinor && parentName ? parentName.split(' ')[0] : (studentName ? studentName.split(' ')[0] : 'Assinado'))
+                      : 'Em branco'}
                   </div>
                   <div className="text-xs">
                     <p className="font-bold text-slate-900">
-                      {isMinor && parentName ? parentName : (parentName || studentName || 'Maria Kátia Garcia Moreira Silva')}
+                      {isMinor && parentName ? parentName : (parentName || studentName || 'A preencher no ato da matrícula')}
                     </p>
                     <p className="font-mono text-slate-600 text-[11px]">
-                      {isMinor && parentCpf ? parentCpf : (parentCpf || studentCpf || '820.632.653-72')}
+                      {isMinor && parentCpf ? parentCpf : (parentCpf || studentCpf || 'CPF: ___.___.___-__')}
                     </p>
-                    <span className="inline-block mt-1 px-2 py-0.5 rounded bg-emerald-100 text-emerald-800 text-[10px] font-bold">
-                      Signatário Certificado
+                    <span className={`inline-block mt-1 px-2 py-0.5 rounded text-[10px] font-bold ${
+                      isSigned 
+                        ? 'bg-emerald-100 text-emerald-800' 
+                        : 'bg-amber-100 text-amber-800'
+                    }`}>
+                      {isSigned ? 'Signatário Certificado' : 'Aguardando Matrícula / Assinatura'}
                     </span>
                   </div>
                 </div>
@@ -939,12 +979,12 @@ export const LoyaltyOfficialContractView: React.FC<LoyaltyOfficialContractViewPr
                   {/* Evento 1: Criação */}
                   <div className="flex items-start gap-3 p-2.5 rounded-lg bg-slate-50 border border-slate-200">
                     <div className="w-20 text-[10px] text-slate-500 shrink-0">
-                      <div>13/10/2026</div>
+                      <div>{signatureDate}</div>
                       <div>07:10:14</div>
                     </div>
                     <div className="space-y-0.5">
                       <p className="font-bold text-slate-900">
-                        Serviço de Assinatura Eletrônica (assinatura.eletronica@loyaltyjiujitsu.com.br, CNPJ 081.265.363-73) criou o documento
+                        Serviço de Assinatura Eletrônica (assinatura.eletronica@loyaltyjiujitsu.com.br, CNPJ 081.265.363-73) gerou a via oficial do documento
                       </p>
                       <p className="text-[10px] text-slate-500 truncate">
                         Hash SHA256 do arquivo: {sha256Hash}
@@ -955,34 +995,38 @@ export const LoyaltyOfficialContractView: React.FC<LoyaltyOfficialContractViewPr
                   {/* Evento 2: Visualização */}
                   <div className="flex items-start gap-3 p-2.5 rounded-lg bg-slate-50 border border-slate-200">
                     <div className="w-20 text-[10px] text-slate-500 shrink-0">
-                      <div>13/10/2026</div>
+                      <div>{signatureDate}</div>
                       <div>07:13:02</div>
                     </div>
                     <div className="space-y-0.5">
                       <p className="font-bold text-slate-900">
-                        {isMinor && parentName ? parentName : (parentName || studentName || 'Maria Katia Garcia Moreira Silva')} (telefone +55{targetZapPhone.replace(/\D/g, '')}, CPF {isMinor && parentCpf ? parentCpf : (parentCpf || studentCpf || '820.632.653-72')}) visualizou o documento
+                        {isMinor && parentName ? parentName : (parentName || studentName || 'Titular / Responsável')} {targetZapPhone ? `(WhatsApp +55${targetZapPhone.replace(/\D/g, '')})` : '(preenchimento na matrícula)'} visualizou o documento
                       </p>
                       <p className="text-[10px] text-slate-500">
-                        Endereço de IP: 177.25.118.207 • Porta: 49644
+                        Ambiente Seguro de Matrícula • Loyalty Jiu-Jitsu Matriz
                       </p>
                     </div>
                   </div>
 
                   {/* Evento 3: Assinatura */}
-                  <div className="flex items-start gap-3 p-2.5 rounded-lg bg-emerald-50/70 border border-emerald-300">
-                    <div className="w-20 text-[10px] text-emerald-800 shrink-0 font-bold">
-                      <div>13/10/2026</div>
-                      <div>07:13:58</div>
+                  <div className={`flex items-start gap-3 p-2.5 rounded-lg border ${
+                    isSigned ? 'bg-emerald-50/70 border-emerald-300' : 'bg-slate-50 border-slate-200'
+                  }`}>
+                    <div className="w-20 text-[10px] text-slate-600 shrink-0 font-bold">
+                      <div>{signatureDate}</div>
+                      <div>{isSigned ? '07:13:58' : '--:--:--'}</div>
                     </div>
                     <div className="space-y-0.5">
-                      <p className="font-bold text-emerald-950">
-                        {isMinor && parentName ? parentName : (parentName || studentName || 'Maria Katia Garcia Moreira Silva')} assinou o documento eletronicamente
+                      <p className={`font-bold ${isSigned ? 'text-emerald-950' : 'text-slate-800'}`}>
+                        {isSigned 
+                          ? `${isMinor && parentName ? parentName : (parentName || studentName || 'Titular / Responsável')} assinou o documento eletronicamente`
+                          : 'Aguardando preenchimento da matrícula e assinatura das partes'}
                       </p>
                       <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-[10px] text-slate-600 pt-1">
-                        <div>Endereço de IP: 177.25.118.207</div>
-                        <div>Navegador: Mobile Safari/26.5</div>
-                        <div>SO: iOS 26.5 / Android</div>
-                        <div>Geolocalização: Fortaleza / CE (-3.717, -38.5287)</div>
+                        <div>Status: {isSigned ? 'Assinado' : 'Minuta para Matrícula'}</div>
+                        <div>Plataforma: Loyalty BJJ App</div>
+                        <div>Comarca: Fortaleza / CE</div>
+                        <div>Lei Federal: nº 14.063/2020</div>
                       </div>
                     </div>
                   </div>

@@ -17,7 +17,7 @@ interface DigitalContractModalProps {
 export const DigitalContractModal: React.FC<DigitalContractModalProps> = ({ 
   isOpen, 
   onClose,
-  studentName = 'Lucas Gracie Mendes'
+  studentName = ''
 }) => {
   const [activeTab, setActiveTab] = useState<'loyalty_pdf' | 'waiver'>('loyalty_pdf');
   const [contract, setContract] = useState<ContractWaiver>(mockContract);
@@ -174,15 +174,15 @@ export const DigitalContractModal: React.FC<DigitalContractModalProps> = ({
           <div className="flex-1 overflow-y-auto">
             <LoyaltyOfficialContractView
               studentData={{
-                name: studentName,
-                address: 'Rua Cidade Palhano, nº 115',
-                neighborhood: 'Vila Velha',
-                cep: '60347-032',
-                city: 'Fortaleza',
-                state: 'CE',
-                planName: '(IRMÃOS) TEEN 3X',
-                monthlyFee: 180,
-                dueDay: 10,
+                name: studentName.trim() || undefined,
+                address: undefined,
+                neighborhood: undefined,
+                cep: undefined,
+                city: undefined,
+                state: undefined,
+                planName: undefined,
+                monthlyFee: undefined,
+                dueDay: undefined,
               }}
               onClose={onClose}
               isEmbedded={false}

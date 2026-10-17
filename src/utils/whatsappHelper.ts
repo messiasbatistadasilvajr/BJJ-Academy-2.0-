@@ -297,9 +297,9 @@ export function sendLoyaltyContractWhatsApp({
   phone,
   cpf,
   parentCpf,
-  planName = '(IRMÃOS) TEEN 3X',
-  monthlyFee = 180,
-  dueDay = 10,
+  planName = '',
+  monthlyFee,
+  dueDay,
   contractHash = '687cd89499b99dcd727cf2cea8e1aec50191ab14018fc86f27e525cf421c5bc5',
   academyName = 'Loyalty Jiu-Jitsu',
   validationUrl = 'https://valida.ae/cf863573c0b73bae72de28724757da0ae66e778affa22bb62'
@@ -308,8 +308,10 @@ export function sendLoyaltyContractWhatsApp({
   const phoneParam = cleanPhone.length >= 10 ? `phone=55${cleanPhone}&` : '';
   const effectiveName = studentName?.trim() || '____________________';
   const effectiveResp = responsibleName?.trim() ? `\n👤 *Responsável Legal:* ${responsibleName.trim()}` : '';
-  const monthlyFormatted = (monthlyFee || 180).toFixed(2).replace('.', ',');
-  const totalFormatted = ((monthlyFee || 180) * 12).toFixed(2).replace('.', ',');
+  const effectivePlan = planName?.trim() || 'A preencher no ato da matrícula';
+  const monthlyFormatted = monthlyFee && Number(monthlyFee) > 0 ? `12x de R$ ${Number(monthlyFee).toFixed(2).replace('.', ',')}` : '12x de R$ _________';
+  const totalFormatted = monthlyFee && Number(monthlyFee) > 0 ? `R$ ${(Number(monthlyFee) * 12).toFixed(2).replace('.', ',')}` : 'R$ _________';
+  const dueDayFormatted = dueDay ? `todo dia ${dueDay}` : 'a definir no ato da matrícula';
 
   const message = 
 `🥋 *CONTRATO DE PRESTAÇÃO DE SERVIÇOS • ${academyName.toUpperCase()}*
@@ -320,10 +322,10 @@ Olá${responsibleName ? `, ${responsibleName}` : ''}! Segue a via digital do Con
 
 📋 *DADOS DA MATRÍCULA:*
 🥋 *Aluno:* ${effectiveName}${effectiveResp}
-${cpf ? `🆔 *CPF Aluno:* ${cpf}\n` : ''}${parentCpf ? `🆔 *CPF Responsável:* ${parentCpf}\n` : ''}📌 *Plano Contratado:* ${planName} (Vigência 12 Meses)
+${cpf ? `🆔 *CPF Aluno:* ${cpf}\n` : ''}${parentCpf ? `🆔 *CPF Responsável:* ${parentCpf}\n` : ''}📌 *Plano Contratado:* ${effectivePlan} (Vigência 12 Meses)
 🥋 *Modalidade:* Jiu-Jitsu (5 sessões por semana)
-💰 *Valor Mensal:* 12x de R$ ${monthlyFormatted} (Vencimento todo dia ${dueDay})
-💵 *Valor Global:* R$ ${totalFormatted}
+💰 *Valor Mensal:* ${monthlyFormatted} (Vencimento ${dueDayFormatted})
+💵 *Valor Global:* ${totalFormatted}
 
 🔒 *AUTENTICAÇÃO & ASSINATURA ELETRÔNICA:*
 ⚖️ *Validade Jurídica:* Lei Federal nº 14.063/2020 e Regulamento (UE) 910/2014

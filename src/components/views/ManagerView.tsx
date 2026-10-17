@@ -9,7 +9,7 @@ import {
   Lock, Unlock, Calculator, Building2, ShieldAlert, Copy, Check,
   QrCode, CheckCheck, Edit3, Sparkles, Download, AlertCircle, MessageCircle, Cake,
   Database, Cloud, Crown, Clock, Swords, Star, Tv, TrendingDown,
-  Package, Upload, HardDrive
+  Package, Upload, HardDrive, PieChart
 } from 'lucide-react';
 import { 
   ClassSession, Invoice, Announcement, PushNotification, 
@@ -29,6 +29,7 @@ import { saveCRMLeadToFirestore, subscribeToCRMLeads } from '../../firebase/fire
 import { ExpenseManagementView } from './ExpenseManagementView';
 import { FinancialView } from './FinancialView';
 import { ProShopOrderService } from '../../services/proShopOrderService';
+import { FinancialChartsView } from './FinancialChartsView';
 
 interface ManagerViewProps {
   classes: ClassSession[];
@@ -131,7 +132,7 @@ export const ManagerView: React.FC<ManagerViewProps> = ({
   onUpdateInvoices,
   onOpenR2Backup,
 }) => {
-  const [activeTab, setActiveTab] = useState<'dashboard' | 'financeiro' | 'despesas' | 'crm' | 'push' | 'academies'>('dashboard');
+  const [activeTab, setActiveTab] = useState<'dashboard' | 'graficos' | 'financeiro' | 'despesas' | 'crm' | 'push' | 'academies'>('dashboard');
 
   const activeRegisteredAcademy = useMemo(() => {
     return academies.find(a => a.id === activeAcademyId) || academies[0];
@@ -646,6 +647,7 @@ export const ManagerView: React.FC<ManagerViewProps> = ({
         <div className="flex items-center gap-2 overflow-x-auto no-scrollbar pt-1.5">
           {[
             { id: 'dashboard', label: 'Métricas & Tatame', icon: BarChart3 },
+            { id: 'graficos', label: 'Gráficos & DRE', icon: PieChart },
             { id: 'financeiro', label: 'Receita & Asaas', icon: DollarSign },
             { id: 'despesas', label: 'Gestão de Despesas', icon: TrendingDown },
             { id: 'academies', label: `Cadastrar Academia (${academies.length})`, icon: Building2 },
@@ -858,6 +860,41 @@ export const ManagerView: React.FC<ManagerViewProps> = ({
               >
                 <Upload size={13} />
                 <span>R2 & Backup</span>
+              </button>
+            </div>
+
+            {/* Banner Interativo: Gráficos Financeiros & DRE do Tatame */}
+            <div 
+              onClick={() => setActiveTab('graficos')}
+              className="p-4 rounded-2xl bg-gradient-to-r from-amber-500/15 via-slate-900 to-orange-500/15 border border-amber-500/50 flex items-center justify-between gap-3 cursor-pointer hover:border-amber-400 transition-all shadow-lg shadow-amber-950/20 group"
+            >
+              <div className="flex items-center gap-3">
+                <div className="p-2.5 rounded-xl bg-gradient-to-br from-amber-500 to-orange-600 text-slate-950 font-black shadow-md shadow-amber-950/40 shrink-0">
+                  <PieChart size={20} className="stroke-[2.5]" />
+                </div>
+                <div>
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <span className="text-xs font-black text-white group-hover:text-amber-300 transition-colors">
+                      Gráficos Financeiros & DRE do Tatame
+                    </span>
+                    <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[9px] font-black bg-amber-500/20 text-amber-300 border border-amber-500/40">
+                      <Sparkles size={10} /> NOVO PAINEL VISUAL
+                    </span>
+                  </div>
+                  <p className="text-[11px] text-slate-300 mt-0.5">
+                    Acompanhe por gráficos: Mensalidades dos alunos, Vendas da lojinha, Pagamento dos professores e Aluguel.
+                  </p>
+                </div>
+              </div>
+              <button 
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setActiveTab('graficos');
+                }}
+                className="px-3 py-1.5 bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-400 text-slate-950 rounded-xl text-xs font-black shrink-0 transition-colors flex items-center gap-1.5 shadow-md shadow-amber-950/50 cursor-pointer"
+              >
+                <span>Ver Gráficos</span>
+                <ArrowUpRight size={14} />
               </button>
             </div>
 
@@ -1343,6 +1380,22 @@ export const ManagerView: React.FC<ManagerViewProps> = ({
               </button>
             </div>
           </div>
+        )}
+
+        {/* 1.5 GRÁFICOS FINANCEIROS & DRE (MENSALIDADES, LOJINHA, PROFESSORES E ALUGUEL) */}
+        {activeTab === 'graficos' && (
+          <FinancialChartsView
+            invoices={invoices}
+            expenses={expenses}
+            academies={academies}
+            activeAcademyId={activeAcademyId}
+            activeAcademyName={activeAcademyName}
+            onOpenFinancial={() => setActiveTab('financeiro')}
+            onOpenExpenseManagement={() => setActiveTab('despesas')}
+            onOpenProShopFulfillment={onOpenProShopFulfillment}
+            onAddExpense={onAddExpense}
+            onBackToDashboard={() => setActiveTab('dashboard')}
+          />
         )}
 
         {/* 2. FINANCEIRO MULTI-ACADEMIA COM JUROS & MULTAS */}

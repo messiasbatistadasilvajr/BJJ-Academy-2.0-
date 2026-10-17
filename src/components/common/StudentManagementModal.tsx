@@ -111,16 +111,16 @@ export const StudentManagementModal: React.FC<StudentManagementModalProps> = ({
   const [selectedStudentForContract, setSelectedStudentForContract] = useState<StudentProfile | null>(null);
   const [isContractModalOpen, setIsContractModalOpen] = useState<boolean>(false);
 
-  // Address and Contract Fields for Real-Time Auto-Fill
+  // Address and Contract Fields for Real-Time Auto-Fill (Em branco para preenchimento na matrícula)
   const [studentRg, setStudentRg] = useState('');
-  const [address, setAddress] = useState('Rua Cidade Palhano, nº 115');
-  const [neighborhood, setNeighborhood] = useState('Vila Velha');
-  const [cep, setCep] = useState('60347-032');
-  const [city, setCity] = useState('Fortaleza');
-  const [state, setState] = useState('CE');
-  const [planName, setPlanName] = useState('(IRMÃOS) TEEN 3X');
-  const [monthlyFee, setMonthlyFee] = useState<number>(180);
-  const [dueDay, setDueDay] = useState<number>(10);
+  const [address, setAddress] = useState('');
+  const [neighborhood, setNeighborhood] = useState('');
+  const [cep, setCep] = useState('');
+  const [city, setCity] = useState('');
+  const [state, setState] = useState('');
+  const [planName, setPlanName] = useState('');
+  const [monthlyFee, setMonthlyFee] = useState<number | ''>('');
+  const [dueDay, setDueDay] = useState<number | ''>('');
   const [autoSendZapOnSave, setAutoSendZapOnSave] = useState<boolean>(true);
 
   // Sync initialRegistering prop when modal opens
@@ -241,9 +241,9 @@ export const StudentManagementModal: React.FC<StudentManagementModalProps> = ({
       cep: cep.trim() || undefined,
       city: city.trim() || undefined,
       state: state.trim() || undefined,
-      planName: planName.trim() || '(IRMÃOS) TEEN 3X',
-      monthlyFee: Number(monthlyFee) || 180,
-      billingDueDay: Number(dueDay) || 10,
+      planName: planName.trim() || undefined,
+      monthlyFee: monthlyFee !== '' && Number(monthlyFee) > 0 ? Number(monthlyFee) : undefined,
+      billingDueDay: dueDay !== '' && Number(dueDay) > 0 ? Number(dueDay) : undefined,
       // Kids / Menor de Idade & Responsável Legal
       isMinor: !!isMinor,
       parentName: isMinor ? parentName.trim() : undefined,
@@ -303,9 +303,9 @@ export const StudentManagementModal: React.FC<StudentManagementModalProps> = ({
           phone: targetPhone,
           cpf: newStudent.cpf,
           parentCpf: newStudent.parentCpf,
-          planName: newStudent.planName || '(IRMÃOS) TEEN 3X',
-          monthlyFee: newStudent.monthlyFee || 180,
-          dueDay: newStudent.billingDueDay || 10,
+          planName: newStudent.planName || undefined,
+          monthlyFee: newStudent.monthlyFee || undefined,
+          dueDay: newStudent.billingDueDay || undefined,
           academyName: currentAcademy.name
         });
       }
@@ -319,6 +319,14 @@ export const StudentManagementModal: React.FC<StudentManagementModalProps> = ({
       setBirthDate('');
       setStudentCpf('');
       setStudentRg('');
+      setAddress('');
+      setNeighborhood('');
+      setCep('');
+      setCity('');
+      setState('');
+      setPlanName('');
+      setMonthlyFee('');
+      setDueDay('');
       setStripes(0);
       setStudentStatus('ATIVO');
       setIsMinor(false);
@@ -647,25 +655,24 @@ export const StudentManagementModal: React.FC<StudentManagementModalProps> = ({
                         name: name.trim() || undefined,
                         rg: studentRg.trim() || undefined,
                         cpf: studentCpf.trim() || undefined,
-                        birthDate: birthDate.trim() || undefined,
-                        address: address.trim() || 'Rua Cidade Palhano, nº 115',
-                        neighborhood: neighborhood.trim() || 'Vila Velha',
-                        cep: cep.trim() || '60347-032',
-                        city: city.trim() || 'Fortaleza',
-                        state: state.trim() || 'CE',
+                        address: address.trim() || undefined,
+                        neighborhood: neighborhood.trim() || undefined,
+                        cep: cep.trim() || undefined,
+                        city: city.trim() || undefined,
+                        state: state.trim() || undefined,
                         phone: phone.trim() || undefined,
                         email: email.trim() || undefined,
                         isMinor,
                         parentName: parentName.trim() || undefined,
-                        parentRelationship: parentRelationship.trim() || 'Mãe',
+                        parentRelationship: parentRelationship.trim() || undefined,
                         parentCpf: parentCpf.trim() || undefined,
                         parentRg: parentRg.trim() || undefined,
                         parentPhone: parentPhone.trim() || undefined,
                         parentEmail: parentEmail.trim() || undefined,
-                        parentAddress: address.trim() || 'Rua Cidade Palhano, nº 115',
-                        planName: planName.trim() || '(IRMÃOS) TEEN 3X',
-                        monthlyFee: Number(monthlyFee) || 180,
-                        dueDay: Number(dueDay) || 10,
+                        parentAddress: address.trim() || undefined,
+                        planName: planName.trim() || undefined,
+                        monthlyFee: monthlyFee !== '' && Number(monthlyFee) > 0 ? Number(monthlyFee) : undefined,
+                        dueDay: dueDay !== '' && Number(dueDay) > 0 ? Number(dueDay) : undefined,
                       }}
                       isEmbedded={true}
                       onClose={() => setContractSubTab('form')}
@@ -1111,7 +1118,7 @@ export const StudentManagementModal: React.FC<StudentManagementModalProps> = ({
                           type="text"
                           value={planName}
                           onChange={(e) => setPlanName(e.target.value)}
-                          placeholder="(IRMÃOS) TEEN 3X"
+                          placeholder="Ex: Adulto 5x / Kids Teen"
                           className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-1.5 text-white text-xs font-medium"
                         />
                       </div>
@@ -1120,9 +1127,9 @@ export const StudentManagementModal: React.FC<StudentManagementModalProps> = ({
                         <input
                           type="number"
                           step="0.01"
-                          value={monthlyFee}
-                          onChange={(e) => setMonthlyFee(Number(e.target.value))}
-                          placeholder="180.00"
+                          value={monthlyFee === '' ? '' : monthlyFee}
+                          onChange={(e) => setMonthlyFee(e.target.value === '' ? '' : Number(e.target.value))}
+                          placeholder="Ex: 150.00"
                           className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-1.5 text-white text-xs font-mono"
                         />
                       </div>
@@ -1132,36 +1139,61 @@ export const StudentManagementModal: React.FC<StudentManagementModalProps> = ({
                           type="number"
                           min="1"
                           max="31"
-                          value={dueDay}
-                          onChange={(e) => setDueDay(Number(e.target.value))}
-                          placeholder="10"
+                          value={dueDay === '' ? '' : dueDay}
+                          onChange={(e) => setDueDay(e.target.value === '' ? '' : Number(e.target.value))}
+                          placeholder="Ex: 10"
                           className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-1.5 text-white text-xs font-mono"
                         />
                       </div>
                       <div className="sm:col-span-2">
-                        <label className="block text-slate-300 font-semibold mb-1 text-[11px]">Endereço Completo</label>
+                        <label className="block text-slate-300 font-semibold mb-1 text-[11px]">Endereço Completo (Rua e Nº)</label>
                         <input
                           type="text"
                           value={address}
                           onChange={(e) => setAddress(e.target.value)}
-                          placeholder="Rua Cidade Palhano, nº 115"
+                          placeholder="Ex: Rua George Cerqueira, nº 976"
                           className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-1.5 text-white text-xs"
                         />
                       </div>
                       <div>
-                        <label className="block text-slate-300 font-semibold mb-1 text-[11px]">Bairro / Cidade</label>
+                        <label className="block text-slate-300 font-semibold mb-1 text-[11px]">Bairro</label>
                         <input
                           type="text"
-                          value={`${neighborhood} - ${city}/${state}`}
-                          onChange={(e) => {
-                            const val = e.target.value;
-                            if (val.includes('-')) {
-                              setNeighborhood(val.split('-')[0].trim());
-                            } else {
-                              setNeighborhood(val);
-                            }
-                          }}
+                          value={neighborhood}
+                          onChange={(e) => setNeighborhood(e.target.value)}
+                          placeholder="Ex: Vila Velha"
                           className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-1.5 text-white text-xs"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-slate-300 font-semibold mb-1 text-[11px]">CEP</label>
+                        <input
+                          type="text"
+                          value={cep}
+                          onChange={(e) => setCep(e.target.value)}
+                          placeholder="Ex: 60347-235"
+                          className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-1.5 text-white text-xs font-mono"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-slate-300 font-semibold mb-1 text-[11px]">Cidade</label>
+                        <input
+                          type="text"
+                          value={city}
+                          onChange={(e) => setCity(e.target.value)}
+                          placeholder="Ex: Fortaleza"
+                          className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-1.5 text-white text-xs"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-slate-300 font-semibold mb-1 text-[11px]">Estado (UF)</label>
+                        <input
+                          type="text"
+                          maxLength={2}
+                          value={state}
+                          onChange={(e) => setState(e.target.value.toUpperCase())}
+                          placeholder="CE"
+                          className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-1.5 text-white text-xs font-mono uppercase"
                         />
                       </div>
                     </div>
@@ -1183,7 +1215,7 @@ export const StudentManagementModal: React.FC<StudentManagementModalProps> = ({
                     </span>
                   </label>
                   <p className="text-[11px] text-slate-400 pl-6">
-                    O WhatsApp receberá o link de auditoria, dados da mensalidade (R$ {monthlyFee.toFixed(2)}) e instruções completas para baixar o PDF das 5 páginas.
+                    O WhatsApp receberá o link de auditoria, dados da mensalidade {monthlyFee !== '' && Number(monthlyFee) > 0 ? `(R$ ${Number(monthlyFee).toFixed(2).replace('.', ',')})` : ''} e instruções completas para baixar o PDF das 5 páginas.
                   </p>
                 </div>
 
@@ -1413,24 +1445,24 @@ export const StudentManagementModal: React.FC<StudentManagementModalProps> = ({
                   rg: selectedStudentForContract.rg,
                   cpf: selectedStudentForContract.cpf || selectedStudentForContract.studentCpf,
                   birthDate: selectedStudentForContract.birthDate,
-                  address: selectedStudentForContract.address || 'Rua Cidade Palhano, nº 115',
-                  neighborhood: selectedStudentForContract.neighborhood || 'Vila Velha',
-                  cep: selectedStudentForContract.cep || '60347-032',
-                  city: selectedStudentForContract.city || 'Fortaleza',
-                  state: selectedStudentForContract.state || 'CE',
+                  address: selectedStudentForContract.address,
+                  neighborhood: selectedStudentForContract.neighborhood,
+                  cep: selectedStudentForContract.cep,
+                  city: selectedStudentForContract.city,
+                  state: selectedStudentForContract.state,
                   phone: selectedStudentForContract.phone,
                   email: selectedStudentForContract.email,
                   isMinor: selectedStudentForContract.isMinor,
                   parentName: selectedStudentForContract.parentName,
-                  parentRelationship: selectedStudentForContract.parentRelationship || 'Mãe',
+                  parentRelationship: selectedStudentForContract.parentRelationship,
                   parentCpf: selectedStudentForContract.parentCpf,
                   parentRg: selectedStudentForContract.parentRg,
                   parentPhone: selectedStudentForContract.parentPhone,
                   parentEmail: selectedStudentForContract.parentEmail,
-                  parentAddress: selectedStudentForContract.address || 'Rua Cidade Palhano, nº 115',
-                  planName: selectedStudentForContract.planName || '(IRMÃOS) TEEN 3X',
-                  monthlyFee: selectedStudentForContract.monthlyFee || 180,
-                  dueDay: selectedStudentForContract.billingDueDay || 10,
+                  parentAddress: selectedStudentForContract.address,
+                  planName: selectedStudentForContract.planName,
+                  monthlyFee: selectedStudentForContract.monthlyFee,
+                  dueDay: selectedStudentForContract.billingDueDay,
                 }}
                 isEmbedded={false}
                 onClose={() => setIsContractModalOpen(false)}

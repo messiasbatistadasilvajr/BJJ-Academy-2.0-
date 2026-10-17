@@ -61,6 +61,18 @@ O **BJJ Academy Mobile** é uma aplicação completa com arquitetura híbrida (F
 * **Snapshot Manual Pré-Deploy**: Botão de 1 clique na interface e endpoint `POST /api/backup/run` para capturar o ponto de restauração imediatamente antes de qualquer atualização ou deploy.
 * **Recuperação em 1 Clique (Disaster Recovery)**: Endpoint `POST /api/backup/restore` e modal interativo que recupera instantaneamente todos os registros caso ocorra qualquer imprevisto ou erro em deploy.
 
+### 📊 11. Dashboard Financeiro por Gráficos & DRE do Tatame
+* **Consolidação dos 4 Pilares Financeiros**:
+  - **Mensalidades dos Alunos:** Receitas recorrentes de mensalidades com taxa de adimplência em tempo real.
+  - **Vendas da Lojinha (Pro-Shop):** Faturamento com kimonos oficiais, faixas, rashguards e acessórios de tatame.
+  - **Pagamento dos Professores:** Folha de pagamento de mestres, instrutores faixas-pretas e monitores kids (`folha_pagamento`).
+  - **Aluguel do Tatame:** Custo de locação do espaço físico e despesas fixas (`aluguel_fixos`).
+* **Visualização com Gráficos SVG Nativos & DRE**:
+  - **Evolução Mensal (Barras Comparativas):** Comparativo visual de Entradas (Verde) vs. Saídas (Vermelho) com linha de lucro líquido mensal.
+  - **Composição de Entradas (Donut):** Proporção percentual de faturamento entre Mensalidades dos Alunos e Vendas da Lojinha.
+  - **Composição de Gastos (Donut):** Distribuição percentual do orçamento entre Professores, Aluguel e Serviços Extras (água/luz/internet).
+  - **DRE em Cascata:** Fluxo passo a passo demonstrando a dedução de cada custo até a obtenção da Margem Líquida Real do caixa da academia.
+
 ---
 
 ## ⚙️ Arquitetura Técnica e Módulos Implementados
@@ -171,6 +183,7 @@ O **BJJ Academy Mobile** é uma aplicação completa com arquitetura híbrida (F
 │   │   │   └── SystemDiagnosticsModal.tsx   # Painel interativo de testes do sistema E2E
 │   │   └── views/                      # Telas dedicadas de cada papel
 │   │       ├── AcademyRegistrationView.tsx  # Cadastro de novas academias/filiais
+│   │       ├── FinancialChartsView.tsx      # Dashboard interativo com gráficos (Mensalidades, Loja, Professores e Aluguel)
 │   │       ├── FinancialView.tsx            # Conciliação financeira e cobranças
 │   │       ├── InstructorView.tsx           # Portal do professor e graduações
 │   │       ├── ManagerView.tsx              # Dashboard administrativo e CRM
