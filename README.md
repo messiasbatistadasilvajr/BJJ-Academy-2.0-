@@ -73,6 +73,17 @@ O **BJJ Academy Mobile** é uma aplicação completa com arquitetura híbrida (F
   - **Composição de Gastos (Donut):** Distribuição percentual do orçamento entre Professores, Aluguel e Serviços Extras (água/luz/internet).
   - **DRE em Cascata:** Fluxo passo a passo demonstrando a dedução de cada custo até a obtenção da Margem Líquida Real do caixa da academia.
 
+### 👑 12. Evolução de Acessos: Cockpit Executivo do CEO, Dual-Role Professor & Portal Familiar
+* **Cockpit Executivo do CEO & Modo de Auditoria:**
+  - **Acesso Master Irrestrito:** O CEO (Mestre Messias Batista) possui controle global com um clique para gerenciar filiais, status do SaaS, banco de dados Cloud Firestore e Backup Cloudflare R2.
+  - **Modo Auditoria em Tempo Real:** Botões de 1 toque no painel do CEO e no modal de credenciais para auditar o aplicativo simulando exatamente a visão do Aluno, do Professor ou do Responsável Legal (Kids), com banner dourado sticky para retorno instantâneo ao controle geral.
+* **Dual-Role Tatame (Professor que também é Aluno):**
+  - **Alternância Instantânea sem Deslogar:** Professores graduados que ministram aulas e também treinam como atletas possuem um alternador no cabeçalho para alternar entre o `Modo Professor` (chamada, lançamento de notas e graduações) e `Meu Treino como Aluno` (carteirinha, progresso de faixa, diário de rola/sparring e faturas).
+* **Portal dos Pais & Responsáveis com Visão do Filho:**
+  - Atalho direto no perfil do dependente para acessar a interface do aplicativo com a experiência do aluno Kids, facilitando o acompanhamento dos treinos e técnicas aprendidas.
+* **Contrato de Fidelidade 12 Meses Dinâmico e Limpo:**
+  - O contrato oficial de prestação de serviços inicia com campos em branco (valores, parcelas, dados de endereço, nome do aluno e responsável legal), eliminando dados pré-fixados fictícios e preenchendo todos os dados automaticamente no momento da matrícula de cada aluno.
+
 ---
 
 ## ⚙️ Arquitetura Técnica e Módulos Implementados

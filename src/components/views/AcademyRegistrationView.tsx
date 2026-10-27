@@ -761,7 +761,7 @@ export const AcademyRegistrationView: React.FC<AcademyRegistrationViewProps> = (
   const currentLogoPreset = PRESET_LOGOS.find(l => l.id === selectedLogoPreset) || PRESET_LOGOS[0];
 
   return (
-    <div className="w-full h-full overflow-y-auto p-3 sm:p-6 space-y-4 pb-20 no-scrollbar animate-in fade-in bg-slate-950/30 backdrop-blur-[0.5px]">
+    <div className="w-full h-full overflow-y-auto p-3 sm:p-6 space-y-4 pb-28 sm:pb-24 no-scrollbar animate-in fade-in bg-slate-950/30 backdrop-blur-[0.5px]">
       
       {/* TOP HERO BANNER com Transparência de Vidro */}
       <div className="p-4 sm:p-6 rounded-3xl bg-gradient-to-br from-slate-950/30 via-slate-950/50 to-slate-950/75 border border-white/10 shadow-2xl relative overflow-hidden backdrop-blur-md">
@@ -1893,39 +1893,48 @@ export const AcademyRegistrationView: React.FC<AcademyRegistrationViewProps> = (
                     </div>
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                      {/* Segunda, Quarta e Sexta */}
+                      {/* Professores & Aulas - Segunda a Sexta */}
                       <div className="p-3 rounded-xl bg-slate-900/90 border border-slate-800 space-y-1.5 text-xs">
                         <div className="font-black text-amber-400 border-b border-slate-800 pb-1 flex items-center justify-between">
-                          <span>Segunda, Quarta e Sexta (Adulto & Kids)</span>
-                          <span className="text-[10px] text-slate-400 font-normal">8 turmas</span>
+                          <span>Segunda a Sexta-feira (Grade Diária)</span>
+                          <span className="text-[10px] text-emerald-400 font-bold">5 horários</span>
                         </div>
-                        <ul className="space-y-1 text-slate-300 text-[11px] font-mono">
-                          <li><strong className="text-white">07:00</strong> — Jiu-Jitsu Adulto (No-Gi / Sem Kimono)</li>
-                          <li><strong className="text-white">08:00</strong> — Jiu-Jitsu Adulto (Gi / Com Kimono)</li>
-                          <li><strong className="text-white">11:00</strong> — Jiu-Jitsu Adulto (Gi / Com Kimono)</li>
-                          <li><strong className="text-white">12:00</strong> — Jiu-Jitsu Adulto (No-Gi / Sem Kimono) <span className="text-amber-400/80">(Almoço)</span></li>
-                          <li><strong className="text-white">16:00</strong> — Jiu-Jitsu Adulto (No-Gi / Sem Kimono) <span className="text-amber-400/80">(Tarde)</span></li>
-                          <li className="text-purple-300 font-semibold"><strong className="text-white">18:00</strong> — Jiu-Jitsu Kids 1 (Seg/Qua) & Kids 2 (Sex)</li>
-                          <li><strong className="text-white">19:00</strong> — Jiu-Jitsu Adulto (Gi / Com Kimono) <span className="text-blue-400/80">(Noite)</span></li>
-                          <li><strong className="text-white">20:00</strong> — Jiu-Jitsu Adulto (Gi / Com Kimono) <span className="text-blue-400/80">(Noite)</span></li>
+                        <ul className="space-y-1.5 text-slate-300 text-[11px] font-mono">
+                          <li>
+                            <strong className="text-white">07:00</strong> — No-gi • <span className="text-amber-300 font-bold font-sans">Prof. Pedro Erick</span>
+                          </li>
+                          <li>
+                            <strong className="text-white">11:00</strong> — Gi • <span className="text-blue-300 font-bold font-sans">Prof. Anilton</span>
+                          </li>
+                          <li>
+                            <strong className="text-white">12:00</strong> — No-gi • <span className="text-blue-300 font-bold font-sans">Prof. Anilton</span>
+                          </li>
+                          <li>
+                            <strong className="text-white">16:00</strong> — Luta-Livre • <span className="text-amber-300 font-bold font-sans">Prof. Pedro Erick</span>
+                          </li>
+                          <li>
+                            <strong className="text-white">20:00</strong> — Gi Adulto Avançado • <span className="text-red-300 font-bold font-sans">Prof. Anderson</span>
+                          </li>
                         </ul>
                       </div>
 
-                      {/* Terça e Quinta */}
+                      {/* Professores & Aulas - Segunda, Quarta e Sexta */}
                       <div className="p-3 rounded-xl bg-slate-900/90 border border-slate-800 space-y-1.5 text-xs">
                         <div className="font-black text-amber-400 border-b border-slate-800 pb-1 flex items-center justify-between">
-                          <span>Terça e Quinta (Adulto & Kids)</span>
-                          <span className="text-[10px] text-slate-400 font-normal">7 turmas</span>
+                          <span>Segunda, Quarta e Sexta-feira</span>
+                          <span className="text-[10px] text-amber-300 font-bold">2 horários</span>
                         </div>
-                        <ul className="space-y-1 text-slate-300 text-[11px] font-mono">
-                          <li><strong className="text-white">07:00</strong> — Jiu-Jitsu Adulto (No-Gi / Sem Kimono)</li>
-                          <li><strong className="text-white">11:00</strong> — Jiu-Jitsu Adulto (Gi / Com Kimono)</li>
-                          <li><strong className="text-white">12:00</strong> — Jiu-Jitsu Adulto (No-Gi / Sem Kimono) <span className="text-amber-400/80">(Almoço)</span></li>
-                          <li><strong className="text-white">16:00</strong> — Jiu-Jitsu Adulto (No-Gi / Sem Kimono) <span className="text-amber-400/80">(Tarde)</span></li>
-                          <li className="text-purple-300 font-semibold"><strong className="text-white">18:00</strong> — Jiu-Jitsu Kids 2</li>
-                          <li className="text-purple-300 font-semibold"><strong className="text-white">19:00</strong> — Jiu-Jitsu Kids 3</li>
-                          <li><strong className="text-white">20:00</strong> — Jiu-Jitsu Adulto (Gi / Com Kimono) <span className="text-blue-400/80">(Noite)</span></li>
+                        <ul className="space-y-1.5 text-slate-300 text-[11px] font-mono">
+                          <li>
+                            <strong className="text-white">15:00</strong> — Gi • <span className="text-emerald-300 font-bold font-sans">Prof. Dudu</span>
+                          </li>
+                          <li>
+                            <strong className="text-white">19:00</strong> — Gi Adulto e Juvenil • <span className="text-purple-300 font-bold font-sans">Prof. Emanuel (Badel)</span>
+                          </li>
                         </ul>
+                        <div className="pt-2 mt-2 border-t border-slate-800 text-[10px] text-slate-400">
+                          Corpo docente oficial cadastrado na base Loyalty Jiu-Jitsu (MM XXIII)
+                        </div>
                       </div>
                     </div>
 

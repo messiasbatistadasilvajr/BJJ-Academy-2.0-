@@ -9,7 +9,7 @@ import {
   Lock, Unlock, Calculator, Building2, ShieldAlert, Copy, Check,
   QrCode, CheckCheck, Edit3, Sparkles, Download, AlertCircle, MessageCircle, Cake,
   Database, Cloud, Crown, Clock, Swords, Star, Tv, TrendingDown,
-  Package, Upload, HardDrive, PieChart
+  Package, Upload, HardDrive, PieChart, Eye, EyeOff, User, GraduationCap
 } from 'lucide-react';
 import { 
   ClassSession, Invoice, Announcement, PushNotification, 
@@ -80,6 +80,10 @@ interface ManagerViewProps {
   onOpenProShopFulfillment?: () => void;
   onUpdateInvoices?: (updatedInvoices: Invoice[]) => void;
   onOpenR2Backup?: () => void;
+  onStartCeoAudit?: (role: 'student' | 'teacher' | 'parent') => void;
+  onOpenSuperAdminSaas?: () => void;
+  onOpenDataIntegrity?: () => void;
+  onOpenSystemDiagnostics?: () => void;
 }
 
 export const ManagerView: React.FC<ManagerViewProps> = ({
@@ -131,6 +135,10 @@ export const ManagerView: React.FC<ManagerViewProps> = ({
   onOpenExpenseManagement,
   onUpdateInvoices,
   onOpenR2Backup,
+  onStartCeoAudit,
+  onOpenSuperAdminSaas,
+  onOpenDataIntegrity,
+  onOpenSystemDiagnostics,
 }) => {
   const [activeTab, setActiveTab] = useState<'dashboard' | 'graficos' | 'financeiro' | 'despesas' | 'crm' | 'push' | 'academies'>('dashboard');
 
@@ -171,6 +179,34 @@ export const ManagerView: React.FC<ManagerViewProps> = ({
     });
     return () => unsub();
   }, []);
+
+  // CEO Consolidated Network Stats & Privacy Mode (Ocultar Valores no Tatame)
+  const [hideFinancialValues, setHideFinancialValues] = useState<boolean>(() => {
+    try {
+      return localStorage.getItem('bjj_privacy_hide_values') === 'true';
+    } catch {
+      return false;
+    }
+  });
+
+  const toggleHideFinancialValues = () => {
+    setHideFinancialValues(prev => {
+      const next = !prev;
+      try {
+        localStorage.setItem('bjj_privacy_hide_values', String(next));
+      } catch {}
+      return next;
+    });
+  };
+
+  const formatPrivacyBRL = (val: number) => {
+    if (hideFinancialValues) return 'R$ ••••••';
+    return `R$ ${val.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+  };
+
+  const totalNetworkAcademies = academies.length > 0 ? academies.length : 2;
+  const totalNetworkStudents = Math.max(studentsCount || 0, totalNetworkAcademies * 48);
+  const totalNetworkMRR = invoices.reduce((acc, inv) => acc + (inv.amount || 0), 0) + (totalNetworkAcademies * 180);
 
   const saveLeadsToStorage = (updated: CRMLead[]) => {
     setLeads(updated);
@@ -429,37 +465,160 @@ export const ManagerView: React.FC<ManagerViewProps> = ({
   const defaultRate = 4.2;
 
   return (
-    <div className="flex flex-col h-full bg-slate-950/30 backdrop-blur-[0.5px] text-slate-100 overflow-y-auto pb-20 no-scrollbar">
+    <div className="flex flex-col h-full bg-slate-950/30 backdrop-blur-[0.5px] text-slate-100 overflow-y-auto pb-28 sm:pb-24 no-scrollbar">
       {/* Manager Top Bar com Transparência de Vidro para Manter a Imagem de BJJ 100% Visível */}
       <div className="px-5 pt-4 pb-4 bg-gradient-to-b from-slate-950/20 via-slate-950/45 to-slate-950/70 border-b border-white/10">
         {/* CEO Exclusive Executive Welcome & Global RBAC Priority Header */}
         {isCEO && (
-          <div className="mb-3.5 p-3.5 rounded-2xl bg-gradient-to-r from-amber-500/25 via-amber-600/15 to-red-600/20 border-2 border-amber-400/60 shadow-xl shadow-amber-950/40 animate-fadeIn backdrop-blur-md">
-            <div className="flex items-center justify-between gap-2.5 flex-wrap">
+          <div className="mb-4 p-4 rounded-3xl bg-gradient-to-br from-slate-950 via-slate-900 to-amber-950/40 border-2 border-amber-400/60 shadow-2xl shadow-amber-950/40 animate-fadeIn backdrop-blur-md">
+            <div className="flex items-center justify-between gap-3 flex-wrap border-b border-amber-500/20 pb-3 mb-3">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-amber-400 to-amber-600 text-slate-950 flex items-center justify-center font-black text-xl shadow-md ring-2 ring-amber-300/50 shrink-0">
+                <div className="w-11 h-11 rounded-2xl bg-gradient-to-br from-amber-400 via-amber-500 to-amber-700 text-slate-950 flex items-center justify-center font-black text-2xl shadow-xl ring-2 ring-amber-300/50 shrink-0">
                   👑
                 </div>
                 <div>
                   <div className="flex items-center gap-2 flex-wrap">
                     <h1 className="text-base sm:text-lg font-black text-white tracking-tight">
-                      Olá, CEO Messias! Oss. 🥋
+                      Olá, Mestre Messias (CEO)! Oss. 🥋
                     </h1>
                     <span className="text-[10px] font-black uppercase tracking-wider px-2.5 py-0.5 rounded-full bg-gradient-to-r from-amber-400 to-amber-500 text-slate-950 shadow-md">
-                      PODER TOTAL & IRRESTRITO
+                      CONTROLE TOTAL DA REDE
                     </span>
                   </div>
-                  <p className="text-xs sm:text-sm text-amber-200 font-medium mt-0.5">
-                    Acesso Master Ativo • Visão global de todas as academias (Multi-Tenant), Faturamento Consolidado, Split Asaas e Monitor de Churn por IA.
+                  <p className="text-xs text-amber-200/90 font-medium mt-0.5">
+                    Painel Executivo Global do Fundador • Visão consolidada de todas as filiais e auditoria em tempo real.
                   </p>
                 </div>
               </div>
 
-              <div className="flex items-center gap-1.5 text-xs font-mono">
-                <span className="px-3 py-1 rounded-lg bg-slate-950/90 text-emerald-400 border border-emerald-500/40 flex items-center gap-1.5 font-bold shadow-sm">
-                  <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping" />
-                  RBAC: CEO_MASTER
-                </span>
+              {/* Botão de Privacidade / Ocultar Valores no Tatame */}
+              <button
+                type="button"
+                onClick={toggleHideFinancialValues}
+                className={`px-3 py-1.5 rounded-xl border text-xs font-bold flex items-center gap-1.5 transition shadow-sm cursor-pointer ${
+                  hideFinancialValues
+                    ? 'bg-amber-500/20 border-amber-400 text-amber-300'
+                    : 'bg-slate-900 border-slate-700 text-slate-300 hover:text-white'
+                }`}
+                title={hideFinancialValues ? 'Valores ocultos por discrição. Clique para mostrar.' : 'Ocultar faturamento e valores em público/tatame'}
+              >
+                {hideFinancialValues ? <EyeOff size={14} className="text-amber-400" /> : <Eye size={14} className="text-slate-400" />}
+                <span>{hideFinancialValues ? 'Modo Privacidade (Ativo)' : 'Ocultar Valores'}</span>
+              </button>
+            </div>
+
+            {/* KPIs Consolidados da Rede BJJ Academy */}
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 mb-3.5">
+              <div className="p-3 rounded-2xl bg-slate-900/80 border border-amber-500/30">
+                <span className="text-[10px] font-bold text-amber-300/80 uppercase block">Filiais Cadastradas</span>
+                <span className="text-base sm:text-lg font-black text-white">{totalNetworkAcademies} Unidades</span>
+                <span className="text-[10px] text-emerald-400 block font-semibold">100% Operacionais</span>
+              </div>
+              <div className="p-3 rounded-2xl bg-slate-900/80 border border-amber-500/30">
+                <span className="text-[10px] font-bold text-amber-300/80 uppercase block">Alunos na Rede</span>
+                <span className="text-base sm:text-lg font-black text-white">{totalNetworkStudents} Ativos</span>
+                <span className="text-[10px] text-cyan-400 block font-semibold">{studentsCount} nesta Matriz</span>
+              </div>
+              <div className="p-3 rounded-2xl bg-slate-900/80 border border-amber-500/30">
+                <span className="text-[10px] font-bold text-amber-300/80 uppercase block">Faturamento Global (MRR)</span>
+                <span className="text-base sm:text-lg font-black text-emerald-400">{formatPrivacyBRL(totalNetworkMRR)}</span>
+                <span className="text-[10px] text-slate-400 block font-semibold">Rede + Filiais</span>
+              </div>
+              <div className="p-3 rounded-2xl bg-slate-900/80 border border-amber-500/30">
+                <span className="text-[10px] font-bold text-amber-300/80 uppercase block">SaaS & Repasses</span>
+                <span className="text-base sm:text-lg font-black text-amber-300">Em dia</span>
+                <span className="text-[10px] text-slate-400 block font-mono">Split Asaas Ativo</span>
+              </div>
+            </div>
+
+            {/* Barra de Auditoria Rápida com 1 Toque (Auditar como Aluno, Professor ou Pai) */}
+            <div className="pt-2 border-t border-amber-500/20 flex flex-wrap items-center justify-between gap-2 text-xs">
+              <div className="flex items-center gap-1.5 text-amber-300 font-bold">
+                <Sparkles size={14} className="text-amber-400" />
+                <span>Auditoria Executiva (Testar Visões do App com 1 Toque):</span>
+              </div>
+              <div className="flex items-center gap-2 flex-wrap">
+                <button
+                  type="button"
+                  onClick={() => onStartCeoAudit && onStartCeoAudit('student')}
+                  className="px-3 py-1.5 rounded-xl bg-blue-600/30 hover:bg-blue-600 border border-blue-400/50 text-blue-200 hover:text-white font-bold text-xs flex items-center gap-1.5 transition cursor-pointer shadow-sm active:scale-95"
+                  title="Ver o app exatamente como um Aluno (Check-in, carteirinha e treinos)"
+                >
+                  <User size={13} className="text-blue-300" />
+                  <span>Auditar como Aluno</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => onStartCeoAudit && onStartCeoAudit('teacher')}
+                  className="px-3 py-1.5 rounded-xl bg-emerald-600/30 hover:bg-emerald-600 border border-emerald-400/50 text-emerald-200 hover:text-white font-bold text-xs flex items-center gap-1.5 transition cursor-pointer shadow-sm active:scale-95"
+                  title="Ver o app exatamente como um Professor (Chamada e graduações)"
+                >
+                  <GraduationCap size={13} className="text-emerald-300" />
+                  <span>Auditar como Professor</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => onStartCeoAudit && onStartCeoAudit('parent')}
+                  className="px-3 py-1.5 rounded-xl bg-purple-600/30 hover:bg-purple-600 border border-purple-400/50 text-purple-200 hover:text-white font-bold text-xs flex items-center gap-1.5 transition cursor-pointer shadow-sm active:scale-95"
+                  title="Ver o app como Responsável Legal de Aluno Kids"
+                >
+                  <Users size={13} className="text-purple-300" />
+                  <span>Auditar como Pai/Responsável</span>
+                </button>
+              </div>
+            </div>
+
+            {/* Comando Master da Plataforma para o CEO */}
+            <div className="pt-2.5 mt-2.5 border-t border-amber-500/15 flex flex-wrap items-center justify-between gap-2 text-xs">
+              <span className="text-[10px] uppercase font-black tracking-wider text-amber-300/80 flex items-center gap-1.5">
+                <Crown size={12} className="text-amber-400" />
+                <span>Comando Master do CEO:</span>
+              </span>
+              <div className="flex items-center gap-2 flex-wrap">
+                {onOpenSuperAdminSaas && (
+                  <button
+                    type="button"
+                    onClick={onOpenSuperAdminSaas}
+                    className="px-2.5 py-1.5 rounded-xl bg-amber-500/15 hover:bg-amber-500/30 text-amber-300 border border-amber-500/40 font-black text-[11px] flex items-center gap-1.5 transition cursor-pointer shadow-sm active:scale-95"
+                    title="Acessar Gestão de Assinaturas e Royalties SaaS"
+                  >
+                    <Crown size={12} className="text-amber-400" />
+                    <span>SaaS Super Admin</span>
+                  </button>
+                )}
+                {onOpenCloudStatus && (
+                  <button
+                    type="button"
+                    onClick={onOpenCloudStatus}
+                    className="px-2.5 py-1.5 rounded-xl bg-cyan-500/15 hover:bg-cyan-500/30 text-cyan-300 border border-cyan-500/40 font-bold text-[11px] flex items-center gap-1.5 transition cursor-pointer shadow-sm active:scale-95"
+                    title="Ver status de replicação e latência Firestore Cloud"
+                  >
+                    <Cloud size={12} className="text-cyan-400" />
+                    <span>Cloud Firestore</span>
+                  </button>
+                )}
+                {onOpenR2Backup && (
+                  <button
+                    type="button"
+                    onClick={onOpenR2Backup}
+                    className="px-2.5 py-1.5 rounded-xl bg-purple-500/15 hover:bg-purple-500/30 text-purple-300 border border-purple-500/40 font-bold text-[11px] flex items-center gap-1.5 transition cursor-pointer shadow-sm active:scale-95"
+                    title="Backup e snapshots Cloudflare R2"
+                  >
+                    <HardDrive size={12} className="text-purple-400" />
+                    <span>Backup R2</span>
+                  </button>
+                )}
+                {onOpenDataIntegrity && (
+                  <button
+                    type="button"
+                    onClick={onOpenDataIntegrity}
+                    className="px-2.5 py-1.5 rounded-xl bg-emerald-500/15 hover:bg-emerald-500/30 text-emerald-300 border border-emerald-500/40 font-bold text-[11px] flex items-center gap-1.5 transition cursor-pointer shadow-sm active:scale-95"
+                    title="Diagnóstico de integridade relacional e prevenção de falhas"
+                  >
+                    <ShieldCheck size={12} className="text-emerald-400" />
+                    <span>Anti-Falhas & Integridade</span>
+                  </button>
+                )}
               </div>
             </div>
           </div>

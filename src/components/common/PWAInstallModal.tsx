@@ -3,10 +3,12 @@ import { motion, AnimatePresence } from 'motion/react';
 import { 
   Download, Share2, PlusSquare, X, CheckCircle, Smartphone, 
   RotateCcw, Copy, Check, ExternalLink, HelpCircle, AlertCircle, 
-  Sparkles, MoreVertical, ArrowUpRight, Trash2, RefreshCw
+  Sparkles, MoreVertical, ArrowUpRight, Trash2, RefreshCw,
+  QrCode, MessageCircle, Globe, ShieldAlert
 } from 'lucide-react';
 import { usePWAInstall } from '../../hooks/usePWAInstall';
 import { triggerNativeHaptic } from '../../utils/nativeApp';
+import { getPublicAppUrl, shareAppWithClientWhatsApp, OFFICIAL_PUBLIC_APP_URL } from '../../utils/urlHelper';
 
 interface PWAInstallModalProps {
   isOpen: boolean;
@@ -29,13 +31,15 @@ export const PWAInstallModal: React.FC<PWAInstallModalProps> = ({
     clearCacheAndReload
   } = usePWAInstall();
 
-  const [activePlatform, setActivePlatform] = useState<'android' | 'ios'>(() => isIOS ? 'ios' : 'android');
+  const [activePlatform, setActivePlatform] = useState<'android' | 'ios' | 'clients_share'>('clients_share');
   const [copiedLink, setCopiedLink] = useState(false);
   const [statusFeedback, setStatusFeedback] = useState<string | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
   const [showChromeVisualGuide, setShowChromeVisualGuide] = useState(false);
 
   if (!isOpen) return null;
+
+  const publicLink = getPublicAppUrl();
 
   const handleInstallClick = async () => {
     triggerNativeHaptic('medium');
@@ -102,7 +106,7 @@ export const PWAInstallModal: React.FC<PWAInstallModalProps> = ({
   const handleCopyLink = () => {
     triggerNativeHaptic('light');
     try {
-      navigator.clipboard.writeText(window.location.href);
+      navigator.clipboard.writeText(publicLink);
       setCopiedLink(true);
       setTimeout(() => setCopiedLink(false), 3000);
     } catch {
@@ -119,6 +123,11 @@ export const PWAInstallModal: React.FC<PWAInstallModalProps> = ({
     await clearCacheAndReload();
   };
 
+  const handleShareWhatsApp = () => {
+    triggerNativeHaptic('success');
+    shareAppWithClientWhatsApp('BJJ Academy');
+  };
+
   return (
     <AnimatePresence>
       <div 
@@ -129,7 +138,7 @@ export const PWAInstallModal: React.FC<PWAInstallModalProps> = ({
           initial={{ scale: 0.95, opacity: 0, y: 10 }}
           animate={{ scale: 1, opacity: 1, y: 0 }}
           exit={{ scale: 0.95, opacity: 0, y: 10 }}
-          className="relative w-full max-w-md rounded-3xl bg-slate-900 border border-slate-700/80 p-5 text-slate-100 shadow-2xl my-auto max-h-[92vh] overflow-y-auto"
+          className="relative w-full max-w-lg rounded-3xl bg-slate-900 border border-slate-700/80 p-5 text-slate-100 shadow-2xl my-auto max-h-[92vh] overflow-y-auto"
         >
           {/* Close Button */}
           <button
@@ -148,27 +157,46 @@ export const PWAInstallModal: React.FC<PWAInstallModalProps> = ({
           </div>
 
           <h3 className="text-base font-black text-center text-white">
-            Instalar ou Reinstalar no Celular
+            Baixar e Instalar BJJacademy
           </h3>
           <p className="text-xs text-center text-slate-400 mb-3">
-            BJJ Academy 2.0 • Acesso em tela cheia, offline e com alta performance
+            BJJ Academy 2.0 • Acesso direto em tela cheia no celular para clientes e alunos
           </p>
 
-          {/* Platform Switcher */}
-          <div className="flex p-1 rounded-2xl bg-slate-950 border border-slate-800 mb-3.5">
+          {/* Platform & Sharing Switcher */}
+          <div className="grid grid-cols-3 p-1 rounded-2xl bg-slate-950 border border-slate-800 mb-3.5 gap-1">
+            <button
+              type="button"
+              onClick={() => {
+                triggerNativeHaptic('light');
+                setActivePlatform('clients_share');
+              }}
+              className={`py-2 px-1 rounded-xl text-[11px] font-bold flex flex-col items-center justify-center gap-0.5 transition ${
+                activePlatform === 'clients_share'
+                  ? 'bg-gradient-to-r from-emerald-600 to-green-600 text-white shadow-md'
+                  : 'text-slate-400 hover:text-slate-200'
+              }`}
+            >
+              <span className="flex items-center gap-1">
+                <MessageCircle className="w-3.5 h-3.5 text-emerald-300" />
+                <span>Para Clientes</span>
+              </span>
+              <span className="text-[9px] opacity-80">(Sem Erro 44)</span>
+            </button>
             <button
               type="button"
               onClick={() => {
                 triggerNativeHaptic('light');
                 setActivePlatform('android');
               }}
-              className={`flex-1 py-2 rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 transition ${
+              className={`py-2 px-1 rounded-xl text-[11px] font-bold flex flex-col items-center justify-center gap-0.5 transition ${
                 activePlatform === 'android'
                   ? 'bg-red-600 text-white shadow-md'
                   : 'text-slate-400 hover:text-slate-200'
               }`}
             >
-              <span>🤖 Android (Chrome)</span>
+              <span>🤖 Android</span>
+              <span className="text-[9px] opacity-80">(Google Chrome)</span>
             </button>
             <button
               type="button"
@@ -176,15 +204,103 @@ export const PWAInstallModal: React.FC<PWAInstallModalProps> = ({
                 triggerNativeHaptic('light');
                 setActivePlatform('ios');
               }}
-              className={`flex-1 py-2 rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 transition ${
+              className={`py-2 px-1 rounded-xl text-[11px] font-bold flex flex-col items-center justify-center gap-0.5 transition ${
                 activePlatform === 'ios'
                   ? 'bg-red-600 text-white shadow-md'
                   : 'text-slate-400 hover:text-slate-200'
               }`}
             >
-              <span>🍎 iPhone / iPad (Safari)</span>
+              <span>🍎 iPhone</span>
+              <span className="text-[9px] opacity-80">(Apple Safari)</span>
             </button>
           </div>
+
+          {/* Section: Compartilhar com Clientes (Solução do Erro 44) */}
+          {activePlatform === 'clients_share' && (
+            <div className="space-y-3.5 text-left">
+              {/* Diagnóstico Explicativo do Erro 44 */}
+              <div className="p-3.5 rounded-2xl bg-amber-500/10 border border-amber-500/30 space-y-1.5">
+                <div className="flex items-center gap-2 text-amber-300 text-xs font-black">
+                  <AlertCircle className="w-4 h-4 shrink-0 text-amber-400" />
+                  <span>Por que seus clientes recebiam o "Erro 44"?</span>
+                </div>
+                <p className="text-[11px] text-slate-300 leading-relaxed">
+                  Quando você copia o link de dentro da barra do navegador do editor, o endereço começa com <strong className="text-red-400 font-mono">ais-dev-...</strong> (ambiente de desenvolvimento privado). Qualquer pessoa que abrir esse link recebe o <strong>Erro 44 (Acesso Negado / 404)</strong> porque não tem sua senha de desenvolvedor.
+                </p>
+                <p className="text-[11px] text-emerald-300 font-semibold leading-relaxed pt-1 border-t border-amber-500/20">
+                  ✅ <strong>Solução Aplicada:</strong> O link público oficial para seus clientes e alunos testarem e baixarem é o link com <strong className="text-white font-mono">ais-pre-...</strong> gerado abaixo. Ele abre em qualquer celular sem pedir login!
+                </p>
+              </div>
+
+              {/* Botão de Envio Direto via WhatsApp */}
+              <button
+                type="button"
+                onClick={handleShareWhatsApp}
+                className="w-full py-3.5 px-4 rounded-2xl bg-gradient-to-r from-emerald-600 to-green-600 hover:from-emerald-500 hover:to-green-500 text-white text-xs font-black transition flex items-center justify-center gap-2 shadow-lg shadow-emerald-950/40 cursor-pointer"
+              >
+                <MessageCircle className="w-4 h-4" />
+                <span>Enviar Link Oficial para Clientes no WhatsApp</span>
+              </button>
+
+              {/* Caixa com o Link Público Oficial */}
+              <div className="p-3 rounded-2xl bg-slate-950 border border-slate-800 space-y-2">
+                <div className="flex items-center justify-between text-slate-400 text-[10px] font-bold">
+                  <span className="flex items-center gap-1 text-slate-300">
+                    <Globe className="w-3.5 h-3.5 text-blue-400" />
+                    <span>Link Público Oficial (Garantido sem Erro 44):</span>
+                  </span>
+                  <span className="text-emerald-400">Público / Livre</span>
+                </div>
+
+                <div className="flex items-center gap-2">
+                  <input
+                    type="text"
+                    readOnly
+                    value={publicLink}
+                    className="flex-1 bg-slate-900 border border-slate-700 rounded-xl px-2.5 py-2 text-xs font-mono text-emerald-300 select-all focus:outline-none"
+                  />
+                  <button
+                    type="button"
+                    onClick={handleCopyLink}
+                    className="py-2 px-3 rounded-xl bg-slate-800 hover:bg-slate-700 text-white text-xs font-bold transition flex items-center gap-1 shrink-0 border border-slate-700 cursor-pointer"
+                  >
+                    {copiedLink ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
+                    <span>{copiedLink ? 'Copiado!' : 'Copiar'}</span>
+                  </button>
+                </div>
+              </div>
+
+              {/* Instruções para Enviar aos Clientes */}
+              <div className="p-3.5 rounded-2xl bg-slate-950/80 border border-slate-800 space-y-2.5">
+                <div className="text-xs font-bold text-slate-200">
+                  Instruções para o cliente instalar no celular dele:
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-[11px] text-slate-300">
+                  <div className="p-2.5 rounded-xl bg-slate-900 border border-slate-800 space-y-1">
+                    <div className="font-bold text-white flex items-center gap-1.5">
+                      <span>🤖 No Android:</span>
+                    </div>
+                    <p className="text-slate-400">
+                      1. Abre o link no <strong>Google Chrome</strong><br/>
+                      2. Toca nos <strong>3 pontinhos (⋮)</strong><br/>
+                      3. Toca em <strong>"Instalar aplicativo"</strong>
+                    </p>
+                  </div>
+
+                  <div className="p-2.5 rounded-xl bg-slate-900 border border-slate-800 space-y-1">
+                    <div className="font-bold text-white flex items-center gap-1.5">
+                      <span>🍎 No iPhone:</span>
+                    </div>
+                    <p className="text-slate-400">
+                      1. Abre o link no <strong>Safari</strong><br/>
+                      2. Toca em <strong>Compartilhar (⬆️)</strong><br/>
+                      3. Toca em <strong>"Adicionar à Tela de Início"</strong>
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
 
           {/* Android Section */}
           {activePlatform === 'android' && (

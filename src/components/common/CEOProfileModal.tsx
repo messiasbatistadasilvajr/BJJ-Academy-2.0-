@@ -3,7 +3,7 @@ import {
   Crown, ShieldCheck, Mail, Phone, MapPin, Building2, 
   CreditCard, Copy, Check, QrCode, Edit3, Save, X, 
   DollarSign, Users, Award, ExternalLink, Sparkles, CheckCircle2,
-  Key, Lock, Eye, EyeOff, Code2, Volume2
+  Key, Lock, Eye, EyeOff, Code2, Volume2, User, GraduationCap, Cloud, Database
 } from 'lucide-react';
 import { PlatformGeneralManager, RegisteredAcademy } from '../../types';
 import { formatBRL } from '../../utils/financialCalculations';
@@ -19,6 +19,10 @@ interface CEOProfileModalProps {
   academies?: RegisteredAcademy[];
   onOpenSaaSSimulator?: () => void;
   onOpenFinancial?: () => void;
+  onOpenSuperAdminSaas?: () => void;
+  onOpenCloudStatus?: () => void;
+  onOpenR2Backup?: () => void;
+  onStartCeoAudit?: (role: 'student' | 'teacher' | 'parent') => void;
 }
 
 export const CEOProfileModal: React.FC<CEOProfileModalProps> = ({
@@ -29,6 +33,10 @@ export const CEOProfileModal: React.FC<CEOProfileModalProps> = ({
   academies = [],
   onOpenSaaSSimulator,
   onOpenFinancial,
+  onOpenSuperAdminSaas,
+  onOpenCloudStatus,
+  onOpenR2Backup,
+  onStartCeoAudit,
 }) => {
   const [activeTab, setActiveTab] = useState<'card' | 'edit' | 'network'>('card');
   const [copiedPix, setCopiedPix] = useState(false);
@@ -462,6 +470,107 @@ export const CEOProfileModal: React.FC<CEOProfileModalProps> = ({
                 <p className="text-[11px] text-slate-400 italic">
                   "{formData.purpose || 'Para pagamentos das academias à plataforma BJJ Academy (Royalties, Licença de Software SaaS & Repasses)'}"
                 </p>
+              </div>
+
+              {/* 👑 Painel Executivo de Auditoria com 1 Toque */}
+              <div className="p-4 rounded-3xl bg-slate-950 border border-amber-500/30 space-y-3">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <div className="w-8 h-8 rounded-xl bg-amber-500/10 border border-amber-500/30 flex items-center justify-center text-amber-400">
+                      <Sparkles className="w-4 h-4" />
+                    </div>
+                    <div>
+                      <h4 className="text-xs font-black text-white uppercase tracking-wider">
+                        Auditoria & Simulação do CEO
+                      </h4>
+                      <p className="text-[10px] text-slate-400">
+                        Navegue no aplicativo exatamente com a visão de cada usuário
+                      </p>
+                    </div>
+                  </div>
+                  <span className="text-[10px] font-bold text-amber-400 bg-amber-500/10 border border-amber-500/30 px-2 py-0.5 rounded-full">
+                    Acesso Master
+                  </span>
+                </div>
+
+                <div className="grid grid-cols-3 gap-2">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      onClose();
+                      onStartCeoAudit && onStartCeoAudit('student');
+                    }}
+                    className="p-2.5 rounded-2xl bg-blue-600/20 hover:bg-blue-600/40 border border-blue-500/40 text-blue-200 text-center flex flex-col items-center justify-center gap-1 transition shadow-sm cursor-pointer"
+                  >
+                    <User className="w-4 h-4 text-blue-300" />
+                    <span className="text-[11px] font-bold">Ver como Aluno</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      onClose();
+                      onStartCeoAudit && onStartCeoAudit('teacher');
+                    }}
+                    className="p-2.5 rounded-2xl bg-emerald-600/20 hover:bg-emerald-600/40 border border-emerald-500/40 text-emerald-200 text-center flex flex-col items-center justify-center gap-1 transition shadow-sm cursor-pointer"
+                  >
+                    <GraduationCap className="w-4 h-4 text-emerald-300" />
+                    <span className="text-[11px] font-bold">Ver como Professor</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      onClose();
+                      onStartCeoAudit && onStartCeoAudit('parent');
+                    }}
+                    className="p-2.5 rounded-2xl bg-purple-600/20 hover:bg-purple-600/40 border border-purple-500/40 text-purple-200 text-center flex flex-col items-center justify-center gap-1 transition shadow-sm cursor-pointer"
+                  >
+                    <Users className="w-4 h-4 text-purple-300" />
+                    <span className="text-[11px] font-bold">Ver como Pai/Kids</span>
+                  </button>
+                </div>
+              </div>
+
+              {/* 🛠️ Comandos Globais de Infraestrutura & SaaS */}
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 pt-1 text-xs">
+                {onOpenSuperAdminSaas && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      onClose();
+                      onOpenSuperAdminSaas();
+                    }}
+                    className="p-2.5 rounded-2xl bg-slate-950 border border-amber-500/30 hover:border-amber-400 text-amber-300 font-bold flex items-center justify-center gap-1.5 transition shadow-sm"
+                  >
+                    <Crown className="w-3.5 h-3.5 text-amber-400" />
+                    <span>SaaS Super Admin</span>
+                  </button>
+                )}
+                {onOpenCloudStatus && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      onClose();
+                      onOpenCloudStatus();
+                    }}
+                    className="p-2.5 rounded-2xl bg-slate-950 border border-cyan-500/30 hover:border-cyan-400 text-cyan-300 font-bold flex items-center justify-center gap-1.5 transition shadow-sm"
+                  >
+                    <Cloud className="w-3.5 h-3.5 text-cyan-400" />
+                    <span>Cloud Firestore</span>
+                  </button>
+                )}
+                {onOpenR2Backup && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      onClose();
+                      onOpenR2Backup();
+                    }}
+                    className="p-2.5 rounded-2xl bg-slate-950 border border-purple-500/30 hover:border-purple-400 text-purple-300 font-bold flex items-center justify-center gap-1.5 transition shadow-sm"
+                  >
+                    <Database className="w-3.5 h-3.5 text-purple-400" />
+                    <span>Backup R2</span>
+                  </button>
+                )}
               </div>
 
               {/* Ações Rápidas */}

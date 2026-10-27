@@ -1,4 +1,5 @@
 import { useEffect, useState, useCallback } from 'react';
+import { getPublicAppUrl } from '../utils/urlHelper';
 
 interface BeforeInstallPromptEvent extends Event {
   prompt: () => Promise<void>;
@@ -124,9 +125,9 @@ export function usePWAInstall() {
 
   const openInNativeChrome = useCallback(() => {
     if (typeof window === 'undefined') return;
-    const currentUrl = window.location.href;
+    const currentUrl = getPublicAppUrl();
 
-    // If inside an iframe, prefer opening current top or clean URL
+    // If inside an iframe, prefer opening public URL
     if (isAndroid) {
       try {
         const cleanHostPath = currentUrl.replace(/^https?:\/\//, '');

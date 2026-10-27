@@ -484,7 +484,8 @@ CREATE TABLE IF NOT EXISTS saas_subscriptions (
       {/* Main Client Table (Listagem de Clientes) */}
       <div className="bg-slate-900/90 border border-slate-800 rounded-2xl shadow-xl overflow-hidden">
         <div className="overflow-x-auto">
-          <table className="w-full text-left border-collapse text-xs">
+          {/* Desktop Table View */}
+          <table className="hidden md:table w-full text-left border-collapse text-xs">
             <thead>
               <tr className="bg-slate-950/80 border-b border-slate-800 text-[11px] uppercase tracking-wider text-slate-400 font-bold">
                 <th className="py-3 px-4">Nome da Academia & Responsável</th>
@@ -513,7 +514,6 @@ CREATE TABLE IF NOT EXISTS saas_subscriptions (
                 filteredSubscriptions.map(sub => {
                   const isOverdue = sub.paymentStatus === 'ATRASADO';
                   const isBlocked = isOverdue || sub.isAccessSuspended;
-                  const isPending = sub.paymentStatus === 'PENDENTE';
 
                   // Cálculo de dias de vencimento
                   let dueDateInfo = { text: sub.dueDate, label: '', isPast: false };
@@ -658,7 +658,7 @@ CREATE TABLE IF NOT EXISTS saas_subscriptions (
                           {/* Registrar Pagamento */}
                           <button
                             onClick={() => handleOpenPaymentModal(sub)}
-                            className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-emerald-600/30 hover:bg-emerald-600 border border-emerald-500/50 hover:border-emerald-400 text-emerald-200 hover:text-white text-[11px] font-bold transition-all active:scale-95"
+                            className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-emerald-600/30 hover:bg-emerald-600 border border-emerald-500/50 hover:border-emerald-400 text-emerald-200 hover:text-white text-[11px] font-bold transition-all active:scale-95 cursor-pointer"
                             title="Registrar Pagamento recebido e desbloquear a academia"
                           >
                             <DollarSign className="w-3.5 h-3.5" />
@@ -668,7 +668,7 @@ CREATE TABLE IF NOT EXISTS saas_subscriptions (
                           {/* Suspender / Reativar Acesso */}
                           <button
                             onClick={() => handleOpenSuspendModal(sub)}
-                            className={`flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-[11px] font-bold transition-all active:scale-95 ${
+                            className={`flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-[11px] font-bold transition-all active:scale-95 cursor-pointer ${
                               isBlocked
                                 ? 'bg-amber-600/30 hover:bg-amber-600 text-amber-200 hover:text-slate-950 border border-amber-500/50'
                                 : 'bg-rose-950/40 hover:bg-rose-800 text-rose-300 hover:text-white border border-rose-800/50'
@@ -691,7 +691,7 @@ CREATE TABLE IF NOT EXISTS saas_subscriptions (
                           {/* Editar Plano */}
                           <button
                             onClick={() => handleOpenEditPlanModal(sub)}
-                            className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 text-[11px] font-semibold transition-all active:scale-95"
+                            className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 text-[11px] font-semibold transition-all active:scale-95 cursor-pointer"
                             title="Editar Plano, Mensalidade e Vencimento"
                           >
                             <Edit3 className="w-3.5 h-3.5 text-cyan-400" />
@@ -705,6 +705,153 @@ CREATE TABLE IF NOT EXISTS saas_subscriptions (
               )}
             </tbody>
           </table>
+
+          {/* Dedicated Responsive Mobile Cards View (Phones < md) */}
+          <div className="md:hidden divide-y divide-slate-800/80">
+            {filteredSubscriptions.length === 0 ? (
+              <div className="p-8 text-center text-slate-500">
+                <Filter className="w-8 h-8 mx-auto text-slate-600 opacity-60 mb-2" />
+                <p className="font-semibold text-sm text-slate-400">Nenhuma academia encontrada</p>
+                <p className="text-xs text-slate-500 mt-1">
+                  Revise a busca ou filtro selecionado.
+                </p>
+              </div>
+            ) : (
+              filteredSubscriptions.map(sub => {
+                const isOverdue = sub.paymentStatus === 'ATRASADO';
+                const isBlocked = isOverdue || sub.isAccessSuspended;
+
+                let dueDateInfo = { text: sub.dueDate, label: '', isPast: false };
+                if (sub.dueDate) {
+                  const d = new Date(sub.dueDate);
+                  const diffDays = Math.ceil((d.getTime() - Date.now()) / (1000 * 60 * 60 * 24));
+                  if (diffDays < 0) {
+                    dueDateInfo.label = `${Math.abs(diffDays)} dia(s) em atraso`;
+                    dueDateInfo.isPast = true;
+                  } else if (diffDays === 0) {
+                    dueDateInfo.label = 'Vence hoje!';
+                  } else {
+                    dueDateInfo.label = `Vence em ${diffDays} dias`;
+                  }
+                }
+
+                return (
+                  <div key={`m_${sub.id}`} className={`p-4 space-y-3 ${isBlocked ? 'bg-rose-950/20' : 'bg-slate-900/60'}`}>
+                    {/* Top Row: Academy & Badges */}
+                    <div className="flex items-start justify-between gap-2">
+                      <div>
+                        <div className="font-black text-white text-base leading-tight">
+                          {sub.academyName}
+                        </div>
+                        {sub.branchName && (
+                          <div className="text-[11px] text-slate-400 font-medium">
+                            {sub.branchName}
+                          </div>
+                        )}
+                        <div className="text-xs text-slate-300 font-semibold mt-1">
+                          Resp: {sub.responsibleName}
+                        </div>
+                      </div>
+
+                      <div className="flex flex-col items-end gap-1 shrink-0">
+                        <span className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-md text-[10px] font-black uppercase ${
+                          sub.planTier === 'OURO'
+                            ? 'bg-amber-500/20 text-amber-300 border border-amber-500/40'
+                            : sub.planTier === 'AVANCADO'
+                            ? 'bg-slate-700/60 text-slate-200 border border-slate-500/40'
+                            : 'bg-amber-950/40 text-amber-400 border border-amber-800/40'
+                        }`}>
+                          <Award className="w-3 h-3" />
+                          {sub.planTier}
+                        </span>
+
+                        {isBlocked ? (
+                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-black uppercase tracking-wider bg-rose-600 text-white shadow-sm">
+                            <Lock className="w-3 h-3" />
+                            Bloqueado
+                          </span>
+                        ) : (
+                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-black uppercase tracking-wider bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">
+                            <Unlock className="w-3 h-3" />
+                            Liberado
+                          </span>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Middle Details Grid */}
+                    <div className="grid grid-cols-2 gap-2 p-2.5 rounded-xl bg-slate-950/70 border border-slate-800 text-xs">
+                      <div>
+                        <span className="text-[10px] text-slate-400 uppercase font-semibold block">Mensalidade</span>
+                        <span className="font-black text-white text-sm font-mono">
+                          R$ {sub.monthlyFeeBRL.toFixed(2)}
+                        </span>
+                      </div>
+                      <div>
+                        <span className="text-[10px] text-slate-400 uppercase font-semibold block">Vencimento</span>
+                        <div className="font-bold text-slate-200">{sub.dueDate}</div>
+                        <span className={`text-[10px] font-bold ${dueDateInfo.isPast ? 'text-rose-400' : 'text-slate-400'}`}>
+                          {dueDateInfo.label}
+                        </span>
+                      </div>
+                      <div className="col-span-2 pt-1 border-t border-slate-800/60 flex items-center justify-between text-[11px]">
+                        <span className="text-slate-400 flex items-center gap-1">
+                          <Phone className="w-3 h-3 text-emerald-400" /> {sub.responsiblePhone}
+                        </span>
+                        <span className="text-slate-400 flex items-center gap-1 truncate max-w-[170px]">
+                          <Mail className="w-3 h-3 text-cyan-400" /> {sub.responsibleEmail}
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* Mobile Visible Action Buttons - Never Hidden! */}
+                    <div className="flex flex-wrap items-center gap-2 pt-1">
+                      <button
+                        type="button"
+                        onClick={() => handleOpenPaymentModal(sub)}
+                        className="flex-1 py-2 px-3 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-black text-xs flex items-center justify-center gap-1.5 shadow-md shadow-emerald-950/50 cursor-pointer active:scale-95"
+                      >
+                        <DollarSign className="w-3.5 h-3.5" />
+                        <span>Baixa PIX</span>
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => handleOpenSuspendModal(sub)}
+                        className={`flex-1 py-2 px-3 rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 border shadow-sm cursor-pointer active:scale-95 ${
+                          isBlocked
+                            ? 'bg-amber-600/30 hover:bg-amber-600 text-amber-200 hover:text-slate-950 border-amber-500/50'
+                            : 'bg-rose-950/60 hover:bg-rose-900 text-rose-300 border-rose-800/60'
+                        }`}
+                      >
+                        {isBlocked ? (
+                          <>
+                            <Unlock className="w-3.5 h-3.5" />
+                            <span>Desbloquear</span>
+                          </>
+                        ) : (
+                          <>
+                            <Lock className="w-3.5 h-3.5" />
+                            <span>Bloquear</span>
+                          </>
+                        )}
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => handleOpenEditPlanModal(sub)}
+                        className="py-2 px-3 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-bold border border-slate-700 flex items-center justify-center gap-1 cursor-pointer active:scale-95"
+                        title="Editar Plano"
+                      >
+                        <Edit3 className="w-3.5 h-3.5 text-cyan-400" />
+                        <span>Plano</span>
+                      </button>
+                    </div>
+                  </div>
+                );
+              })
+            )}
+          </div>
         </div>
       </div>
 

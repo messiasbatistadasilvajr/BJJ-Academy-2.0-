@@ -246,121 +246,143 @@ export const mockInitialStudents: StudentProfile[] = [
 
 export const mockClasses: ClassSession[] = [
   {
-    id: 'class_01',
-    name: 'Kids 01 (3 a 6 anos)',
-    instructor: 'Profª Beatriz Lima - Faixa Marrom',
-    instructorAvatar: '/bjj_media/bjj_student_female.jpg',
-    time: '18:00',
-    duration: '50 min',
-    type: 'Kids',
-    tatame: 'Tatame 1 (Seg/Qua) & Tatame 2 (Ter/Qui)',
-    capacity: 20,
-    enrolledCount: 16,
-    checkedIn: true,
-    tatameAreaM2: 50,
-    maxSafeSparringPairs: 7,
-    registeredStudents: [
-      { id: 'dep_pedro_01', name: 'Pedro Henrique Mendes', belt: 'grey', avatar: '/bjj_media/bjj_kid_student.jpg', status: 'present', note: 'Excelente foco no aquecimento' },
-      { id: 'dep_sofia_02', name: 'Sofia Mendes', belt: 'white', avatar: '/bjj_media/bjj_kid_student.jpg', status: 'present', note: 'Ajudou os colegas na guarda' },
-      { id: 'kid_3', name: 'Enzo Gabriel Santos', belt: 'grey', avatar: '/bjj_media/bjj_kid_student.jpg', status: 'present' },
-      { id: 'kid_4', name: 'Valentina Rossi', belt: 'white', avatar: '/bjj_media/bjj_kid_student.jpg', status: 'absent' },
-      { id: 'kid_5', name: 'Matheus Costa', belt: 'yellow', avatar: '/bjj_media/bjj_kid_student.jpg', status: 'present' }
-    ]
-  },
-  {
-    id: 'class_02',
-    name: 'Jiu-Jitsu Gi (Intermediário / Avançado)',
-    instructor: 'Mestre Rodrigo "Cavalo" - 3º Grau',
+    id: 'class_07am',
+    name: 'Jiu-Jitsu No-gi (Seg a Sex)',
+    instructor: 'Prof. Pedro Erick',
     instructorAvatar: '/bjj_media/bjj_professor_mestre.jpg',
-    time: '20:00',
+    time: '07:00',
     duration: '60 min',
-    type: 'Fundamentos',
-    tatame: 'Tatame 1 (Principal)',
+    type: 'No-Gi',
+    tatame: 'Tatame Principal (Segunda a Sexta-feira)',
     capacity: 35,
-    enrolledCount: 28,
+    enrolledCount: 24,
     checkedIn: true,
     tatameAreaM2: 80,
     maxSafeSparringPairs: 10,
     registeredStudents: [
       { id: 'stu_lucas_01', name: 'Lucas Gracie Mendes', belt: 'blue', avatar: '/bjj_media/bjj_student_male.jpg', status: 'present' },
       { id: 'stu_2', name: 'Gabriel Alencar', belt: 'white', avatar: '/bjj_media/bjj_student_male.jpg', status: 'present' },
-      { 
-        id: 'stu_3', 
-        name: 'Renato Silveira', 
-        belt: 'blue', 
-        avatar: '/bjj_media/bjj_student_male.jpg', 
-        status: 'present',
-        hasInjuryWarning: true,
-        injuryNote: 'Ombro direito em reabilitação (evitar projeções e chaves de ombro)',
-        injurySeverity: 'moderate'
-      },
-      { id: 'stu_4', name: 'Camila Guimarães', belt: 'white', avatar: '/bjj_media/bjj_student_female.jpg', status: 'pending' },
       { id: 'stu_5', name: 'Felipe Duarte', belt: 'purple', avatar: '/bjj_media/bjj_student_male.jpg', status: 'present' },
-      { 
-        id: 'stu_6', 
-        name: 'Marcos Vinicius', 
-        belt: 'blue', 
-        avatar: '/bjj_media/bjj_student_male.jpg', 
-        status: 'present',
-        hasInjuryWarning: true,
-        injuryNote: 'Entorse leve de tornozelo — apenas rola posicional sem chaves de pé',
-        injurySeverity: 'mild'
-      }
+      { id: 'stu_7', name: 'Thiago Tavares', belt: 'brown', avatar: '/bjj_media/bjj_student_male.jpg', status: 'present' }
     ]
   },
   {
-    id: 'class_03',
-    name: 'Jiu-Jitsu No Gi (Iniciante / Intermediário)',
-    instructor: 'Prof. Alexandre Peçanha - Faixa Preta',
+    id: 'class_11am',
+    name: 'Jiu-Jitsu Gi (Seg a Sex)',
+    instructor: 'Prof. Anilton',
+    instructorAvatar: '/bjj_media/bjj_professor_mestre.jpg',
+    time: '11:00',
+    duration: '60 min',
+    type: 'Fundamentos',
+    tatame: 'Tatame Principal (Segunda a Sexta-feira)',
+    capacity: 35,
+    enrolledCount: 22,
+    checkedIn: true,
+    tatameAreaM2: 80,
+    maxSafeSparringPairs: 10,
+    registeredStudents: [
+      { id: 'stu_lucas_01', name: 'Lucas Gracie Mendes', belt: 'blue', avatar: '/bjj_media/bjj_student_male.jpg', status: 'present' },
+      { id: 'stu_4', name: 'Camila Guimarães', belt: 'white', avatar: '/bjj_media/bjj_student_female.jpg', status: 'present' },
+      { id: 'stu_8', name: 'Leonardo Salles', belt: 'purple', avatar: '/bjj_media/bjj_student_male.jpg', status: 'present' }
+    ]
+  },
+  {
+    id: 'class_12pm',
+    name: 'Jiu-Jitsu No-gi (Seg a Sex)',
+    instructor: 'Prof. Anilton',
     instructorAvatar: '/bjj_media/bjj_professor_mestre.jpg',
     time: '12:00',
     duration: '60 min',
     type: 'No-Gi',
-    tatame: 'Tatame 1 (Principal)',
-    capacity: 30,
-    enrolledCount: 22,
+    tatame: 'Tatame Principal (Segunda a Sexta-feira)',
+    capacity: 35,
+    enrolledCount: 25,
     checkedIn: false,
     tatameAreaM2: 80,
     maxSafeSparringPairs: 10,
     registeredStudents: [
       { id: 'stu_lucas_01', name: 'Lucas Gracie Mendes', belt: 'blue', avatar: '/bjj_media/bjj_student_male.jpg', status: 'pending' },
-      { id: 'stu_7', name: 'Thiago Tavares', belt: 'brown', avatar: '/bjj_media/bjj_student_male.jpg', status: 'present' },
-      { id: 'stu_8', name: 'Leonardo Salles', belt: 'purple', avatar: '/bjj_media/bjj_student_male.jpg', status: 'present' }
+      { id: 'stu_7', name: 'Thiago Tavares', belt: 'brown', avatar: '/bjj_media/bjj_student_male.jpg', status: 'present' }
     ]
   },
   {
-    id: 'class_04',
-    name: 'Kids 03 (10 a 14 anos) • Time de Competição',
-    instructor: 'Mestre Rodrigo "Cavalo" - 3º Grau',
+    id: 'class_03pm',
+    name: 'Jiu-Jitsu Gi (Seg, Qua e Sex)',
+    instructor: 'Prof. Dudu',
     instructorAvatar: '/bjj_media/bjj_professor_mestre.jpg',
-    time: '17:00',
+    time: '15:00',
     duration: '60 min',
-    type: 'Competição',
-    tatame: 'Tatame 2 (Competição Especial)',
-    capacity: 25,
-    enrolledCount: 18,
-    checkedIn: false,
-    tatameAreaM2: 60,
-    maxSafeSparringPairs: 8,
-    registeredStudents: [
-      { id: 'dep_pedro_01', name: 'Pedro Henrique Mendes', belt: 'grey', avatar: '/bjj_media/bjj_kid_student.jpg', status: 'present' }
-    ]
-  },
-  {
-    id: 'class_05',
-    name: 'Muay Thai Tradicional',
-    instructor: 'Prof. Alexandre Peçanha',
-    instructorAvatar: '/bjj_media/bjj_professor_mestre.jpg',
-    time: '19:00',
-    duration: '60 min',
-    type: 'Muay Thai',
-    tatame: 'Tatame 1 (Principal)',
+    type: 'Fundamentos',
+    tatame: 'Tatame Principal (Segunda, Quarta e Sexta-feira)',
     capacity: 30,
     enrolledCount: 20,
     checkedIn: false,
     tatameAreaM2: 80,
     maxSafeSparringPairs: 10,
-    registeredStudents: []
+    registeredStudents: [
+      { id: 'stu_2', name: 'Gabriel Alencar', belt: 'white', avatar: '/bjj_media/bjj_student_male.jpg', status: 'present' },
+      { id: 'stu_5', name: 'Felipe Duarte', belt: 'purple', avatar: '/bjj_media/bjj_student_male.jpg', status: 'present' }
+    ]
+  },
+  {
+    id: 'class_04pm',
+    name: 'Luta-Livre (Seg a Sex)',
+    instructor: 'Prof. Pedro Erick',
+    instructorAvatar: '/bjj_media/bjj_professor_mestre.jpg',
+    time: '16:00',
+    duration: '60 min',
+    type: 'No-Gi',
+    tatame: 'Tatame Principal (Segunda a Sexta-feira)',
+    capacity: 30,
+    enrolledCount: 19,
+    checkedIn: false,
+    tatameAreaM2: 80,
+    maxSafeSparringPairs: 10,
+    registeredStudents: [
+      { id: 'stu_lucas_01', name: 'Lucas Gracie Mendes', belt: 'blue', avatar: '/bjj_media/bjj_student_male.jpg', status: 'pending' },
+      { id: 'stu_8', name: 'Leonardo Salles', belt: 'purple', avatar: '/bjj_media/bjj_student_male.jpg', status: 'present' }
+    ]
+  },
+  {
+    id: 'class_07pm',
+    name: 'Jiu-Jitsu Gi • Adulto e Juvenil (Seg, Qua e Sex)',
+    instructor: 'Prof. Emanuel (Badel)',
+    instructorAvatar: '/bjj_media/bjj_professor_mestre.jpg',
+    time: '19:00',
+    duration: '60 min',
+    type: 'Fundamentos',
+    tatame: 'Tatame Principal (Segunda, Quarta e Sexta-feira)',
+    capacity: 40,
+    enrolledCount: 34,
+    checkedIn: true,
+    tatameAreaM2: 80,
+    maxSafeSparringPairs: 12,
+    registeredStudents: [
+      { id: 'stu_lucas_01', name: 'Lucas Gracie Mendes', belt: 'blue', avatar: '/bjj_media/bjj_student_male.jpg', status: 'present' },
+      { id: 'stu_2', name: 'Gabriel Alencar', belt: 'white', avatar: '/bjj_media/bjj_student_male.jpg', status: 'present' },
+      { id: 'stu_4', name: 'Camila Guimarães', belt: 'white', avatar: '/bjj_media/bjj_student_female.jpg', status: 'present' },
+      { id: 'stu_5', name: 'Felipe Duarte', belt: 'purple', avatar: '/bjj_media/bjj_student_male.jpg', status: 'present' }
+    ]
+  },
+  {
+    id: 'class_08pm',
+    name: 'Jiu-Jitsu Gi • Adulto Avançado (Seg a Sex)',
+    instructor: 'Prof. Anderson',
+    instructorAvatar: '/bjj_media/bjj_professor_mestre.jpg',
+    time: '20:00',
+    duration: '60 min',
+    type: 'Gi',
+    tatame: 'Tatame Principal (Segunda a Sexta-feira)',
+    capacity: 40,
+    enrolledCount: 30,
+    checkedIn: false,
+    tatameAreaM2: 80,
+    maxSafeSparringPairs: 12,
+    registeredStudents: [
+      { id: 'stu_lucas_01', name: 'Lucas Gracie Mendes', belt: 'blue', avatar: '/bjj_media/bjj_student_male.jpg', status: 'present' },
+      { id: 'stu_7', name: 'Thiago Tavares', belt: 'brown', avatar: '/bjj_media/bjj_student_male.jpg', status: 'present' },
+      { id: 'stu_8', name: 'Leonardo Salles', belt: 'purple', avatar: '/bjj_media/bjj_student_male.jpg', status: 'present' }
+    ]
   }
 ];
 
@@ -1298,7 +1320,8 @@ export interface LoyaltyAdultScheduleItem {
   modality: string;
   level?: string;
   days: string;
-  type: 'Gi' | 'No Gi' | 'Muay Thai';
+  type: 'Gi' | 'No Gi' | 'Luta-Livre' | 'Muay Thai';
+  instructor: string;
 }
 
 export interface LoyaltyKidsScheduleItem {
@@ -1318,6 +1341,7 @@ export interface LoyaltyScheduleGroup {
     title: string;
     modality: string;
     tag?: string;
+    instructor?: string;
   }[];
 }
 
@@ -1329,18 +1353,65 @@ export interface LoyaltyKidsSchedule {
 }
 
 // -------------------------------------------------------------
-// GRADE OFICIAL LOYALTY JIU-JITSU • ADULTOS (POSTER OFICIAL MM XXIII)
+// GRADE OFICIAL LOYALTY JIU-JITSU • ADULTOS & PROFESSORES MM XXIII
 // -------------------------------------------------------------
 export const loyaltyOfficialAdultSchedule: LoyaltyAdultScheduleItem[] = [
-  { time: '07:00', modality: 'No Gi', level: 'Iniciante / Intermediário', days: 'SEG A SEX', type: 'No Gi' },
-  { time: '08:00', modality: 'Gi', level: 'Iniciante', days: 'SEG A SEX', type: 'Gi' },
-  { time: '11:00', modality: 'Gi', level: 'Intermediário / Avançado', days: 'SEG A SEX', type: 'Gi' },
-  { time: '12:00', modality: 'No Gi', level: 'Iniciante / Intermediário', days: 'SEG A SEX', type: 'No Gi' },
-  { time: '15:00', modality: 'Gi', level: 'Intermediário', days: 'SEG, QUA E SEX', type: 'Gi' },
-  { time: '16:00', modality: 'No Gi', level: 'Iniciante / Intermediário', days: 'SEG A SEX', type: 'No Gi' },
-  { time: '19:00', modality: 'Gi', level: 'Iniciante', days: 'SEG, QUA E SEX', type: 'Gi' },
-  { time: '20:00', modality: 'Gi', level: 'Intermediário / Avançado', days: 'SEG A SEX', type: 'Gi' },
-  { time: '19:00', modality: 'Muay Thai', level: 'Todos os níveis', days: 'SEG, QUA E SEX', type: 'Muay Thai' }
+  { 
+    time: '07:00', 
+    modality: 'No-gi', 
+    level: 'Todos os níveis', 
+    days: 'Segunda a Sexta-feira', 
+    type: 'No Gi', 
+    instructor: 'Pedro Erick' 
+  },
+  { 
+    time: '11:00', 
+    modality: 'Gi', 
+    level: 'Iniciante / Intermediário', 
+    days: 'Segunda a Sexta-feira', 
+    type: 'Gi', 
+    instructor: 'Anilton' 
+  },
+  { 
+    time: '12:00', 
+    modality: 'No-gi', 
+    level: 'Iniciante / Intermediário', 
+    days: 'Segunda a Sexta-feira', 
+    type: 'No Gi', 
+    instructor: 'Anilton' 
+  },
+  { 
+    time: '15:00', 
+    modality: 'Gi', 
+    level: 'Intermediário', 
+    days: 'Segunda, Quarta e Sexta-feira', 
+    type: 'Gi', 
+    instructor: 'Dudu' 
+  },
+  { 
+    time: '16:00', 
+    modality: 'Luta-Livre', 
+    level: 'Iniciante ao Avançado', 
+    days: 'Segunda a Sexta-feira', 
+    type: 'Luta-Livre', 
+    instructor: 'Pedro Erick' 
+  },
+  { 
+    time: '19:00', 
+    modality: 'Gi', 
+    level: 'Adulto e Juvenil', 
+    days: 'Segunda, Quarta e Sexta-feira', 
+    type: 'Gi', 
+    instructor: 'Emanuel (Badel)' 
+  },
+  { 
+    time: '20:00', 
+    modality: 'Gi', 
+    level: 'Adulto Avançado', 
+    days: 'Segunda a Sexta-feira', 
+    type: 'Gi', 
+    instructor: 'Anderson' 
+  }
 ];
 
 // -------------------------------------------------------------
@@ -1364,13 +1435,14 @@ export const loyaltyOfficialKidsTatame02: LoyaltyKidsScheduleItem[] = [
 // Grupos para compatibilidade
 export const loyaltyOfficialScheduleGroups: LoyaltyScheduleGroup[] = [
   {
-    groupName: 'Grade de Treinos Adultos (Gi, No Gi & Muay Thai)',
-    days: 'Segunda a Sexta',
+    groupName: 'Grade Oficial de Treinos • Loyalty Jiu-Jitsu MM XXIII',
+    days: 'Segunda a Sexta-feira',
     classes: loyaltyOfficialAdultSchedule.map(item => ({
       time: item.time,
-      title: `${item.modality}${item.level ? ` (${item.level})` : ''}`,
-      modality: item.type === 'No Gi' ? 'No-Gi / Sem Kimono' : item.type === 'Muay Thai' ? 'Muay Thai Tradicional' : 'Gi / Com Kimono',
-      tag: item.days
+      title: `${item.modality} • Prof. ${item.instructor}`,
+      modality: item.type === 'No Gi' ? 'No-gi / Sem Kimono' : item.type === 'Luta-Livre' ? 'Luta-Livre' : 'Gi / Com Kimono',
+      tag: `${item.days} • Prof. ${item.instructor}`,
+      instructor: item.instructor
     }))
   },
   {
@@ -1411,16 +1483,13 @@ export const loyaltyOfficialOperatingHours: AcademyOperatingDay[] = [
     dayLabel: 'segunda-feira',
     isOpen: true,
     slots: [
-      '07:00 (No Gi • Inic/Inter)',
-      '08:00 (Gi • Iniciante)',
-      '11:00 (Gi • Inter/Avançado)',
-      '12:00 (No Gi • Inic/Inter)',
-      '15:00 (Gi • Intermediário)',
-      '16:00 (No Gi • Inic/Inter)',
-      '17:00 (Kids 03 • T1 e T2 Competição)',
-      '18:00 (Kids 01 • T1 3 a 6 anos)',
-      '19:00 (Gi Inic & Muay Thai)',
-      '20:00 (Gi • Inter/Avançado)'
+      '07:00 (No-gi • Prof. Pedro Erick)',
+      '11:00 (Gi • Prof. Anilton)',
+      '12:00 (No-gi • Prof. Anilton)',
+      '15:00 (Gi • Prof. Dudu)',
+      '16:00 (Luta-Livre • Prof. Pedro Erick)',
+      '19:00 (Gi Adulto e Juvenil • Prof. Emanuel (Badel))',
+      '20:00 (Gi Adulto Avançado • Prof. Anderson)'
     ]
   },
   {
@@ -1428,17 +1497,11 @@ export const loyaltyOfficialOperatingHours: AcademyOperatingDay[] = [
     dayLabel: 'terça-feira',
     isOpen: true,
     slots: [
-      '07:00 (No Gi • Inic/Inter)',
-      '08:00 (Gi • Iniciante)',
-      '09:00 (Kids 02 • T1 7 a 12 anos)',
-      '11:00 (Gi • Inter/Avançado)',
-      '12:00 (No Gi • Inic/Inter)',
-      '15:00 (Kids 02 • T1 7 a 12 anos)',
-      '16:00 (No Gi • Inic/Inter)',
-      '17:00 (Kids 03 • T1 10 a 14 anos)',
-      '18:00 (Kids 02 • T1 & Kids 01 • T2)',
-      '19:00 (Kids 03 • T1 & Muay Thai Kids • T2)',
-      '20:00 (Gi • Inter/Avançado)'
+      '07:00 (No-gi • Prof. Pedro Erick)',
+      '11:00 (Gi • Prof. Anilton)',
+      '12:00 (No-gi • Prof. Anilton)',
+      '16:00 (Luta-Livre • Prof. Pedro Erick)',
+      '20:00 (Gi Adulto Avançado • Prof. Anderson)'
     ]
   },
   {
@@ -1446,16 +1509,13 @@ export const loyaltyOfficialOperatingHours: AcademyOperatingDay[] = [
     dayLabel: 'quarta-feira',
     isOpen: true,
     slots: [
-      '07:00 (No Gi • Inic/Inter)',
-      '08:00 (Gi • Iniciante)',
-      '11:00 (Gi • Inter/Avançado)',
-      '12:00 (No Gi • Inic/Inter)',
-      '15:00 (Gi • Intermediário)',
-      '16:00 (No Gi • Inic/Inter)',
-      '17:00 (Kids 03 • T1 e T2 Competição)',
-      '18:00 (Kids 01 • T1 3 a 6 anos)',
-      '19:00 (Gi Inic & Muay Thai)',
-      '20:00 (Gi • Inter/Avançado)'
+      '07:00 (No-gi • Prof. Pedro Erick)',
+      '11:00 (Gi • Prof. Anilton)',
+      '12:00 (No-gi • Prof. Anilton)',
+      '15:00 (Gi • Prof. Dudu)',
+      '16:00 (Luta-Livre • Prof. Pedro Erick)',
+      '19:00 (Gi Adulto e Juvenil • Prof. Emanuel (Badel))',
+      '20:00 (Gi Adulto Avançado • Prof. Anderson)'
     ]
   },
   {
@@ -1463,17 +1523,11 @@ export const loyaltyOfficialOperatingHours: AcademyOperatingDay[] = [
     dayLabel: 'quinta-feira',
     isOpen: true,
     slots: [
-      '07:00 (No Gi • Inic/Inter)',
-      '08:00 (Gi • Iniciante)',
-      '09:00 (Kids 02 • T1 7 a 12 anos)',
-      '11:00 (Gi • Inter/Avançado)',
-      '12:00 (No Gi • Inic/Inter)',
-      '15:00 (Kids 02 • T1 7 a 12 anos)',
-      '16:00 (No Gi • Inic/Inter)',
-      '17:00 (Kids 03 • T1 10 a 14 anos)',
-      '18:00 (Kids 02 • T1 & Kids 01 • T2)',
-      '19:00 (Kids 03 • T1 & Muay Thai Kids • T2)',
-      '20:00 (Gi • Inter/Avançado)'
+      '07:00 (No-gi • Prof. Pedro Erick)',
+      '11:00 (Gi • Prof. Anilton)',
+      '12:00 (No-gi • Prof. Anilton)',
+      '16:00 (Luta-Livre • Prof. Pedro Erick)',
+      '20:00 (Gi Adulto Avançado • Prof. Anderson)'
     ]
   },
   {
@@ -1481,23 +1535,22 @@ export const loyaltyOfficialOperatingHours: AcademyOperatingDay[] = [
     dayLabel: 'sexta-feira',
     isOpen: true,
     slots: [
-      '07:00 (No Gi • Inic/Inter)',
-      '08:00 (Gi • Iniciante)',
-      '11:00 (Gi • Inter/Avançado)',
-      '12:00 (No Gi • Inic/Inter)',
-      '15:00 (Gi • Intermediário)',
-      '16:00 (No Gi • Inic/Inter)',
-      '17:00 (Kids 03 • T1 e T2 Competição)',
-      '18:00 (Kids 02 • T1 7 a 12 anos)',
-      '19:00 (Gi Inic & Muay Thai)',
-      '20:00 (Gi • Inter/Avançado)'
+      '07:00 (No-gi • Prof. Pedro Erick)',
+      '11:00 (Gi • Prof. Anilton)',
+      '12:00 (No-gi • Prof. Anilton)',
+      '15:00 (Gi • Prof. Dudu)',
+      '16:00 (Luta-Livre • Prof. Pedro Erick)',
+      '19:00 (Gi Adulto e Juvenil • Prof. Emanuel (Badel))',
+      '20:00 (Gi Adulto Avançado • Prof. Anderson)'
     ]
   },
   {
     dayOfWeek: 'sabado',
     dayLabel: 'sábado',
-    isOpen: false,
-    slots: []
+    isOpen: true,
+    slots: [
+      '09:00 (Open Mat • Treino Livre Geral)'
+    ]
   },
   {
     dayOfWeek: 'domingo',
@@ -1567,49 +1620,84 @@ export const mockRegisteredAcademies: RegisteredAcademy[] = [
     managerPasscode: 'Dono@2026',
     staffUsers: [
       {
-        id: 'prof_rodrigo_cavalo',
-        name: 'Mestre Rodrigo "Cavalo"',
-        email: 'rodrigo.cavalo@loyaltyjiujitsu.com.br',
+        id: 'prof_pedro_erick',
+        name: 'Prof. Pedro Erick',
+        email: 'pedro.erick@loyaltyjiujitsu.com.br',
+        role: 'PROFESSOR',
+        belt: 'black',
+        stripes: 2,
+        avatar: '/bjj_media/bjj_professor_mestre.jpg',
+        academyId: 'acad_loyalty_jiujitsu',
+        academyName: 'Loyalty Jiu-Jitsu',
+        password: 'Pedro@tatame1',
+        pinCode: '111111',
+        activeClassId: 'class_07am',
+        isClassActive: false,
+        scheduleNotes: 'Segunda a Sexta-feira: 07:00hs (No-gi) e 16:00hs (Luta-Livre)'
+      },
+      {
+        id: 'prof_anilton',
+        name: 'Prof. Anilton',
+        email: 'anilton@loyaltyjiujitsu.com.br',
+        role: 'PROFESSOR',
+        belt: 'black',
+        stripes: 2,
+        avatar: '/bjj_media/bjj_professor_mestre.jpg',
+        academyId: 'acad_loyalty_jiujitsu',
+        academyName: 'Loyalty Jiu-Jitsu',
+        password: 'Anilton@tatame1',
+        pinCode: '222222',
+        activeClassId: 'class_11am',
+        isClassActive: false,
+        scheduleNotes: 'Segunda a Sexta-feira: 11:00hs (Gi) e 12:00hs (No-gi)'
+      },
+      {
+        id: 'prof_dudu',
+        name: 'Prof. Dudu',
+        email: 'dudu@loyaltyjiujitsu.com.br',
+        role: 'PROFESSOR',
+        belt: 'black',
+        stripes: 1,
+        avatar: '/bjj_media/bjj_professor_mestre.jpg',
+        academyId: 'acad_loyalty_jiujitsu',
+        academyName: 'Loyalty Jiu-Jitsu',
+        password: 'Dudu@tatame1',
+        pinCode: '333333',
+        activeClassId: 'class_03pm',
+        isClassActive: false,
+        scheduleNotes: 'Segunda, Quarta e Sexta-feira: 15:00hs'
+      },
+      {
+        id: 'prof_emanuel_badel',
+        name: 'Prof. Emanuel (Badel)',
+        email: 'emanuel.badel@loyaltyjiujitsu.com.br',
+        role: 'PROFESSOR',
+        belt: 'black',
+        stripes: 2,
+        avatar: '/bjj_media/bjj_professor_mestre.jpg',
+        academyId: 'acad_loyalty_jiujitsu',
+        academyName: 'Loyalty Jiu-Jitsu',
+        password: 'Badel@tatame1',
+        pinCode: '444444',
+        activeClassId: 'class_07pm',
+        isClassActive: false,
+        scheduleNotes: 'Segunda, Quarta e Sexta-feira: 19:00hs (Gi Adulto e Juvenil)'
+      },
+      {
+        id: 'prof_anderson',
+        name: 'Prof. Anderson',
+        email: 'anderson@loyaltyjiujitsu.com.br',
         role: 'PROFESSOR',
         belt: 'black',
         stripes: 3,
         avatar: '/bjj_media/bjj_professor_mestre.jpg',
         academyId: 'acad_loyalty_jiujitsu',
         academyName: 'Loyalty Jiu-Jitsu',
-        password: 'Cavalo@tatame1',
-        pinCode: '333333',
-        activeClassId: 'class_02',
-        isClassActive: false
-      },
-      {
-        id: 'prof_beatriz_lima',
-        name: 'Profª Beatriz Lima',
-        email: 'beatriz.lima@loyaltyjiujitsu.com.br',
-        role: 'PROFESSOR',
-        belt: 'brown',
-        stripes: 1,
-        avatar: '/bjj_media/bjj_student_female.jpg',
-        academyId: 'acad_loyalty_jiujitsu',
-        academyName: 'Loyalty Jiu-Jitsu',
-        password: 'Beatriz@kids2',
-        pinCode: '222222',
-        activeClassId: 'class_01',
-        isClassActive: false
-      },
-      {
-        id: 'prof_alexandre_pecanha',
-        name: 'Prof. Alexandre Peçanha',
-        email: 'alexandre.pecanha@loyaltyjiujitsu.com.br',
-        role: 'PROFESSOR',
-        belt: 'black',
-        stripes: 1,
-        avatar: '/bjj_media/bjj_professor_mestre.jpg',
-        academyId: 'acad_loyalty_jiujitsu',
-        academyName: 'Loyalty Jiu-Jitsu',
-        password: 'Pecanha@bjj1',
-        pinCode: '111111',
-        activeClassId: 'class_03',
-        isClassActive: false
+        password: 'Anderson@tatame1',
+        pinCode: '555555',
+        activeClassId: 'class_08pm',
+        isClassActive: false,
+        scheduleNotes: 'Segunda a Sexta-feira: 20:00hs (Gi Adulto Avançado)'
       }
     ],
     pricingPlans: [

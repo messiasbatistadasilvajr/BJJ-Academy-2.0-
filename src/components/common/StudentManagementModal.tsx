@@ -5,14 +5,15 @@ import {
   Sparkles, Cloud, RefreshCw, AlertCircle, Zap, 
   Lock, UserCheck, UserX, ArrowUpRight, Baby,
   HeartHandshake, FileText, Calendar, ShieldCheck,
-  Printer, Send, Eye, FileCheck, Upload, Camera, HardDrive
+  Printer, Send, Eye, FileCheck, Upload, Camera, HardDrive,
+  Maximize2, Minimize2, Check, MapPin
 } from 'lucide-react';
 import { StudentProfile, BeltColor, RegisteredAcademy, SaasPlanTier, SAAS_PLAN_DETAILS, SAAS_PLAN_LIMITS } from '../../types';
 import { BeltBadge } from './BeltBadge';
 import { saveStudentToFirestore, removeStudentFromFirestore } from '../../firebase/firestoreService';
 import { StudentEnrollmentService } from '../../services/studentEnrollmentService';
 import { PlanUpgradeModal } from './PlanUpgradeModal';
-import { validateCPF, formatCPF, formatPhone } from '../../utils/brazilianDocValidators';
+import { validateCPF, formatCPF, formatPhone, formatCEP, fetchAddressByCEP } from '../../utils/brazilianDocValidators';
 import { LoyaltyOfficialContractView, ContractStudentData } from './LoyaltyOfficialContractView';
 import { sendLoyaltyContractWhatsApp } from '../../utils/whatsappHelper';
 import { R2StorageClient } from '../../services/r2StorageClient';
@@ -29,6 +30,7 @@ interface StudentManagementModalProps {
   onUpdateAcademy?: (academy: RegisteredAcademy) => void;
   initialRegistering?: boolean;
   onOpenR2Backup?: () => void;
+  onOpenFullPageRegistration?: () => void;
 }
 
 export const StudentManagementModal: React.FC<StudentManagementModalProps> = ({
@@ -43,6 +45,7 @@ export const StudentManagementModal: React.FC<StudentManagementModalProps> = ({
   onUpdateAcademy,
   initialRegistering = false,
   onOpenR2Backup,
+  onOpenFullPageRegistration,
 }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [isRegistering, setIsRegistering] = useState(initialRegistering);
@@ -122,6 +125,31 @@ export const StudentManagementModal: React.FC<StudentManagementModalProps> = ({
   const [monthlyFee, setMonthlyFee] = useState<number | ''>('');
   const [dueDay, setDueDay] = useState<number | ''>('');
   const [autoSendZapOnSave, setAutoSendZapOnSave] = useState<boolean>(true);
+
+  const [isModalFullscreen, setIsModalFullscreen] = useState<boolean>(false);
+  const [isSearchingCep, setIsSearchingCep] = useState<boolean>(false);
+
+  const handleCepChange = async (val: string) => {
+    const formatted = formatCEP(val);
+    setCep(formatted);
+    const cleanNumbers = formatted.replace(/\D/g, '');
+    if (cleanNumbers.length === 8) {
+      setIsSearchingCep(true);
+      try {
+        const addr = await fetchAddressByCEP(formatted);
+        if (addr && !addr.erro) {
+          if (addr.logradouro) setAddress(addr.logradouro);
+          if (addr.bairro) setNeighborhood(addr.bairro);
+          if (addr.localidade) setCity(addr.localidade);
+          if (addr.uf) setState(addr.uf);
+        }
+      } catch (err) {
+        console.warn('Erro ao consultar CEP:', err);
+      } finally {
+        setIsSearchingCep(false);
+      }
+    }
+  };
 
   // Sync initialRegistering prop when modal opens
   useEffect(() => {
@@ -392,12 +420,12 @@ export const StudentManagementModal: React.FC<StudentManagementModalProps> = ({
   return (
     <>
       <div 
-        className="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4"
+        className="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-3 sm:p-6"
         id="modal-student-management"
       >
-        <div className={`bg-slate-900 border border-slate-800 rounded-3xl w-full ${contractSubTab === 'contract' ? 'max-w-5xl' : 'max-w-2xl'} transition-all duration-300 overflow-hidden shadow-2xl flex flex-col max-h-[92vh]`}>
+        <div className={`bg-slate-900 border border-slate-800 rounded-3xl w-full ${isRegistering || contractSubTab === 'contract' ? 'max-w-5xl xl:max-w-6xl' : 'max-w-3xl xl:max-w-4xl'} transition-all duration-300 overflow-hidden shadow-2xl flex flex-col max-h-[95vh]`}>
           {/* Header */}
-          <div className="px-6 py-4 border-b border-slate-800 flex items-center justify-between bg-slate-900/90 shrink-0">
+          <div className="px-6 py-4.5 border-b border-slate-800 flex items-center justify-between bg-slate-900/90 shrink-0">
             <div className="flex items-center gap-3.5">
               <div className="p-3 rounded-2xl bg-blue-500/10 text-blue-400 border border-blue-500/20 shadow-sm">
                 <Users size={24} />
@@ -417,12 +445,25 @@ export const StudentManagementModal: React.FC<StudentManagementModalProps> = ({
                 </p>
               </div>
             </div>
-            <button 
-              onClick={onClose}
-              className="p-2 text-slate-400 hover:text-white rounded-xl hover:bg-slate-800 transition-colors"
-            >
-              <X size={18} />
-            </button>
+            <div className="flex items-center gap-2">
+              {onOpenFullPageRegistration && (
+                <button
+                  type="button"
+                  onClick={onOpenFullPageRegistration}
+                  className="px-3 py-1.5 rounded-xl bg-blue-600/30 hover:bg-blue-600 text-blue-300 hover:text-white border border-blue-500/40 text-xs font-bold transition flex items-center gap-1.5 cursor-pointer shadow-sm"
+                  title="Abrir Cadastro de Aluno em Página Inteira Dedicada"
+                >
+                  <Maximize2 size={14} />
+                  <span className="hidden sm:inline">Página Completa</span>
+                </button>
+              )}
+              <button 
+                onClick={onClose}
+                className="p-2 text-slate-400 hover:text-white rounded-xl hover:bg-slate-800 transition-colors"
+              >
+                <X size={18} />
+              </button>
+            </div>
           </div>
 
           {/* Database Tier SaaS Plan Capacity Bar */}
@@ -517,6 +558,18 @@ export const StudentManagementModal: React.FC<StudentManagementModalProps> = ({
                 <Cloud size={14} className="text-amber-400" />
                 <span className="hidden sm:inline">Mídias R2 & Backup</span>
                 <span className="text-[9px] font-mono px-1.5 py-0.2 rounded-full bg-amber-500/25 text-amber-200">10 GB Free</span>
+              </button>
+            )}
+
+            {onOpenFullPageRegistration && (
+              <button
+                type="button"
+                onClick={onOpenFullPageRegistration}
+                className="px-3.5 py-2 rounded-xl text-xs font-black transition flex items-center gap-1.5 shrink-0 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white shadow-lg shadow-blue-900/40 cursor-pointer"
+                title="Abrir em Página Completa sem nada impedindo a visualização"
+              >
+                <Maximize2 size={14} />
+                <span>Página Completa</span>
               </button>
             )}
 
@@ -680,9 +733,9 @@ export const StudentManagementModal: React.FC<StudentManagementModalProps> = ({
                   </div>
                 ) : (
                   /* TAB 1: FORMULÁRIO DE CADASTRO COM BINDING EM TEMPO REAL */
-                  <form onSubmit={handleCreateStudent} className="bg-slate-950/60 border border-slate-800 rounded-2xl p-4 space-y-4">
+                  <form onSubmit={handleCreateStudent} className="bg-slate-950/60 border border-slate-800 rounded-3xl p-5 sm:p-7 space-y-6">
                     {/* Banner Informativo de Contrato Conectado */}
-                    <div className="p-3 rounded-xl bg-amber-950/30 border border-amber-500/30 flex items-center justify-between gap-2.5 text-xs">
+                    <div className="p-3.5 rounded-2xl bg-amber-950/30 border border-amber-500/30 flex items-center justify-between gap-3 text-xs">
                       <div className="flex items-center gap-2">
                         <FileText className="w-4 h-4 text-amber-400 shrink-0" />
                         <span className="text-slate-300">
@@ -696,14 +749,14 @@ export const StudentManagementModal: React.FC<StudentManagementModalProps> = ({
                       <button
                         type="button"
                         onClick={() => setContractSubTab('contract')}
-                        className="px-2.5 py-1 rounded-lg bg-amber-500/20 hover:bg-amber-500/30 border border-amber-500/40 text-amber-300 font-bold text-[11px] flex items-center gap-1 shrink-0 cursor-pointer"
+                        className="px-3 py-1.5 rounded-xl bg-amber-500/20 hover:bg-amber-500/30 border border-amber-500/40 text-amber-300 font-bold text-xs flex items-center gap-1.5 shrink-0 cursor-pointer"
                       >
-                        <Eye size={12} />
+                        <Eye size={13} />
                         <span>Ver Contrato (PDF)</span>
                       </button>
                     </div>
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-5 text-xs">
                   {/* Foto do Aluno com Armazenamento Externo no Cloudflare R2 */}
                   <div className="sm:col-span-2 p-3.5 rounded-2xl bg-gradient-to-r from-amber-950/40 via-slate-900 to-slate-900 border border-amber-500/40 flex items-center justify-between gap-3 flex-wrap">
                     <div className="flex items-center gap-3">

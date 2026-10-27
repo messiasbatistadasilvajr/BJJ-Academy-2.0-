@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { 
   Smartphone, Monitor, Layers, Download, Wifi, 
-  RotateCcw, Sparkles, Shield, User, Users, GraduationCap, Briefcase, Crown,
+  RotateCcw, Sparkles, Shield, User, Users, UserPlus, GraduationCap, Briefcase, Crown,
   Timer, BookOpen, Tablet, Award, ShoppingBag, FileText, Trophy, Volume2, DollarSign, Building2,
   Database, Cloud, Key, ChevronDown, Menu, X, Check, ArrowRight, Maximize2, Minimize2, SlidersHorizontal, Code,
-  TrendingDown, ShieldCheck, Package
+  TrendingDown, ShieldCheck, Package, Share2
 } from 'lucide-react';
 import { UserRole, isCeoRole, isSuperAdminOrCeoRole, RegisteredAcademy, canAccessExpenseManagement, canAccessSuperAdmin } from '../../types';
 import { NativeStatusBar } from './NativeStatusBar';
@@ -132,6 +132,7 @@ export const DeviceFrame: React.FC<DeviceFrameProps> = ({
     { id: 'teacher', label: 'Professor Tatame', icon: GraduationCap, color: 'text-emerald-400' },
     { id: 'student', label: 'Aluno', icon: User, color: 'text-red-400' },
     { id: 'parent', label: 'Portal Responsável', icon: Users, color: 'text-blue-400' },
+    { id: 'student_registration', label: 'Cadastrar Aluno', icon: UserPlus, color: 'text-blue-400', badge: 'MATRÍCULA' },
     { id: 'academy_registration', label: 'Cadastrar Academia', icon: Building2, color: 'text-amber-400', badge: 'FILIAIS' },
     { id: 'expense_management', label: 'Gestão de Despesas', icon: TrendingDown, color: 'text-rose-400', badge: 'DESPESAS' },
   ];
@@ -165,8 +166,8 @@ export const DeviceFrame: React.FC<DeviceFrameProps> = ({
         {/* Imagem Fixa Global de Fundo: Dois Lutadores de Jiu-Jitsu (100% Visível no Topo) */}
         <BJJFixedBackground opacity={0.48} className="fixed" />
 
-        {/* Responsive Mobile Container: 100% width on phone, neatly centered on tablet/desktop */}
-        <div className="w-full max-w-lg h-full flex flex-col relative z-20 overflow-hidden shadow-2xl bg-slate-950/20 backdrop-blur-[0.5px] sm:border-x sm:border-slate-800/80">
+        {/* Responsive Mobile Container: 100% width on phone, generously wide on tablet/desktop */}
+        <div className="w-full max-w-xl md:max-w-3xl lg:max-w-5xl xl:max-w-6xl h-full flex flex-col relative z-20 overflow-hidden shadow-2xl bg-slate-950/20 backdrop-blur-[0.5px] sm:border-x sm:border-slate-800/80">
           {/* Enhanced Mobile Top App Bar com Transparência de Vidro (Imagem 100% Visível no Topo) e Fontes Ampliadas */}
           <header className="h-15 shrink-0 px-3 sm:px-4 bg-slate-950/40 border-b border-white/10 backdrop-blur-md flex items-center justify-between gap-2.5 z-30 shadow-lg">
             {/* Logo + Academy selector pill */}
@@ -269,7 +270,7 @@ export const DeviceFrame: React.FC<DeviceFrameProps> = ({
             onClick={() => setIsMobileRolesOpen(false)}
           >
             <div 
-              className="w-full max-w-md bg-slate-900 border border-slate-800 rounded-t-3xl sm:rounded-3xl p-5 shadow-2xl max-h-[85vh] overflow-y-auto no-scrollbar"
+              className="w-full max-w-md bg-slate-900 border border-slate-800 rounded-t-3xl sm:rounded-3xl p-5 pb-8 shadow-2xl max-h-[85vh] overflow-y-auto no-scrollbar"
               onClick={(e) => e.stopPropagation()}
             >
               <div className="flex items-center justify-between pb-3 border-b border-slate-800 mb-4">
@@ -322,6 +323,7 @@ export const DeviceFrame: React.FC<DeviceFrameProps> = ({
                             {r.id === 'teacher' && 'Chamada no Tatame, Rola Seguro e Exame de Faixa'}
                             {r.id === 'student' && 'Aulas, Check-in, PIX, Frequência e Graduação'}
                             {r.id === 'parent' && 'Portal do Responsável com Filhos e Dependentes'}
+                            {r.id === 'student_registration' && 'Ficha completa de matrícula, dados civis, anamnese e contrato'}
                             {r.id === 'academy_registration' && 'Cadastrar e gerenciar filiais da rede'}
                           </div>
                         </div>
@@ -350,7 +352,7 @@ export const DeviceFrame: React.FC<DeviceFrameProps> = ({
             onClick={() => setIsMobileModulesOpen(false)}
           >
             <div 
-              className="w-full max-w-md bg-slate-900 border border-slate-800 rounded-t-3xl sm:rounded-3xl p-5 shadow-2xl max-h-[85vh] overflow-y-auto no-scrollbar"
+              className="w-full max-w-md bg-slate-900 border border-slate-800 rounded-t-3xl sm:rounded-3xl p-5 pb-8 shadow-2xl max-h-[85vh] overflow-y-auto no-scrollbar"
               onClick={(e) => e.stopPropagation()}
             >
               <div className="flex items-center justify-between pb-3 border-b border-slate-800 mb-4">
@@ -572,7 +574,7 @@ export const DeviceFrame: React.FC<DeviceFrameProps> = ({
             onClick={() => setIsMobileBranchOpen(false)}
           >
             <div 
-              className="w-full max-w-md bg-slate-900 border border-slate-800 rounded-t-3xl sm:rounded-3xl p-5 shadow-2xl max-h-[85vh] overflow-y-auto no-scrollbar"
+              className="w-full max-w-md bg-slate-900 border border-slate-800 rounded-t-3xl sm:rounded-3xl p-5 pb-8 shadow-2xl max-h-[85vh] overflow-y-auto no-scrollbar"
               onClick={(e) => e.stopPropagation()}
             >
               <div className="flex items-center justify-between pb-3 border-b border-slate-800 mb-4">
@@ -661,7 +663,7 @@ export const DeviceFrame: React.FC<DeviceFrameProps> = ({
             onClick={() => setIsMobileMenuOpen(false)}
           >
             <div 
-              className="w-full max-w-md bg-slate-900 border border-slate-800 rounded-t-3xl sm:rounded-3xl p-5 shadow-2xl max-h-[85vh] overflow-y-auto no-scrollbar"
+              className="w-full max-w-md bg-slate-900 border border-slate-800 rounded-t-3xl sm:rounded-3xl p-5 pb-8 shadow-2xl max-h-[85vh] overflow-y-auto no-scrollbar"
               onClick={(e) => e.stopPropagation()}
             >
               <div className="flex items-center justify-between pb-3 border-b border-slate-800 mb-4">
@@ -845,6 +847,21 @@ export const DeviceFrame: React.FC<DeviceFrameProps> = ({
                     </span>
                   </button>
                 )}
+
+                {/* Compartilhar App com Clientes (Link sem Erro 44) */}
+                <button
+                  onClick={() => {
+                    setIsMobileMenuOpen(false);
+                    onOpenPWAInstall();
+                  }}
+                  className="w-full flex items-center justify-between p-3 rounded-2xl bg-gradient-to-r from-emerald-600 to-green-700 text-white text-xs font-bold shadow-md cursor-pointer"
+                >
+                  <div className="flex items-center gap-2.5">
+                    <Share2 className="w-4 h-4 text-emerald-200" />
+                    <span>📲 Enviar App aos Clientes (Sem Erro 44)</span>
+                  </div>
+                  <ArrowRight className="w-4 h-4" />
+                </button>
 
                 {/* PWA Install */}
                 <button
@@ -1083,6 +1100,16 @@ export const DeviceFrame: React.FC<DeviceFrameProps> = ({
             <span className="hidden md:inline">Capacitor</span>
           </button>
 
+          {/* Compartilhar com Clientes (Link sem Erro 44) */}
+          <button
+            onClick={onOpenPWAInstall}
+            className="px-2.5 py-1.5 rounded-xl bg-gradient-to-r from-emerald-600 to-green-700 hover:from-emerald-500 hover:to-green-600 text-white text-xs font-bold flex items-center gap-1 shadow-md shadow-emerald-950 transition cursor-pointer"
+            title="Enviar link sem Erro 44 para clientes e alunos baixarem"
+          >
+            <Share2 className="w-3.5 h-3.5 text-emerald-200" />
+            <span className="hidden md:inline">Enviar aos Clientes</span>
+          </button>
+
           {/* PWA Install Button */}
           <button
             onClick={onOpenPWAInstall}
@@ -1263,7 +1290,7 @@ export const DeviceFrame: React.FC<DeviceFrameProps> = ({
       <main className="w-full flex justify-center items-center flex-1 py-1">
         {isDesktopView ? (
           // Expanded Desktop Layout (for Managers / Front Desk / Fullscreen)
-          <div className="w-full max-w-5xl h-[calc(100vh-175px)] min-h-[580px] bg-slate-950/40 border border-slate-700/70 rounded-3xl overflow-hidden shadow-2xl flex flex-col relative backdrop-blur-md">
+          <div className="w-full max-w-7xl h-[calc(100vh-140px)] min-h-[640px] bg-slate-950/40 border border-slate-700/70 rounded-3xl overflow-hidden shadow-2xl flex flex-col relative backdrop-blur-md">
             <div className="h-11 px-5 bg-slate-950/70 backdrop-blur-md border-b border-white/10 flex items-center justify-between text-xs text-slate-300 relative z-20">
               <div className="flex items-center gap-2.5">
                 <span className="w-3.5 h-3.5 rounded-full bg-red-500/80 inline-block" />

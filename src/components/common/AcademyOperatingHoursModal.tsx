@@ -26,7 +26,7 @@ export const AcademyOperatingHoursModal: React.FC<AcademyOperatingHoursModalProp
   if (!isOpen) return null;
 
   const isLoyaltyAcademy = academy.id === 'acad_loyalty_jiujitsu' || academy.name?.toLowerCase().includes('loyalty');
-  const [activeTab, setActiveTab] = useState<'adultos' | 'kids' | 'dia_a_dia'>('adultos');
+  const [activeTab, setActiveTab] = useState<'adultos' | 'kids' | 'professores' | 'dia_a_dia'>('adultos');
 
   const hours: AcademyOperatingDay[] = isLoyaltyAcademy
     ? loyaltyOfficialOperatingHours
@@ -82,7 +82,17 @@ export const AcademyOperatingHoursModal: React.FC<AcademyOperatingHoursModalProp
                     : 'bg-zinc-900 text-zinc-300 hover:bg-zinc-800'
                 }`}
               >
-                <span>🧒 Kids (T1 & T2)</span>
+                <span>🧒 Kids</span>
+              </button>
+              <button
+                onClick={() => setActiveTab('professores')}
+                className={`px-3 py-1.5 rounded-xl text-xs font-black uppercase tracking-wider transition whitespace-nowrap flex items-center gap-1.5 ${
+                  activeTab === 'professores'
+                    ? 'bg-amber-400 text-black shadow font-black'
+                    : 'bg-zinc-900 text-amber-300 hover:bg-zinc-800'
+                }`}
+              >
+                <span>👨‍🏫 Professores</span>
               </button>
               <button
                 onClick={() => setActiveTab('dia_a_dia')}
@@ -181,7 +191,7 @@ export const AcademyOperatingHoursModal: React.FC<AcademyOperatingHoursModalProp
                         </span>
                       </div>
 
-                      {/* Modalidade e Nível */}
+                      {/* Modalidade e Nível + Professor */}
                       <div className="col-span-6 text-left pr-2">
                         <div className="text-sm sm:text-base font-black text-white leading-tight">
                           {row.modality}
@@ -189,6 +199,11 @@ export const AcademyOperatingHoursModal: React.FC<AcademyOperatingHoursModalProp
                         {row.level && (
                           <div className="text-[11px] sm:text-xs text-slate-300 font-medium mt-0.5 leading-snug">
                             {row.level}
+                          </div>
+                        )}
+                        {row.instructor && (
+                          <div className="inline-flex items-center gap-1.5 mt-1 px-2 py-0.5 rounded-md bg-amber-500/15 border border-amber-500/30 text-amber-300 text-[10px] sm:text-xs font-black">
+                            <span>🥋 {row.instructor}</span>
                           </div>
                         )}
                       </div>
@@ -407,7 +422,231 @@ export const AcademyOperatingHoursModal: React.FC<AcademyOperatingHoursModalProp
           )}
 
           {/* ============================================================== */}
-          {/* 3. VISÃO DIA A DIA (OU VISÃO PADRÃO PARA OUTRAS ACADEMIAS)      */}
+          {/* 3. QUADRO OFICIAL: PROFESSORES LOYALTY JIU-JITSU               */}
+          {/* Corpo docente e horários de aula discriminados                 */}
+          {/* ============================================================== */}
+          {isLoyaltyAcademy && activeTab === 'professores' && (
+            <div className="relative z-10 max-w-lg mx-auto space-y-4 py-2">
+              <div className="flex flex-col items-center justify-center text-center space-y-1">
+                <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-500/20 border border-amber-500/40 text-amber-300 text-xs font-black uppercase tracking-wider">
+                  <span>🥋 Corpo Docente Oficial</span>
+                </div>
+                <h2 className="text-xl sm:text-2xl font-black text-white tracking-wide uppercase">
+                  Professores & Horários
+                </h2>
+                <p className="text-xs text-zinc-400">
+                  Grade de instrutores responsáveis pelo tatame • Loyalty Jiu-Jitsu
+                </p>
+              </div>
+
+              {/* Professores Grid */}
+              <div className="space-y-3 pt-2">
+                {/* 1. Prof. Pedro Erick */}
+                <div className="p-3.5 rounded-2xl bg-zinc-950 border border-amber-500/30 hover:border-amber-400/60 transition shadow-lg">
+                  <div className="flex items-center justify-between gap-2 border-b border-zinc-800 pb-2 mb-2">
+                    <div className="flex items-center gap-2.5">
+                      <div className="w-10 h-10 rounded-xl bg-amber-500/20 border border-amber-500/40 flex items-center justify-center font-black text-amber-300 text-base">
+                        PE
+                      </div>
+                      <div>
+                        <h4 className="font-black text-white text-sm sm:text-base leading-tight">
+                          Professor: Pedro Erick
+                        </h4>
+                        <span className="text-[10px] text-amber-400 font-bold uppercase tracking-wider">
+                          Instrutor Oficial • No-Gi & Luta-Livre
+                        </span>
+                      </div>
+                    </div>
+                    <span className="px-2.5 py-1 rounded-lg bg-zinc-900 border border-zinc-800 text-zinc-300 text-[10px] sm:text-xs font-bold">
+                      Seg a Sex
+                    </span>
+                  </div>
+                  <div className="space-y-1.5 text-xs">
+                    <div className="flex items-center justify-between bg-zinc-900/80 px-2.5 py-1.5 rounded-lg border border-zinc-850">
+                      <span className="text-zinc-300 font-medium">Dias de Aula:</span>
+                      <strong className="text-white">Segunda a Sexta-feira</strong>
+                    </div>
+                    <div className="grid grid-cols-2 gap-1.5 pt-0.5">
+                      <div className="bg-zinc-900 px-2.5 py-1.5 rounded-lg border border-zinc-800">
+                        <span className="text-[10px] text-zinc-400 block font-mono">07:00hs</span>
+                        <strong className="text-white text-xs">No-gi</strong>
+                      </div>
+                      <div className="bg-zinc-900 px-2.5 py-1.5 rounded-lg border border-zinc-800">
+                        <span className="text-[10px] text-zinc-400 block font-mono">16:00hs</span>
+                        <strong className="text-amber-300 text-xs">Luta-Livre</strong>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* 2. Prof. Anilton */}
+                <div className="p-3.5 rounded-2xl bg-zinc-950 border border-amber-500/30 hover:border-amber-400/60 transition shadow-lg">
+                  <div className="flex items-center justify-between gap-2 border-b border-zinc-800 pb-2 mb-2">
+                    <div className="flex items-center gap-2.5">
+                      <div className="w-10 h-10 rounded-xl bg-blue-500/20 border border-blue-500/40 flex items-center justify-center font-black text-blue-300 text-base">
+                        AN
+                      </div>
+                      <div>
+                        <h4 className="font-black text-white text-sm sm:text-base leading-tight">
+                          Professor: Anilton
+                        </h4>
+                        <span className="text-[10px] text-blue-400 font-bold uppercase tracking-wider">
+                          Instrutor Oficial • Gi & No-Gi
+                        </span>
+                      </div>
+                    </div>
+                    <span className="px-2.5 py-1 rounded-lg bg-zinc-900 border border-zinc-800 text-zinc-300 text-[10px] sm:text-xs font-bold">
+                      Seg a Sex
+                    </span>
+                  </div>
+                  <div className="space-y-1.5 text-xs">
+                    <div className="flex items-center justify-between bg-zinc-900/80 px-2.5 py-1.5 rounded-lg border border-zinc-850">
+                      <span className="text-zinc-300 font-medium">Dias de Aula:</span>
+                      <strong className="text-white">Segunda a Sexta-feira</strong>
+                    </div>
+                    <div className="grid grid-cols-2 gap-1.5 pt-0.5">
+                      <div className="bg-zinc-900 px-2.5 py-1.5 rounded-lg border border-zinc-800">
+                        <span className="text-[10px] text-zinc-400 block font-mono">11:00hs</span>
+                        <strong className="text-white text-xs">Gi (Com Kimono)</strong>
+                      </div>
+                      <div className="bg-zinc-900 px-2.5 py-1.5 rounded-lg border border-zinc-800">
+                        <span className="text-[10px] text-zinc-400 block font-mono">12:00hs</span>
+                        <strong className="text-white text-xs">No-gi (Sem Kimono)</strong>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* 3. Prof. Dudu */}
+                <div className="p-3.5 rounded-2xl bg-zinc-950 border border-amber-500/30 hover:border-amber-400/60 transition shadow-lg">
+                  <div className="flex items-center justify-between gap-2 border-b border-zinc-800 pb-2 mb-2">
+                    <div className="flex items-center gap-2.5">
+                      <div className="w-10 h-10 rounded-xl bg-emerald-500/20 border border-emerald-500/40 flex items-center justify-center font-black text-emerald-300 text-base">
+                        DU
+                      </div>
+                      <div>
+                        <h4 className="font-black text-white text-sm sm:text-base leading-tight">
+                          Professor: Dudu
+                        </h4>
+                        <span className="text-[10px] text-emerald-400 font-bold uppercase tracking-wider">
+                          Instrutor Oficial • Gi
+                        </span>
+                      </div>
+                    </div>
+                    <span className="px-2.5 py-1 rounded-lg bg-zinc-900 border border-zinc-800 text-zinc-300 text-[10px] sm:text-xs font-bold">
+                      Seg / Qua / Sex
+                    </span>
+                  </div>
+                  <div className="space-y-1.5 text-xs">
+                    <div className="flex items-center justify-between bg-zinc-900/80 px-2.5 py-1.5 rounded-lg border border-zinc-850">
+                      <span className="text-zinc-300 font-medium">Dias de Aula:</span>
+                      <strong className="text-white">Segunda, Quarta e Sexta-feira</strong>
+                    </div>
+                    <div className="bg-zinc-900 px-2.5 py-1.5 rounded-lg border border-zinc-800 flex items-center justify-between">
+                      <span className="text-zinc-300">Horário:</span>
+                      <span className="font-mono font-bold text-white text-sm">15:00hs</span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* 4. Prof. Emanuel (Badel) */}
+                <div className="p-3.5 rounded-2xl bg-zinc-950 border border-amber-500/30 hover:border-amber-400/60 transition shadow-lg">
+                  <div className="flex items-center justify-between gap-2 border-b border-zinc-800 pb-2 mb-2">
+                    <div className="flex items-center gap-2.5">
+                      <div className="w-10 h-10 rounded-xl bg-purple-500/20 border border-purple-500/40 flex items-center justify-center font-black text-purple-300 text-base">
+                        EB
+                      </div>
+                      <div>
+                        <h4 className="font-black text-white text-sm sm:text-base leading-tight">
+                          Professor: Emanuel (Badel)
+                        </h4>
+                        <span className="text-[10px] text-purple-400 font-bold uppercase tracking-wider">
+                          Instrutor Oficial • Adulto e Juvenil
+                        </span>
+                      </div>
+                    </div>
+                    <span className="px-2.5 py-1 rounded-lg bg-zinc-900 border border-zinc-800 text-zinc-300 text-[10px] sm:text-xs font-bold">
+                      Seg / Qua / Sex
+                    </span>
+                  </div>
+                  <div className="space-y-1.5 text-xs">
+                    <div className="flex items-center justify-between bg-zinc-900/80 px-2.5 py-1.5 rounded-lg border border-zinc-850">
+                      <span className="text-zinc-300 font-medium">Dias de Aula:</span>
+                      <strong className="text-white">Segunda, Quarta e Sexta-feira</strong>
+                    </div>
+                    <div className="bg-zinc-900 px-2.5 py-1.5 rounded-lg border border-zinc-800 flex items-center justify-between">
+                      <div>
+                        <span className="text-zinc-300 block">Horário:</span>
+                        <span className="text-[11px] text-purple-300 font-medium">Gi • Adulto e Juvenil</span>
+                      </div>
+                      <span className="font-mono font-bold text-white text-sm">19:00hs</span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* 5. Prof. Anderson */}
+                <div className="p-3.5 rounded-2xl bg-zinc-950 border border-amber-500/30 hover:border-amber-400/60 transition shadow-lg">
+                  <div className="flex items-center justify-between gap-2 border-b border-zinc-800 pb-2 mb-2">
+                    <div className="flex items-center gap-2.5">
+                      <div className="w-10 h-10 rounded-xl bg-red-500/20 border border-red-500/40 flex items-center justify-center font-black text-red-300 text-base">
+                        AD
+                      </div>
+                      <div>
+                        <h4 className="font-black text-white text-sm sm:text-base leading-tight">
+                          Professor: Anderson
+                        </h4>
+                        <span className="text-[10px] text-red-400 font-bold uppercase tracking-wider">
+                          Instrutor Oficial • Adulto Avançado
+                        </span>
+                      </div>
+                    </div>
+                    <span className="px-2.5 py-1 rounded-lg bg-zinc-900 border border-zinc-800 text-zinc-300 text-[10px] sm:text-xs font-bold">
+                      Seg a Sex
+                    </span>
+                  </div>
+                  <div className="space-y-1.5 text-xs">
+                    <div className="flex items-center justify-between bg-zinc-900/80 px-2.5 py-1.5 rounded-lg border border-zinc-850">
+                      <span className="text-zinc-300 font-medium">Dias de Aula:</span>
+                      <strong className="text-white">Segunda a Sexta-feira</strong>
+                    </div>
+                    <div className="bg-zinc-900 px-2.5 py-1.5 rounded-lg border border-zinc-800 flex items-center justify-between">
+                      <div>
+                        <span className="text-zinc-300 block">Horário:</span>
+                        <span className="text-[11px] text-amber-300 font-medium">Gi • Adulto Avançado</span>
+                      </div>
+                      <span className="font-mono font-bold text-white text-sm">20:00hs</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Poster Footer (WhatsApp & Instagram) */}
+              <div className="pt-4 border-t border-white/30 flex items-center justify-center gap-3 sm:gap-6 text-xs sm:text-sm text-white font-bold">
+                <a
+                  href="https://wa.me/5585991362789"
+                  target="_blank"
+                  rel="noreferrer"
+                  className="flex items-center gap-1.5 hover:text-emerald-400 transition-colors"
+                >
+                  <MessageCircle className="w-4 h-4 text-emerald-400" />
+                  <span>(85) 9-9136-2789</span>
+                </a>
+                <span className="text-white/40">|</span>
+                <a
+                  href="https://instagram.com/loyaltyjiujitsu"
+                  target="_blank"
+                  rel="noreferrer"
+                  className="flex items-center gap-1.5 hover:text-pink-400 transition-colors"
+                >
+                  <Instagram className="w-4 h-4 text-pink-400" />
+                  <span>@loyaltyjiujitsu</span>
+                </a>
+              </div>
+            </div>
+          )}
+
+          {/* ============================================================== */}
+          {/* 4. VISÃO DIA A DIA (OU VISÃO PADRÃO PARA OUTRAS ACADEMIAS)      */}
           {/* ============================================================== */}
           {(!isLoyaltyAcademy || activeTab === 'dia_a_dia') && (
             <div className="space-y-3 max-w-lg mx-auto py-2">

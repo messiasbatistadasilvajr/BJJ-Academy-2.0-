@@ -4,7 +4,7 @@ import {
   Users, Award, Calendar, DollarSign, MessageSquare, 
   CheckCircle2, AlertCircle, QrCode, ArrowUpRight, 
   ShieldCheck, Heart, Clock, BellRing, Sparkles, Send,
-  FileText, ShoppingBag, Trophy, BookOpen, Star
+  FileText, ShoppingBag, Trophy, BookOpen, Star, User
 } from 'lucide-react';
 import { DependentStudent, Invoice, Announcement, ChatMessage } from '../../types';
 import { BeltBadge } from '../common/BeltBadge';
@@ -23,6 +23,7 @@ interface ParentViewProps {
   onOpenTournaments?: () => void;
   onOpenBeltGuide?: () => void;
   onOpenKidsBehavioralFeed?: () => void;
+  onSwitchToStudentView?: (childId?: string) => void;
 }
 
 export const ParentView: React.FC<ParentViewProps> = ({
@@ -38,6 +39,7 @@ export const ParentView: React.FC<ParentViewProps> = ({
   onOpenTournaments,
   onOpenBeltGuide,
   onOpenKidsBehavioralFeed,
+  onSwitchToStudentView,
 }) => {
   const [selectedChildIndex, setSelectedChildIndex] = useState<number>(0);
   const [activeTab, setActiveTab] = useState<'geral' | 'frequencia' | 'financeiro' | 'mensagens'>('geral');
@@ -72,7 +74,7 @@ export const ParentView: React.FC<ParentViewProps> = ({
   }
 
   return (
-    <div className="flex flex-col h-full bg-slate-950/30 backdrop-blur-[0.5px] text-slate-100 overflow-y-auto pb-20 no-scrollbar">
+    <div className="flex flex-col h-full bg-slate-950/30 backdrop-blur-[0.5px] text-slate-100 overflow-y-auto pb-28 sm:pb-24 no-scrollbar">
       {/* Portal do Responsável Top Header com Transparência de Vidro */}
       <div className="px-5 pt-4 pb-4 bg-gradient-to-b from-slate-950/20 via-slate-950/45 to-slate-950/70 border-b border-white/10">
         <div className="flex items-center justify-between mb-3.5">
@@ -192,43 +194,57 @@ export const ParentView: React.FC<ParentViewProps> = ({
             </div>
           </div>
 
-          {/* Quick Shortcuts for Parent */}
-          <div className="grid grid-cols-4 gap-2 pt-2 border-t border-slate-800/80">
+          {/* Quick Shortcuts for Parent (100% Responsivo no Celular) */}
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 pt-2.5 border-t border-slate-800/80">
             <button
               onClick={onOpenContract}
-              className="py-2 px-2 rounded-xl bg-slate-950 border border-slate-800 hover:border-cyan-500/50 text-slate-200 text-xs font-semibold flex items-center justify-center gap-1.5 transition"
+              className="py-2.5 px-3 rounded-2xl bg-slate-950 border border-slate-800 hover:border-cyan-500/50 text-slate-200 text-xs font-bold flex items-center justify-center gap-2 transition cursor-pointer min-h-[42px] active:scale-95 shadow-sm"
             >
-              <FileText className="w-3.5 h-3.5 text-cyan-400" />
-              <span className="text-[10px]">Contrato</span>
+              <FileText className="w-4 h-4 text-cyan-400" />
+              <span>Contrato & Termo</span>
             </button>
 
             <button
               onClick={onOpenProShop}
-              className="py-2 px-2 rounded-xl bg-slate-950 border border-slate-800 hover:border-purple-500/50 text-slate-200 text-xs font-semibold flex items-center justify-center gap-1.5 transition"
+              className="py-2.5 px-3 rounded-2xl bg-slate-950 border border-slate-800 hover:border-purple-500/50 text-slate-200 text-xs font-bold flex items-center justify-center gap-2 transition cursor-pointer min-h-[42px] active:scale-95 shadow-sm"
             >
-              <ShoppingBag className="w-3.5 h-3.5 text-purple-400" />
-              <span className="text-[10px]">Kimono</span>
+              <ShoppingBag className="w-4 h-4 text-purple-400" />
+              <span>Kimono Pro-Shop</span>
             </button>
 
             <button
               onClick={onOpenTournaments}
-              className="py-2 px-2 rounded-xl bg-slate-950 border border-slate-800 hover:border-amber-500/50 text-slate-200 text-xs font-semibold flex items-center justify-center gap-1.5 transition"
+              className="py-2.5 px-3 rounded-2xl bg-slate-950 border border-slate-800 hover:border-amber-500/50 text-slate-200 text-xs font-bold flex items-center justify-center gap-2 transition cursor-pointer min-h-[42px] active:scale-95 shadow-sm"
             >
-              <Trophy className="w-3.5 h-3.5 text-amber-400" />
-              <span className="text-[10px]">Torneios</span>
+              <Trophy className="w-4 h-4 text-amber-400" />
+              <span>Torneios CBJJ</span>
             </button>
 
             {onOpenKidsBehavioralFeed && (
               <button
                 onClick={onOpenKidsBehavioralFeed}
-                className="py-2 px-2 rounded-xl bg-gradient-to-r from-amber-500/20 to-amber-600/20 border border-amber-500/40 hover:border-amber-400 text-amber-300 text-xs font-bold flex items-center justify-center gap-1.5 transition"
+                className="py-2.5 px-3 rounded-2xl bg-gradient-to-r from-amber-500/20 to-amber-600/20 border border-amber-500/40 hover:border-amber-400 text-amber-300 text-xs font-black flex items-center justify-center gap-2 transition cursor-pointer min-h-[42px] active:scale-95 shadow-sm"
                 title="Feed Comportamental & Valores BJJ Kids"
               >
-                <Star className="w-3.5 h-3.5 text-amber-400 fill-amber-400" />
-                <span className="text-[10px]">Valores Kids</span>
+                <Star className="w-4 h-4 text-amber-400 fill-amber-400" />
+                <span>Valores Kids</span>
               </button>
             )}
           </div>
+
+          {/* Atalho Especial: Visualizar o App como o Filho (Visão do Aluno) */}
+          {onSwitchToStudentView && (
+            <button
+              type="button"
+              onClick={() => onSwitchToStudentView(currentChild.id)}
+              className="w-full mt-2 py-2.5 px-3.5 rounded-2xl bg-gradient-to-r from-blue-600/30 via-indigo-600/30 to-blue-700/30 hover:from-blue-600/50 hover:to-indigo-600/50 border border-blue-400/50 text-blue-100 hover:text-white text-xs font-bold flex items-center justify-center gap-2 transition shadow-md cursor-pointer active:scale-98"
+              title={`Acessar aplicativo com a experiência do aluno ${currentChild.name.split(' ')[0]}`}
+            >
+              <User className="w-4 h-4 text-blue-300" />
+              <span>Acessar App como {currentChild.name.split(' ')[0]} (Visão do Aluno no Tatame)</span>
+              <ArrowUpRight className="w-3.5 h-3.5 text-blue-300 opacity-70" />
+            </button>
+          )}
         </div>
       </div>
 

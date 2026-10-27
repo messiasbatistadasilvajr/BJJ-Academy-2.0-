@@ -5,7 +5,7 @@ import {
   Clock, MapPin, Users, Edit3, Plus, Sparkles, 
   ChevronDown, Flame, FileText, Check, AlertCircle,
   Timer, BookOpen, Download, MessageCircle, Zap, ShieldCheck,
-  Bell, Send, Trophy, Calendar, Shield, Megaphone, Flag, Volume2, ShieldAlert, Cake, Swords
+  Bell, Send, Trophy, Calendar, Shield, Megaphone, Flag, Volume2, ShieldAlert, Cake, Swords, User
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { ClassSession, BeltColor } from '../../types';
@@ -48,6 +48,7 @@ interface TeacherViewProps {
     categories: string;
     notes: string;
   }) => void;
+  onSwitchToStudentRole?: () => void;
 }
 
 export const TeacherView: React.FC<TeacherViewProps> = ({
@@ -75,6 +76,7 @@ export const TeacherView: React.FC<TeacherViewProps> = ({
   onAddClass,
   onSendClassAnnouncement,
   onAddTournamentReminder,
+  onSwitchToStudentRole,
 }) => {
   const [selectedClassId, setSelectedClassId] = useState<string>(classes[1]?.id || classes[0]?.id);
   const [selectedStudentForNote, setSelectedStudentForNote] = useState<{ id: string; name: string } | null>(null);
@@ -96,7 +98,7 @@ export const TeacherView: React.FC<TeacherViewProps> = ({
   const [newClassDuration, setNewClassDuration] = useState('1h 15m');
   const [newClassTatame, setNewClassTatame] = useState('Tatame 1 - Principal');
   const [newClassCapacity, setNewClassCapacity] = useState(30);
-  const [newClassInstructor, setNewClassInstructor] = useState('Mestre Rodrigo "Cavalo" (3º Grau)');
+  const [newClassInstructor, setNewClassInstructor] = useState(activeInstructor?.name || 'Prof. Pedro Erick');
 
   // 📢 Enviar Mensagem / Mural Modal State
   const [isSendMessageModalOpen, setIsSendMessageModalOpen] = useState(false);
@@ -331,7 +333,7 @@ export const TeacherView: React.FC<TeacherViewProps> = ({
   };
 
   return (
-    <div className="flex flex-col h-full bg-slate-950/30 backdrop-blur-[0.5px] text-slate-100 overflow-y-auto pb-20 no-scrollbar">
+    <div className="flex flex-col h-full bg-slate-950/30 backdrop-blur-[0.5px] text-slate-100 overflow-y-auto pb-28 sm:pb-24 no-scrollbar">
       {/* Teacher Operational Top Header com Transparência de Vidro */}
       <div className="px-5 pt-4 pb-3.5 bg-gradient-to-b from-slate-950/20 via-slate-950/45 to-slate-950/70 border-b border-white/10 space-y-3">
         {/* Blindagem Pedagógica Banner */}
@@ -385,7 +387,21 @@ export const TeacherView: React.FC<TeacherViewProps> = ({
               </h2>
             </div>
           </div>
-          <div className="flex items-center gap-1.5">
+          <div className="flex items-center gap-1.5 flex-wrap justify-end">
+            {/* Dual Role: Professor que também treina como Aluno */}
+            {onSwitchToStudentRole && (
+              <button
+                type="button"
+                onClick={onSwitchToStudentRole}
+                className="text-[11px] bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white px-2.5 py-1 rounded-xl font-black flex items-center gap-1.5 shadow-md border border-blue-400/40 transition cursor-pointer active:scale-95"
+                title="Alternar para seu perfil de Aluno (Para ver seu treino pessoal, presenças e graduações)"
+              >
+                <User className="w-3 h-3 text-blue-200" />
+                <span className="hidden sm:inline">Meu Treino como Aluno</span>
+                <span className="sm:hidden">Meu Treino</span>
+              </button>
+            )}
+
             {onOpenTeacherLogin && (
               <button
                 type="button"
@@ -402,59 +418,59 @@ export const TeacherView: React.FC<TeacherViewProps> = ({
           </div>
         </div>
 
-        {/* Teacher Responsibilities Quick Actions Bar */}
-        <div className="grid grid-cols-5 sm:grid-cols-5 md:grid-cols-10 gap-1.5 pt-1">
+        {/* Teacher Responsibilities Quick Actions Bar (100% Visível e Responsivo no Mobile) */}
+        <div className="flex items-center gap-2 overflow-x-auto no-scrollbar py-1 -mx-1 px-1">
           <button
             type="button"
             onClick={() => setIsCreateClassModalOpen(true)}
-            className="p-2 rounded-xl bg-emerald-600/20 hover:bg-emerald-600/30 text-emerald-300 border border-emerald-500/40 flex flex-col items-center justify-center gap-1 text-[10px] font-bold transition shadow-sm"
+            className="p-2.5 rounded-2xl bg-emerald-600/20 hover:bg-emerald-600/30 text-emerald-300 border border-emerald-500/40 flex flex-col items-center justify-center gap-1 text-[11px] font-bold transition shadow-sm shrink-0 min-w-[82px] cursor-pointer"
           >
-            <Plus size={14} className="text-emerald-400" />
+            <Plus size={15} className="text-emerald-400" />
             <span>+ Nova Aula</span>
           </button>
 
           <button
             type="button"
             onClick={() => setIsSendMessageModalOpen(true)}
-            className="p-2 rounded-xl bg-blue-600/20 hover:bg-blue-600/30 text-blue-300 border border-blue-500/40 flex flex-col items-center justify-center gap-1 text-[10px] font-bold transition shadow-sm"
+            className="p-2.5 rounded-2xl bg-blue-600/20 hover:bg-blue-600/30 text-blue-300 border border-blue-500/40 flex flex-col items-center justify-center gap-1 text-[11px] font-bold transition shadow-sm shrink-0 min-w-[82px] cursor-pointer"
           >
-            <Megaphone size={14} className="text-blue-400" />
+            <Megaphone size={15} className="text-blue-400" />
             <span>Mensagens</span>
           </button>
 
           <button
             type="button"
             onClick={() => setIsTournamentModalOpen(true)}
-            className="p-2 rounded-xl bg-amber-600/20 hover:bg-amber-600/30 text-amber-300 border border-amber-500/40 flex flex-col items-center justify-center gap-1 text-[10px] font-bold transition shadow-sm"
+            className="p-2.5 rounded-2xl bg-amber-600/20 hover:bg-amber-600/30 text-amber-300 border border-amber-500/40 flex flex-col items-center justify-center gap-1 text-[11px] font-bold transition shadow-sm shrink-0 min-w-[82px] cursor-pointer"
           >
-            <Trophy size={14} className="text-amber-400" />
+            <Trophy size={15} className="text-amber-400" />
             <span>Torneios</span>
           </button>
 
           <button
             type="button"
             onClick={onOpenGraduation}
-            className="p-2 rounded-xl bg-purple-600/20 hover:bg-purple-600/30 text-purple-300 border border-purple-500/40 flex flex-col items-center justify-center gap-1 text-[10px] font-bold transition shadow-sm"
+            className="p-2.5 rounded-2xl bg-purple-600/20 hover:bg-purple-600/30 text-purple-300 border border-purple-500/40 flex flex-col items-center justify-center gap-1 text-[11px] font-bold transition shadow-sm shrink-0 min-w-[82px] cursor-pointer"
           >
-            <Award size={14} className="text-purple-400" />
+            <Award size={15} className="text-purple-400" />
             <span>Graduar</span>
           </button>
 
           <button
             type="button"
             onClick={onOpenPhotoAttendance}
-            className="p-2 rounded-xl bg-cyan-600/20 hover:bg-cyan-600/30 text-cyan-300 border border-cyan-500/40 flex flex-col items-center justify-center gap-1 text-[10px] font-bold transition shadow-sm"
+            className="p-2.5 rounded-2xl bg-cyan-600/20 hover:bg-cyan-600/30 text-cyan-300 border border-cyan-500/40 flex flex-col items-center justify-center gap-1 text-[11px] font-bold transition shadow-sm shrink-0 min-w-[82px] cursor-pointer"
           >
-            <Camera size={14} className="text-cyan-400" />
+            <Camera size={15} className="text-cyan-400" />
             <span>Foto IA</span>
           </button>
 
           <button
             type="button"
             onClick={onOpenAICoach}
-            className="p-2 rounded-xl bg-red-600/20 hover:bg-red-600/30 text-red-300 border border-red-500/40 flex flex-col items-center justify-center gap-1 text-[10px] font-bold transition shadow-sm"
+            className="p-2.5 rounded-2xl bg-red-600/20 hover:bg-red-600/30 text-red-300 border border-red-500/40 flex flex-col items-center justify-center gap-1 text-[11px] font-bold transition shadow-sm shrink-0 min-w-[82px] cursor-pointer"
           >
-            <Sparkles size={14} className="text-red-400" />
+            <Sparkles size={15} className="text-red-400" />
             <span>AI Coach</span>
           </button>
 
@@ -462,9 +478,9 @@ export const TeacherView: React.FC<TeacherViewProps> = ({
             <button
               type="button"
               onClick={onOpenRetentionRadar}
-              className="p-2 rounded-xl bg-rose-600/20 hover:bg-rose-600/30 text-rose-300 border border-rose-500/40 flex flex-col items-center justify-center gap-1 text-[10px] font-bold transition shadow-sm"
+              className="p-2.5 rounded-2xl bg-rose-600/20 hover:bg-rose-600/30 text-rose-300 border border-rose-500/40 flex flex-col items-center justify-center gap-1 text-[11px] font-bold transition shadow-sm shrink-0 min-w-[82px] cursor-pointer"
             >
-              <ShieldAlert size={14} className="text-rose-400" />
+              <ShieldAlert size={15} className="text-rose-400" />
               <span>Evasão</span>
             </button>
           )}
@@ -473,10 +489,10 @@ export const TeacherView: React.FC<TeacherViewProps> = ({
             <button
               type="button"
               onClick={onOpenBirthdayAlert}
-              className="p-2 rounded-xl bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border border-amber-500/40 flex flex-col items-center justify-center gap-1 text-[10px] font-bold transition shadow-sm relative"
+              className="p-2.5 rounded-2xl bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border border-amber-500/40 flex flex-col items-center justify-center gap-1 text-[11px] font-bold transition shadow-sm relative shrink-0 min-w-[82px] cursor-pointer"
               title="Aniversariantes: Parabenize em nome da academia"
             >
-              <Cake size={14} className="text-amber-400" />
+              <Cake size={15} className="text-amber-400" />
               <span>Aniversários</span>
               {todayBirthdaysCount !== undefined && todayBirthdaysCount > 0 && (
                 <span className="absolute -top-1 -right-1 w-4 h-4 bg-amber-500 text-slate-950 font-black rounded-full text-[9px] flex items-center justify-center">
@@ -490,10 +506,10 @@ export const TeacherView: React.FC<TeacherViewProps> = ({
             <button
               type="button"
               onClick={onOpenBeltGuide}
-              className="p-2 rounded-xl bg-yellow-500/20 hover:bg-yellow-500/30 text-yellow-300 border border-yellow-500/40 flex flex-col items-center justify-center gap-1 text-[10px] font-bold transition shadow-sm"
+              className="p-2.5 rounded-2xl bg-yellow-500/20 hover:bg-yellow-500/30 text-yellow-300 border border-yellow-500/40 flex flex-col items-center justify-center gap-1 text-[11px] font-bold transition shadow-sm shrink-0 min-w-[82px] cursor-pointer"
               title="Tabela Oficial de Graduação IBJJF (Adulto e Kids)"
             >
-              <Award size={14} className="text-yellow-400" />
+              <Award size={15} className="text-yellow-400" />
               <span>Faixas IBJJF</span>
             </button>
           )}
@@ -502,10 +518,10 @@ export const TeacherView: React.FC<TeacherViewProps> = ({
             <button
               type="button"
               onClick={onOpenSparringMatchmaker}
-              className="p-2 rounded-xl bg-red-600/20 hover:bg-red-600/30 text-red-300 border border-red-500/40 flex flex-col items-center justify-center gap-1 text-[10px] font-bold transition shadow-sm"
+              className="p-2.5 rounded-2xl bg-red-600/20 hover:bg-red-600/30 text-red-300 border border-red-500/40 flex flex-col items-center justify-center gap-1 text-[11px] font-bold transition shadow-sm shrink-0 min-w-[82px] cursor-pointer"
               title="Cronômetro Inteligente e Sorteio de Duplas para o Rola"
             >
-              <Swords size={14} className="text-red-400 animate-pulse" />
+              <Swords size={15} className="text-red-400 animate-pulse" />
               <span>Rola & Duplas</span>
             </button>
           )}
@@ -830,20 +846,20 @@ export const TeacherView: React.FC<TeacherViewProps> = ({
                 return (
                   <div
                     key={stu.id}
-                    className={`p-3 rounded-2xl border transition flex items-center justify-between ${
+                    className={`p-3.5 rounded-2xl border transition flex flex-col sm:flex-row sm:items-center justify-between gap-3 ${
                       isPresent
-                        ? 'bg-slate-900/90 border-emerald-500/40'
+                        ? 'bg-slate-900/90 border-emerald-500/40 shadow-sm'
                         : 'bg-slate-900/50 border-slate-800/80 opacity-80'
                     }`}
                   >
-                    <div className="flex items-center gap-3 min-w-0">
+                    <div className="flex items-center gap-3 min-w-0 w-full sm:w-auto">
                       <img
                         src={stu.avatar}
                         alt={stu.name}
-                        className="w-10 h-10 rounded-xl object-cover border border-slate-700 shrink-0"
+                        className="w-11 h-11 rounded-xl object-cover border border-slate-700 shrink-0"
                       />
-                      <div className="min-w-0">
-                        <div className="text-xs font-bold text-white truncate">{stu.name}</div>
+                      <div className="min-w-0 flex-1">
+                        <div className="text-sm font-extrabold text-white truncate">{stu.name}</div>
                         <div className="mt-0.5">
                           <BeltBadge belt={stu.belt} size="sm" />
                         </div>
@@ -852,7 +868,7 @@ export const TeacherView: React.FC<TeacherViewProps> = ({
                           <button
                             type="button"
                             onClick={() => handleOpenInjuryModal(stu)}
-                            className="flex items-center gap-1.5 mt-1 px-2 py-0.5 rounded-md bg-amber-950/40 border border-amber-500/30 text-amber-300 text-[10px] hover:bg-amber-950/70 transition max-w-fit"
+                            className="flex items-center gap-1.5 mt-1 px-2 py-0.5 rounded-md bg-amber-950/40 border border-amber-500/30 text-amber-300 text-[10px] hover:bg-amber-950/70 transition max-w-fit cursor-pointer"
                             title="Clique para ver ou editar restrições médicas do atleta"
                           >
                             <span className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse shrink-0" />
@@ -867,20 +883,20 @@ export const TeacherView: React.FC<TeacherViewProps> = ({
                       </div>
                     </div>
 
-                    {/* Actions for this student */}
-                    <div className="flex items-center gap-1.5 shrink-0">
+                    {/* Actions for this student (100% visíveis e responsivas no mobile) */}
+                    <div className="flex items-center justify-end gap-1.5 flex-wrap w-full sm:w-auto pt-2 sm:pt-0 border-t sm:border-t-0 border-slate-800/60">
                       {/* Ficha Médica / Alerta de Lesão */}
                       <button
                         type="button"
                         onClick={() => handleOpenInjuryModal(stu)}
-                        className={`p-2 rounded-xl transition ${
+                        className={`p-2 rounded-xl transition cursor-pointer ${
                           stu.hasInjuryWarning
                             ? 'bg-amber-950/70 text-amber-300 border border-amber-500/50 hover:bg-amber-900/80'
-                            : 'bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white'
+                            : 'bg-slate-800 hover:bg-slate-750 text-slate-400 hover:text-white border border-slate-700/60'
                         }`}
                         title={stu.hasInjuryWarning ? `Restrição Ativa: ${stu.injuryNote}` : 'Ficha Médica & Lesões'}
                       >
-                        <ShieldAlert className="w-3.5 h-3.5" />
+                        <ShieldAlert className="w-4 h-4" />
                       </button>
 
                       {/* WhatsApp absence notice if absent */}
@@ -888,41 +904,44 @@ export const TeacherView: React.FC<TeacherViewProps> = ({
                         <button
                           type="button"
                           onClick={() => sendMissedClassWhatsApp(stu.name, currentClass.name, academyName)}
-                          className="p-2 rounded-xl bg-emerald-950/60 hover:bg-emerald-900 text-emerald-300 border border-emerald-800/60 transition"
+                          className="p-2 rounded-xl bg-emerald-950/60 hover:bg-emerald-900 text-emerald-300 border border-emerald-800/60 transition cursor-pointer"
                           title="Avisar no WhatsApp que faltou no treino"
                         >
-                          <MessageCircle className="w-3.5 h-3.5" />
+                          <MessageCircle className="w-4 h-4" />
                         </button>
                       )}
 
                       {/* Add Observation Note */}
                       <button
+                        type="button"
                         onClick={() => setSelectedStudentForNote({ id: stu.id, name: stu.name })}
-                        className="p-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-amber-400 transition"
+                        className="p-2 rounded-xl bg-slate-800 hover:bg-slate-750 text-slate-300 hover:text-amber-400 border border-slate-700/60 transition cursor-pointer"
                         title="Adicionar Observação Técnica"
                       >
-                        <Edit3 className="w-3.5 h-3.5" />
+                        <Edit3 className="w-4 h-4" />
                       </button>
 
                       {/* Promote Student Button */}
                       <button
+                        type="button"
                         onClick={() => setPromotionModalStudent({ id: stu.id, name: stu.name, belt: stu.belt })}
-                        className="p-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-red-400 transition"
+                        className="p-2 rounded-xl bg-slate-800 hover:bg-slate-750 text-slate-300 hover:text-red-400 border border-slate-700/60 transition cursor-pointer"
                         title="Registrar Graduação / Grau"
                       >
-                        <Award className="w-3.5 h-3.5" />
+                        <Award className="w-4 h-4" />
                       </button>
 
                       {/* Attendance Toggle */}
                       <button
+                        type="button"
                         onClick={() => onUpdateAttendance(currentClass.id, stu.id, isPresent ? 'absent' : 'present')}
-                        className={`px-3 py-1.5 rounded-xl text-xs font-extrabold flex items-center gap-1 transition ${
+                        className={`px-3.5 py-2 rounded-xl text-xs font-black flex items-center gap-1.5 transition cursor-pointer shadow-sm ${
                           isPresent
-                            ? 'bg-emerald-600 hover:bg-emerald-500 text-white shadow-sm'
-                            : 'bg-slate-800 hover:bg-slate-750 text-slate-400 hover:text-white border border-slate-700'
+                            ? 'bg-emerald-600 hover:bg-emerald-500 text-white'
+                            : 'bg-slate-800 hover:bg-slate-750 text-slate-300 hover:text-white border border-slate-700'
                         }`}
                       >
-                        {isPresent ? <CheckCircle2 className="w-3.5 h-3.5" /> : <XCircle className="w-3.5 h-3.5" />}
+                        {isPresent ? <CheckCircle2 className="w-4 h-4 text-emerald-200" /> : <XCircle className="w-4 h-4 text-slate-400" />}
                         <span>{isPresent ? 'Presente' : 'Falta'}</span>
                       </button>
                     </div>
@@ -1239,14 +1258,19 @@ export const TeacherView: React.FC<TeacherViewProps> = ({
 
                   <div>
                     <label className="text-[11px] font-bold text-slate-400 uppercase">
-                      Instrutor:
+                      Professor / Instrutor:
                     </label>
-                    <input
-                      type="text"
+                    <select
                       value={newClassInstructor}
                       onChange={(e) => setNewClassInstructor(e.target.value)}
-                      className="w-full mt-1 bg-slate-950 border border-slate-800 rounded-xl p-2 text-xs text-white focus:outline-none focus:border-emerald-500"
-                    />
+                      className="w-full mt-1 bg-slate-950 border border-slate-800 rounded-xl p-2 text-xs text-white focus:outline-none focus:border-emerald-500 font-bold"
+                    >
+                      <option value="Prof. Pedro Erick">Prof. Pedro Erick (07h No-gi / 16h Luta-Livre)</option>
+                      <option value="Prof. Anilton">Prof. Anilton (11h Gi / 12h No-gi)</option>
+                      <option value="Prof. Dudu">Prof. Dudu (15h Gi - Seg/Qua/Sex)</option>
+                      <option value="Prof. Emanuel (Badel)">Prof. Emanuel (Badel) (19h Gi Adulto/Juv)</option>
+                      <option value="Prof. Anderson">Prof. Anderson (20h Gi Adulto Avançado)</option>
+                    </select>
                   </div>
                 </div>
 

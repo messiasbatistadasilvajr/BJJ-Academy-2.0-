@@ -5,7 +5,7 @@ import {
   Camera, CheckCircle2, ChevronRight, Bell, Sparkles, 
   Flame, Lock, ArrowUpRight, Clock, MapPin, QrCode, Send,
   Timer, BookOpen, ShoppingBag, Trophy, FileText, Play,
-  AlertTriangle, Calculator, Building2, Cake
+  AlertTriangle, Calculator, Building2, Cake, GraduationCap, Users
 } from 'lucide-react';
 import { StudentProfile, ClassSession, Invoice, Announcement, ChatMessage, RankingMember, RegisteredAcademy } from '../../types';
 import { BeltBadge } from '../common/BeltBadge';
@@ -36,6 +36,8 @@ interface StudentViewProps {
   onOpenBeltGuide?: () => void;
   academyName?: string;
   activeAcademy?: RegisteredAcademy;
+  onSwitchToTeacherRole?: () => void;
+  onSwitchToParentRole?: () => void;
 }
 
 export const StudentView: React.FC<StudentViewProps> = ({
@@ -62,6 +64,8 @@ export const StudentView: React.FC<StudentViewProps> = ({
   onOpenBeltGuide,
   academyName,
   activeAcademy,
+  onSwitchToTeacherRole,
+  onSwitchToParentRole,
 }) => {
   const [activeTab, setActiveTab] = useState<'treinos' | 'graduacao' | 'frequencia' | 'financeiro' | 'comunicados'>('treinos');
   const [chatInput, setChatInput] = useState('');
@@ -80,12 +84,12 @@ export const StudentView: React.FC<StudentViewProps> = ({
   };
 
   return (
-    <div className="flex flex-col h-full bg-slate-950/30 backdrop-blur-[0.5px] text-slate-100 overflow-y-auto pb-20 no-scrollbar">
+    <div className="flex flex-col h-full bg-slate-950/30 backdrop-blur-[0.5px] text-slate-100 overflow-y-auto pb-28 sm:pb-24 no-scrollbar">
       {/* Student Hero Header com Transparência de Vidro para Exibir a Imagem de BJJ no Topo */}
       <div className="relative px-5 pt-4 pb-5 bg-gradient-to-b from-slate-950/20 via-slate-950/45 to-slate-950/70 border-b border-white/10">
-        <div className="flex items-start justify-between gap-3 mb-3">
-          <div className="flex items-center gap-3.5">
-            <div className="relative">
+        <div className="flex flex-col xs:flex-row xs:items-start justify-between gap-3 mb-3">
+          <div className="flex items-center gap-3.5 min-w-0">
+            <div className="relative shrink-0">
               <img
                 src={student.avatar}
                 alt={student.name}
@@ -95,18 +99,18 @@ export const StudentView: React.FC<StudentViewProps> = ({
                 <Flame className="w-3.5 h-3.5 fill-amber-400" />
               </span>
             </div>
-            <div>
+            <div className="min-w-0">
               <div className="flex items-center gap-2">
-                <h2 className="text-lg sm:text-xl font-black text-white tracking-tight">{student.name}</h2>
+                <h2 className="text-lg sm:text-xl font-black text-white tracking-tight truncate">{student.name}</h2>
                 <button
                   onClick={onOpenBiometrics}
                   title="Bloquear/Autenticar com Biometria"
-                  className="p-1.5 rounded-lg bg-slate-800/90 text-slate-200 hover:text-red-400 hover:bg-slate-700 transition"
+                  className="p-1.5 rounded-lg bg-slate-800/90 text-slate-200 hover:text-red-400 hover:bg-slate-700 transition shrink-0 cursor-pointer"
                 >
                   <Lock className="w-4 h-4" />
                 </button>
               </div>
-              <p className="text-xs text-slate-300 font-semibold mt-0.5">
+              <p className="text-xs text-slate-300 font-semibold mt-0.5 truncate">
                 Matrícula #9821 • {student.category}
               </p>
               <div className="mt-1.5">
@@ -115,10 +119,38 @@ export const StudentView: React.FC<StudentViewProps> = ({
             </div>
           </div>
 
-          <div className="text-right shrink-0">
-            <div className="inline-flex flex-col items-end px-3 py-1.5 rounded-xl bg-slate-900/80 border border-slate-700/80 shadow-sm">
+          <div className="flex items-center xs:items-end justify-between xs:justify-start xs:flex-col gap-1.5 shrink-0 pt-1 xs:pt-0 border-t xs:border-t-0 border-slate-800/60">
+            <div className="inline-flex flex-col items-start xs:items-end px-3 py-1.5 rounded-xl bg-slate-900/80 border border-slate-700/80 shadow-sm">
               <span className="text-[10px] text-slate-300 font-extrabold uppercase">Ranking</span>
               <span className="text-sm font-black text-amber-400">#{student.rankingPosition} Geral</span>
+            </div>
+
+            <div className="flex items-center gap-1.5">
+              {/* Dual Role: Professor que também treina como Aluno */}
+              {onSwitchToTeacherRole && (
+                <button
+                  type="button"
+                  onClick={onSwitchToTeacherRole}
+                  className="px-2.5 py-1.5 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-700 hover:from-emerald-500 hover:to-teal-600 text-white font-black text-[11px] flex items-center gap-1.5 shadow-md border border-emerald-400/40 transition active:scale-95 cursor-pointer"
+                  title="Você também atua como Professor: alternar para gerenciar turmas e chamada"
+                >
+                  <GraduationCap className="w-3.5 h-3.5 text-emerald-200" />
+                  <span>Modo Professor</span>
+                </button>
+              )}
+
+              {/* Alternar para Portal do Responsável (Kids) */}
+              {onSwitchToParentRole && (
+                <button
+                  type="button"
+                  onClick={onSwitchToParentRole}
+                  className="px-2.5 py-1.5 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-700 hover:from-blue-500 hover:to-indigo-600 text-white font-black text-[11px] flex items-center gap-1.5 shadow-md border border-blue-400/40 transition active:scale-95 cursor-pointer"
+                  title="Alternar para o Portal do Responsável Legal dos dependentes Kids"
+                >
+                  <Users className="w-3.5 h-3.5 text-blue-200" />
+                  <span>Portal Pais</span>
+                </button>
+              )}
             </div>
           </div>
         </div>

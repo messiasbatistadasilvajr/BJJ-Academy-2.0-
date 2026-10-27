@@ -186,6 +186,15 @@ export const DigitalContractModal: React.FC<DigitalContractModalProps> = ({
               }}
               onClose={onClose}
               isEmbedded={false}
+              onSignContract={(sigUrl, meta) => {
+                setContract(prev => ({
+                  ...prev,
+                  status: 'signed',
+                  signedDate: meta.signedAt,
+                  signatureUrl: sigUrl,
+                  termsAccepted: true
+                }));
+              }}
             />
           </div>
         ) : (

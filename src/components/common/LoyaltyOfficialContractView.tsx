@@ -1,11 +1,12 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { 
   Printer, Send, CheckCircle2, Copy, FileText, 
   ExternalLink, ShieldCheck, QrCode, PenTool, Check, 
   ChevronLeft, ChevronRight, Download, Sparkles, AlertCircle,
-  Eye, Building2, User, Phone, MapPin, Hash, ShieldAlert
+  Eye, Building2, User, Phone, MapPin, Hash, ShieldAlert, RotateCcw
 } from 'lucide-react';
 import { sendLoyaltyContractWhatsApp } from '../../utils/whatsappHelper';
+import { bjjAudio } from '../../utils/audio';
 
 export interface ContractStudentData {
   name?: string;
@@ -36,19 +37,30 @@ interface LoyaltyOfficialContractViewProps {
   studentData?: ContractStudentData;
   onClose?: () => void;
   isEmbedded?: boolean; // Se estiver embutido no formulário de cadastro de novo aluno
+  onSignContract?: (signatureDataUrl: string, auditMeta: { signedAt: string; hash: string; signerName: string }) => void;
+  initialSignature?: string;
 }
 
 export const LoyaltyOfficialContractView: React.FC<LoyaltyOfficialContractViewProps> = ({
   studentData = {},
   onClose,
-  isEmbedded = false
+  isEmbedded = false,
+  onSignContract,
+  initialSignature
 }) => {
   const [currentPage, setCurrentPage] = useState<number>(1);
   const [viewMode, setViewMode] = useState<'all_pages' | 'single_page'>('all_pages');
-  const [isSigned, setIsSigned] = useState<boolean>(false);
+  const [isSigned, setIsSigned] = useState<boolean>(() => !!initialSignature);
+  const [signatureImage, setSignatureImage] = useState<string | null>(initialSignature || null);
+  const [isDrawing, setIsDrawing] = useState<boolean>(false);
+  const [hasDrawnStroke, setHasDrawnStroke] = useState<boolean>(() => !!initialSignature);
+  const [signatureFeedback, setSignatureFeedback] = useState<string | null>(null);
   const [signatureDate, setSignatureDate] = useState<string>(() => new Date().toLocaleDateString('pt-BR'));
   const [zapSentFeedback, setZapSentFeedback] = useState<boolean>(false);
   const [isCopied, setIsCopied] = useState<boolean>(false);
+
+  const sigCanvasRef = useRef<HTMLCanvasElement | null>(null);
+  const signatureSectionRef = useRef<HTMLDivElement | null>(null);
 
   // Default contract values matching Loyalty Jiu-Jitsu Matriz Fortaleza
   const academyContractor = {
@@ -151,6 +163,161 @@ export const LoyaltyOfficialContractView: React.FC<LoyaltyOfficialContractViewPr
     }
   };
 
+  // Target signer
+  const effectiveSignerName = isMinor && parentName ? parentName : (parentName || studentName || 'Contratante / Responsável Legal');
+  const effectiveSignerCpf = isMinor && parentCpf ? parentCpf : (parentCpf || studentCpf || '');
+
+  // Setup canvas strokes
+  useEffect(() => {
+    if (sigCanvasRef.current) {
+      const canvas = sigCanvasRef.current;
+      const ctx = canvas.getContext('2d');
+      if (ctx) {
+        ctx.strokeStyle = '#1e3a8a'; // Blue ballpoint ink
+        ctx.lineWidth = 2.8;
+        ctx.lineCap = 'round';
+        ctx.lineJoin = 'round';
+      }
+    }
+  }, [viewMode, currentPage]);
+
+  const startDrawing = (e: React.MouseEvent<HTMLCanvasElement> | React.TouchEvent<HTMLCanvasElement>) => {
+    const canvas = sigCanvasRef.current;
+    if (!canvas) return;
+    const rect = canvas.getBoundingClientRect();
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+
+    setIsDrawing(true);
+    setHasDrawnStroke(true);
+    const clientX = 'touches' in e ? e.touches[0].clientX : e.clientX;
+    const clientY = 'touches' in e ? e.touches[0].clientY : e.clientY;
+    ctx.beginPath();
+    ctx.moveTo(clientX - rect.left, clientY - rect.top);
+  };
+
+  const draw = (e: React.MouseEvent<HTMLCanvasElement> | React.TouchEvent<HTMLCanvasElement>) => {
+    if (!isDrawing) return;
+    const canvas = sigCanvasRef.current;
+    if (!canvas) return;
+    const rect = canvas.getBoundingClientRect();
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+
+    if ('touches' in e && e.cancelable) {
+      e.preventDefault();
+    }
+
+    const clientX = 'touches' in e ? e.touches[0].clientX : e.clientX;
+    const clientY = 'touches' in e ? e.touches[0].clientY : e.clientY;
+    ctx.lineTo(clientX - rect.left, clientY - rect.top);
+    ctx.stroke();
+  };
+
+  const stopDrawing = () => {
+    setIsDrawing(false);
+  };
+
+  const clearSignature = () => {
+    const canvas = sigCanvasRef.current;
+    if (canvas) {
+      const ctx = canvas.getContext('2d');
+      if (ctx) {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+      }
+    }
+    setHasDrawnStroke(false);
+    setSignatureImage(null);
+    setIsSigned(false);
+  };
+
+  const saveSignature = () => {
+    const canvas = sigCanvasRef.current;
+    if (!canvas) return;
+
+    let finalDataUrl = signatureImage;
+    if (hasDrawnStroke) {
+      finalDataUrl = canvas.toDataURL('image/png');
+      setSignatureImage(finalDataUrl);
+    } else if (!finalDataUrl) {
+      applyDefaultCursiveSignature();
+      return;
+    }
+
+    const now = new Date();
+    const formattedDate = `${now.toLocaleDateString('pt-BR')} às ${now.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit', second: '2-digit' })}`;
+    setSignatureDate(formattedDate);
+    setIsSigned(true);
+    try {
+      bjjAudio.playAccessGranted();
+    } catch {}
+
+    setSignatureFeedback('Assinatura gravada com sucesso no contrato oficial!');
+    setTimeout(() => setSignatureFeedback(null), 4000);
+
+    if (onSignContract && finalDataUrl) {
+      onSignContract(finalDataUrl, {
+        signedAt: formattedDate,
+        hash: sha256Hash,
+        signerName: effectiveSignerName
+      });
+    }
+  };
+
+  const applyDefaultCursiveSignature = () => {
+    const canvas = sigCanvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    ctx.font = 'italic 26px "Brush Script MT", "Caveat", "Segoe Script", cursive, serif';
+    ctx.fillStyle = '#1e3a8a';
+    ctx.fillText(effectiveSignerName, 25, canvas.height / 2 + 8);
+
+    // Decorative underline flourish
+    ctx.beginPath();
+    ctx.strokeStyle = '#1e3a8a';
+    ctx.lineWidth = 2;
+    ctx.moveTo(20, canvas.height / 2 + 18);
+    ctx.bezierCurveTo(canvas.width / 3, canvas.height / 2 + 32, (canvas.width * 2) / 3, canvas.height / 2 + 12, canvas.width - 25, canvas.height / 2 + 22);
+    ctx.stroke();
+
+    const dataUrl = canvas.toDataURL('image/png');
+    setSignatureImage(dataUrl);
+    setHasDrawnStroke(true);
+    setIsSigned(true);
+
+    const now = new Date();
+    const formattedDate = `${now.toLocaleDateString('pt-BR')} às ${now.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit', second: '2-digit' })}`;
+    setSignatureDate(formattedDate);
+    try {
+      bjjAudio.playAccessGranted();
+    } catch {}
+
+    setSignatureFeedback('Assinatura cursiva gerada e vinculada ao contrato oficial!');
+    setTimeout(() => setSignatureFeedback(null), 4000);
+
+    if (onSignContract) {
+      onSignContract(dataUrl, {
+        signedAt: formattedDate,
+        hash: sha256Hash,
+        signerName: effectiveSignerName
+      });
+    }
+  };
+
+  const scrollToSignature = () => {
+    if (viewMode === 'single_page' && currentPage !== 4) {
+      setCurrentPage(4);
+      setTimeout(() => {
+        signatureSectionRef.current?.scrollIntoView({ behavior: 'smooth' });
+      }, 100);
+    } else {
+      signatureSectionRef.current?.scrollIntoView({ behavior: 'smooth' });
+    }
+  };
+
   // Component to render dynamic fill with fallback clean underline for manual completion
   const RenderFill = ({ 
     value, 
@@ -243,19 +410,19 @@ export const LoyaltyOfficialContractView: React.FC<LoyaltyOfficialContractViewPr
             <span>Imprimir / Salvar PDF</span>
           </button>
 
-          {/* Quick Sign Toggle */}
+          {/* Touchscreen in-app Signature Action */}
           <button
             type="button"
-            onClick={() => setIsSigned(!isSigned)}
+            onClick={scrollToSignature}
             className={`py-2 px-3 rounded-xl font-bold text-xs flex items-center gap-1.5 transition border cursor-pointer ${
               isSigned 
-                ? 'bg-purple-900/50 border-purple-500/70 text-purple-200' 
-                : 'bg-slate-800 border-slate-700 text-slate-300 hover:text-white'
+                ? 'bg-emerald-950/70 border-emerald-500/70 text-emerald-300 shadow-md shadow-emerald-950/40' 
+                : 'bg-gradient-to-r from-red-600 to-amber-600 hover:from-red-500 hover:to-amber-500 text-white shadow-md'
             }`}
-            title="Alterna o carimbo de assinatura eletrônica do responsável"
+            title="Assinar o contrato diretamente na tela do celular com o dedo ou mouse"
           >
-            <ShieldCheck className={`w-3.5 h-3.5 ${isSigned ? 'text-purple-400' : 'text-slate-400'}`} />
-            <span>{isSigned ? 'Assinado Eletronicamente' : 'Assinar Digitalmente'}</span>
+            <PenTool className="w-3.5 h-3.5 text-white" />
+            <span>{isSigned ? '✓ Contrato Assinado no App' : '✍️ Assinar no Celular'}</span>
           </button>
 
           {/* View mode toggle */}
@@ -716,25 +883,169 @@ export const LoyaltyOfficialContractView: React.FC<LoyaltyOfficialContractViewPr
                 <span className="text-[10px] font-mono text-slate-400">pg. 4 de 5</span>
               </div>
 
-              <div className="text-center mb-8">
+              <div className="text-center mb-6">
                 <h3 className="text-sm font-black text-black uppercase tracking-wider">
                   TERMO DE ASSINATURA E TESTEMUNHAS
                 </h3>
                 <p className="text-xs text-slate-500 mt-1">
-                  Validação com firma eletrônica ou manual em duas vias de igual teor.
+                  Validação com firma eletrônica touch no app ou manual em duas vias de igual teor.
                 </p>
               </div>
 
-              {/* Grid de Assinaturas (Conforme Página 4 do PDF) */}
-              <div className="space-y-10 pt-4">
+              {/* PAINEL INTERATIVO DE ASSINATURA DO CONTRATANTE (VISÍVEL NO APP / OCULTO NA IMPRESSÃO) */}
+              <div 
+                ref={signatureSectionRef}
+                className="mb-8 p-4 sm:p-5 rounded-2xl bg-slate-900 border-2 border-red-500/50 text-white shadow-2xl print:hidden text-left"
+              >
+                <div className="flex flex-wrap items-center justify-between gap-2 mb-3">
+                  <div className="flex items-center gap-2.5">
+                    <div className="p-2 rounded-xl bg-red-600/20 text-red-400 border border-red-500/30">
+                      <PenTool className="w-5 h-5" />
+                    </div>
+                    <div>
+                      <h4 className="text-sm font-black text-white flex items-center gap-2">
+                        <span>Assinatura Digital do Contratante</span>
+                        {isSigned && (
+                          <span className="px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400 border border-emerald-500/40 text-[10px] font-bold flex items-center gap-1">
+                            <CheckCircle2 className="w-3 h-3" />
+                            <span>Assinado no App</span>
+                          </span>
+                        )}
+                      </h4>
+                      <p className="text-[11px] text-slate-300">
+                        Signatário Oficial: <strong className="text-amber-400">{effectiveSignerName}</strong>
+                        {effectiveSignerCpf ? ` • CPF: ${effectiveSignerCpf}` : ''}
+                      </p>
+                    </div>
+                  </div>
+
+                  {isSigned && (
+                    <button
+                      type="button"
+                      onClick={clearSignature}
+                      className="px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-bold border border-slate-700 flex items-center gap-1.5 transition cursor-pointer"
+                    >
+                      <RotateCcw className="w-3.5 h-3.5 text-amber-400" />
+                      <span>Refazer Assinatura</span>
+                    </button>
+                  )}
+                </div>
+
+                {!isSigned ? (
+                  <div className="space-y-3">
+                    <div className="relative rounded-2xl overflow-hidden border-2 border-dashed border-slate-600 bg-white">
+                      <canvas
+                        ref={sigCanvasRef}
+                        width={700}
+                        height={160}
+                        onMouseDown={startDrawing}
+                        onMouseMove={draw}
+                        onMouseUp={stopDrawing}
+                        onMouseLeave={stopDrawing}
+                        onTouchStart={startDrawing}
+                        onTouchMove={draw}
+                        onTouchEnd={stopDrawing}
+                        className="w-full h-36 bg-slate-50 cursor-crosshair touch-none"
+                        title="Assine com o dedo ou mouse sobre a linha"
+                      />
+                      <div className="absolute bottom-2 left-3 text-[10px] text-slate-400 font-mono pointer-events-none select-none flex items-center gap-1">
+                        <span>✍️</span>
+                        <span>Desenhe sua assinatura com o dedo ou mouse sobre a tela</span>
+                      </div>
+                    </div>
+
+                    {signatureFeedback && (
+                      <div className="p-2.5 rounded-xl bg-emerald-950/70 border border-emerald-500/50 text-emerald-300 text-xs flex items-center gap-2">
+                        <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
+                        <span>{signatureFeedback}</span>
+                      </div>
+                    )}
+
+                    <div className="flex flex-wrap items-center justify-between gap-2 pt-1">
+                      <div className="flex items-center gap-2">
+                        <button
+                          type="button"
+                          onClick={clearSignature}
+                          className="py-2 px-3 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold flex items-center gap-1.5 transition cursor-pointer border border-slate-700"
+                        >
+                          <RotateCcw className="w-3.5 h-3.5" />
+                          <span>Limpar Traço</span>
+                        </button>
+
+                        <button
+                          type="button"
+                          onClick={applyDefaultCursiveSignature}
+                          className="py-2 px-3 rounded-xl bg-blue-950/70 hover:bg-blue-900 border border-blue-500/40 text-blue-200 text-xs font-semibold flex items-center gap-1.5 transition cursor-pointer"
+                          title="Gerar assinatura cursiva estilizada baseada no nome do contratante"
+                        >
+                          <Sparkles className="w-3.5 h-3.5 text-blue-400" />
+                          <span>Assinatura Cursiva Automática</span>
+                        </button>
+                      </div>
+
+                      <button
+                        type="button"
+                        onClick={saveSignature}
+                        className="py-2.5 px-5 rounded-xl bg-gradient-to-r from-emerald-600 to-green-600 hover:from-emerald-500 hover:to-green-500 text-white text-xs font-black flex items-center gap-2 shadow-lg shadow-emerald-950/50 cursor-pointer"
+                      >
+                        <Check className="w-4 h-4" />
+                        <span>Confirmar e Assinar Contrato no App</span>
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="p-3.5 rounded-xl bg-emerald-950/40 border border-emerald-500/40 flex flex-wrap items-center justify-between gap-3">
+                    <div className="flex items-center gap-3">
+                      {signatureImage ? (
+                        <img 
+                          src={signatureImage} 
+                          alt="Assinatura Gravada" 
+                          className="h-12 max-w-[150px] bg-white rounded-lg p-1 object-contain border border-emerald-500/50" 
+                        />
+                      ) : (
+                        <div className="px-3 py-1.5 rounded-lg bg-blue-900/40 text-blue-300 font-serif italic text-base border border-blue-500/40">
+                          {effectiveSignerName}
+                        </div>
+                      )}
+                      <div className="text-xs">
+                        <p className="font-bold text-emerald-300">Contrato Assinado Digitalmente</p>
+                        <p className="text-[10px] text-slate-400 font-mono">
+                          Autenticado em {signatureDate} • Lei Federal nº 14.063/2020
+                        </p>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <button
+                        type="button"
+                        onClick={handlePrint}
+                        className="py-2 px-3 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-bold flex items-center gap-1.5 border border-slate-700 cursor-pointer"
+                      >
+                        <Printer className="w-3.5 h-3.5" />
+                        <span>Salvar PDF</span>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={handleSendToWhatsApp}
+                        className="py-2 px-3 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold flex items-center gap-1.5 shadow-md shadow-emerald-950/40 cursor-pointer"
+                      >
+                        <Send className="w-3.5 h-3.5" />
+                        <span>Enviar no WhatsApp</span>
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Grid de Assinaturas Oficiais (Conforme Página 4 do Documento Físico) */}
+              <div className="space-y-10 pt-2">
                 
                 {/* Linha 1: Contratante e Contratado */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-8 sm:gap-12">
                   <div className="text-center space-y-1">
                     <div className="h-14 flex items-end justify-center pb-1">
-                      {isSigned && (parentName || studentName) ? (
+                      {isSigned ? (
                         <div className="font-serif italic text-blue-900 font-bold text-base border-b-2 border-slate-400 w-full pb-1">
-                          {isMinor && parentName ? parentName : (parentName || studentName)}
+                          {effectiveSignerName}
                         </div>
                       ) : (
                         <div className="border-b-2 border-slate-800 w-full" />
@@ -768,19 +1079,42 @@ export const LoyaltyOfficialContractView: React.FC<LoyaltyOfficialContractViewPr
                 {/* Linha 2: Assinatura do Contratante e Contratado */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-8 sm:gap-12">
                   <div className="text-center space-y-1">
-                    <div className="h-12 flex items-end justify-center pb-1">
-                      <div className="border-b-2 border-slate-800 w-full" />
+                    <div className="h-16 flex flex-col items-center justify-end pb-1 relative">
+                      {isSigned && signatureImage ? (
+                        <div className="flex flex-col items-center justify-center w-full">
+                          <img 
+                            src={signatureImage} 
+                            alt="Assinatura Contratante" 
+                            className="h-12 max-h-12 object-contain mx-auto" 
+                          />
+                          <div className="border-b-2 border-slate-800 w-full" />
+                        </div>
+                      ) : isSigned ? (
+                        <div className="flex flex-col items-center justify-center w-full">
+                          <span className="font-serif italic text-blue-900 text-lg font-bold pb-1">
+                            {effectiveSignerName}
+                          </span>
+                          <div className="border-b-2 border-slate-800 w-full" />
+                        </div>
+                      ) : (
+                        <div className="border-b-2 border-slate-800 w-full" />
+                      )}
                     </div>
                     <div className="font-bold text-xs text-slate-900">
                       Assinatura do contratante
                     </div>
-                    <div className="text-[10px] text-slate-400 font-mono">
-                      {isSigned ? 'Assinado Digitalmente via ICP / Lei 14.063' : 'Assinatura a rogo ou eletrônica'}
+                    <div className="text-[10px] text-slate-500 font-mono">
+                      {isSigned 
+                        ? `Assinado Digitalmente no App (${signatureDate}) • Lei 14.063/2020` 
+                        : 'Assinatura digital no app ou a rogo'}
                     </div>
                   </div>
 
                   <div className="text-center space-y-1">
-                    <div className="h-12 flex items-end justify-center pb-1">
+                    <div className="h-16 flex flex-col items-center justify-end pb-1">
+                      <div className="font-serif italic text-red-900 font-bold text-base pb-1">
+                        Pedro Erick Emidio da Silva
+                      </div>
                       <div className="border-b-2 border-slate-800 w-full" />
                     </div>
                     <div className="font-bold text-xs text-slate-900">
@@ -946,24 +1280,32 @@ export const LoyaltyOfficialContractView: React.FC<LoyaltyOfficialContractViewPr
                 </h3>
 
                 <div className="flex items-center gap-4 p-4 rounded-xl bg-slate-50 border border-slate-200">
-                  <div className="w-32 h-14 bg-white rounded-lg border border-slate-300 flex items-center justify-center text-blue-900 font-serif italic text-lg px-2">
-                    {isSigned && (parentName || studentName) 
-                      ? (isMinor && parentName ? parentName.split(' ')[0] : (studentName ? studentName.split(' ')[0] : 'Assinado'))
-                      : 'Em branco'}
+                  <div className="w-36 h-16 bg-white rounded-lg border border-slate-300 flex items-center justify-center text-blue-900 font-serif italic text-lg px-2 overflow-hidden shadow-sm">
+                    {isSigned && signatureImage ? (
+                      <img 
+                        src={signatureImage} 
+                        alt="Assinatura" 
+                        className="max-h-full max-w-full object-contain" 
+                      />
+                    ) : isSigned ? (
+                      <span className="truncate">{effectiveSignerName.split(' ')[0]}</span>
+                    ) : (
+                      <span className="text-slate-400 text-xs font-sans not-italic">Em branco</span>
+                    )}
                   </div>
                   <div className="text-xs">
                     <p className="font-bold text-slate-900">
-                      {isMinor && parentName ? parentName : (parentName || studentName || 'A preencher no ato da matrícula')}
+                      {effectiveSignerName}
                     </p>
                     <p className="font-mono text-slate-600 text-[11px]">
-                      {isMinor && parentCpf ? parentCpf : (parentCpf || studentCpf || 'CPF: ___.___.___-__')}
+                      {effectiveSignerCpf ? `CPF: ${effectiveSignerCpf}` : 'CPF: ___.___.___-__'}
                     </p>
                     <span className={`inline-block mt-1 px-2 py-0.5 rounded text-[10px] font-bold ${
                       isSigned 
-                        ? 'bg-emerald-100 text-emerald-800' 
+                        ? 'bg-emerald-100 text-emerald-800 border border-emerald-300' 
                         : 'bg-amber-100 text-amber-800'
                     }`}>
-                      {isSigned ? 'Signatário Certificado' : 'Aguardando Matrícula / Assinatura'}
+                      {isSigned ? '✓ Signatário Certificado via Touch no App' : 'Aguardando Matrícula / Assinatura'}
                     </span>
                   </div>
                 </div>
@@ -1059,22 +1401,36 @@ export const LoyaltyOfficialContractView: React.FC<LoyaltyOfficialContractViewPr
         </div>
 
         <div className="flex items-center gap-2">
+          {/* Quick Sign Shortcut */}
+          <button
+            type="button"
+            onClick={scrollToSignature}
+            className={`py-2 px-3 rounded-xl text-xs font-bold flex items-center gap-1.5 transition cursor-pointer ${
+              isSigned
+                ? 'bg-emerald-950/80 border border-emerald-500/60 text-emerald-300'
+                : 'bg-gradient-to-r from-red-600 to-amber-600 hover:from-red-500 hover:to-amber-500 text-white shadow-md'
+            }`}
+          >
+            <PenTool className="w-3.5 h-3.5" />
+            <span>{isSigned ? 'Assinado' : 'Assinar'}</span>
+          </button>
+
           <button
             type="button"
             onClick={handlePrint}
-            className="py-2 px-3 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-bold flex items-center gap-1.5 transition"
+            className="py-2 px-3 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-bold flex items-center gap-1.5 transition cursor-pointer border border-slate-700"
           >
             <Printer className="w-3.5 h-3.5" />
-            <span>Salvar PDF</span>
+            <span className="hidden sm:inline">Salvar PDF</span>
           </button>
 
           <button
             type="button"
             onClick={handleSendToWhatsApp}
-            className="py-2 px-4 rounded-xl bg-gradient-to-r from-emerald-600 to-green-600 hover:from-emerald-500 hover:to-green-500 text-white text-xs font-black flex items-center gap-2 shadow-lg shadow-emerald-950/40"
+            className="py-2 px-4 rounded-xl bg-gradient-to-r from-emerald-600 to-green-600 hover:from-emerald-500 hover:to-green-500 text-white text-xs font-black flex items-center gap-2 shadow-lg shadow-emerald-950/40 cursor-pointer"
           >
             <Send className="w-3.5 h-3.5" />
-            <span>Enviar no ZAP do Pai</span>
+            <span>{isSigned ? 'Enviar Contrato Assinado' : 'Enviar no WhatsApp'}</span>
           </button>
         </div>
       </div>

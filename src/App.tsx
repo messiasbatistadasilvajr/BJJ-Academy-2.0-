@@ -25,6 +25,7 @@ import { AcademyVoiceSettingsModal } from './components/common/AcademyVoiceSetti
 import { FinancialHubModal } from './components/common/FinancialHubModal';
 import { AcademyRegistrationModal } from './components/common/AcademyRegistrationModal';
 import { AcademyRegistrationView } from './components/views/AcademyRegistrationView';
+import { StudentRegistrationView } from './components/views/StudentRegistrationView';
 import { ExpenseManagementView } from './components/views/ExpenseManagementView';
 import { ProtectedExpenseRoute } from './components/common/ProtectedExpenseRoute';
 import { SuperAdminSaasView } from './components/views/SuperAdminSaasView';
@@ -92,6 +93,7 @@ export default function App() {
   // RBAC Privileges: CEO possui prioridade total e permissões globais irrestritas
   const isCEO = isCeoRole(activeRole);
   const isSuperAdminOrCEO = isSuperAdminOrCeoRole(activeRole);
+  const [isCeoAuditMode, setIsCeoAuditMode] = useState<boolean>(false);
 
   const handleSelectRole = (newRole: UserRole) => {
     setActiveRole(newRole);
@@ -114,7 +116,15 @@ export default function App() {
   });
 
   const [classes, setClasses] = useState<ClassSession[]>(() => {
-    return safeLocalStorageGet<ClassSession[]>('bjj_classes', mockClasses);
+    const cached = safeLocalStorageGet<ClassSession[]>('bjj_classes', mockClasses);
+    const hasOutdatedInstructors = !cached || cached.length === 0 || cached.some(c => 
+      c.instructor?.includes('Cavalo') || c.instructor?.includes('Peçanha') || c.instructor?.includes('Beatriz')
+    );
+    if (hasOutdatedInstructors) {
+      safeLocalStorageSet('bjj_classes', mockClasses);
+      return mockClasses;
+    }
+    return cached;
   });
 
   const [invoices, setInvoices] = useState<Invoice[]>(() => {
@@ -241,8 +251,10 @@ export default function App() {
       setStudentManagementTargetAcademy(targetAcademy);
       setActiveAcademyId(targetAcademy.id);
     }
-    setStudentManagementInitialRegistering(true);
-    setIsStudentManagementOpen(true);
+    // Abre diretamente na Página Completa dedicada 100% visível sem barreiras
+    setActiveRole('student_registration');
+    setIsStudentManagementOpen(false);
+    setStudentManagementInitialRegistering(false);
   };
 
   useEffect(() => {
@@ -366,8 +378,13 @@ export default function App() {
           (a) => a.id === 'acad_loyalty_jiujitsu' || a.name.toLowerCase().includes('loyalty')
         );
         if (loyaltyOnly.length > 0) {
-          setAcademies(loyaltyOnly);
-          safeLocalStorageSet('bjj_academies', loyaltyOnly);
+          const officialLoyalty = mockRegisteredAcademies.find(a => a.id === 'acad_loyalty_jiujitsu') || mockRegisteredAcademies[0];
+          const enriched = loyaltyOnly.map(a => ({
+            ...a,
+            staffUsers: officialLoyalty.staffUsers
+          }));
+          setAcademies(enriched);
+          safeLocalStorageSet('bjj_academies', enriched);
         }
         setIsCloudSynced(true);
       }
@@ -375,8 +392,17 @@ export default function App() {
 
     const unsubClasses = subscribeToClasses((updatedClasses) => {
       if (updatedClasses && updatedClasses.length > 0) {
-        setClasses(updatedClasses);
-        safeLocalStorageSet('bjj_classes', updatedClasses);
+        const hasOutdated = updatedClasses.some(c => 
+          c.instructor?.includes('Cavalo') || c.instructor?.includes('Peçanha') || c.instructor?.includes('Beatriz')
+        );
+        if (hasOutdated) {
+          mockClasses.forEach(cl => saveClassToFirestore(cl).catch(console.warn));
+          setClasses(mockClasses);
+          safeLocalStorageSet('bjj_classes', mockClasses);
+        } else {
+          setClasses(updatedClasses);
+          safeLocalStorageSet('bjj_classes', updatedClasses);
+        }
         setIsCloudSynced(true);
       }
     });
@@ -871,6 +897,36 @@ export default function App() {
         />
       ) : (
         <>
+          {/* 👑 CEO Audit Mode Sticky Banner */}
+          {isCeoAuditMode && (
+            <div className="sticky top-0 z-50 bg-gradient-to-r from-amber-600 via-amber-700 to-red-700 text-white px-4 py-2.5 flex items-center justify-between text-xs shadow-xl border-b-2 border-amber-300 animate-fadeIn">
+              <div className="flex items-center gap-2.5">
+                <div className="w-6 h-6 rounded-lg bg-slate-950 flex items-center justify-center text-amber-300 font-black text-xs shadow">
+                  👑
+                </div>
+                <div>
+                  <span className="font-black text-amber-200 uppercase tracking-wider text-[10px] block">
+                    Modo Auditoria do CEO Messias Ativo
+                  </span>
+                  <span className="text-white font-bold text-xs">
+                    Simulando experiência como: <strong className="underline decoration-amber-300">{activeRole === 'student' ? 'Aluno (Check-in & Carteirinha)' : activeRole === 'teacher' ? 'Professor (Chamada & Turmas)' : 'Pai / Responsável (Kids)'}</strong>
+                  </span>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => {
+                  setIsCeoAuditMode(false);
+                  setActiveRole('ceo');
+                  triggerPushNotification('👑 Painel CEO Restaurado', 'Você retornou ao controle executivo do CEO Messias.');
+                }}
+                className="px-3.5 py-1.5 rounded-xl bg-slate-950 hover:bg-slate-900 active:scale-95 text-amber-300 hover:text-white font-black text-xs flex items-center gap-1.5 border border-amber-400/60 shadow-lg cursor-pointer transition"
+              >
+                <span>↩ Voltar ao Painel CEO</span>
+              </button>
+            </div>
+          )}
+
           {/* Role-Based Active View */}
           {activeRole === 'student' && (
         <StudentView
@@ -903,6 +959,14 @@ export default function App() {
           onOpenBeltGuide={() => setIsBeltGuideOpen(true)}
           academyName={activeAcademy.name}
           activeAcademy={activeAcademy}
+          onSwitchToTeacherRole={() => {
+            setActiveRole('teacher');
+            triggerPushNotification('🥋 Modo Professor Ativado', 'Você alternou para a gestão de turmas e chamada.');
+          }}
+          onSwitchToParentRole={() => {
+            setActiveRole('parent');
+            triggerPushNotification('👨‍👧 Portal Responsável Ativado', 'Você alternou para a gestão dos dependentes Kids.');
+          }}
         />
       )}
 
@@ -920,6 +984,10 @@ export default function App() {
           onOpenTournaments={() => setIsTournamentsOpen(true)}
           onOpenBeltGuide={() => setIsBeltGuideOpen(true)}
           onOpenKidsBehavioralFeed={() => setIsKidsBehavioralFeedOpen(true)}
+          onSwitchToStudentView={(childId) => {
+            setActiveRole('student');
+            triggerPushNotification('🥋 Visão do Aluno Ativada', 'Você está visualizando o app na visão de treino do aluno.');
+          }}
         />
       )}
 
@@ -985,6 +1053,10 @@ export default function App() {
             setAnnouncements((prev) => [created, ...prev]);
             triggerPushNotification(`🏆 Convocação Torneio: ${reminder.name}`, `Inscrições até ${reminder.registrationDeadline}`);
           }}
+          onSwitchToStudentRole={() => {
+            setActiveRole('student');
+            triggerPushNotification('🥋 Modo Aluno Ativado', 'Você alternou para a sua visão pessoal de treinos e graduação.');
+          }}
         />
       )}
         </>
@@ -1043,6 +1115,17 @@ export default function App() {
             localStorage.setItem('bjj_invoices', JSON.stringify(updated));
           }}
           onOpenR2Backup={() => setIsR2BackupModalOpen(true)}
+          onStartCeoAudit={(targetRole) => {
+            setIsCeoAuditMode(true);
+            setActiveRole(targetRole);
+            triggerPushNotification(
+              '👑 Modo Auditoria CEO Ativado',
+              `Você está auditando a experiência do usuário como: ${targetRole === 'student' ? 'Aluno' : targetRole === 'teacher' ? 'Professor' : 'Responsável (Kids)'}. Toque no botão dourado no topo para retornar ao Painel CEO a qualquer momento.`
+            );
+          }}
+          onOpenSuperAdminSaas={() => setActiveRole('saas_superadmin')}
+          onOpenDataIntegrity={() => setIsDataIntegrityOpen(true)}
+          onOpenSystemDiagnostics={() => setIsSystemDiagnosticsOpen(true)}
         />
       )}
 
@@ -1087,6 +1170,27 @@ export default function App() {
           }}
           onBackToManager={() => setActiveRole('manager')}
           onOpenStudentEnrollment={handleOpenStudentEnrollment}
+        />
+      )}
+
+      {/* 👤 CADASTRO DE NOVOS ALUNOS (PÁGINA DEDICADA 100% COMPLETA SEM BLOQUEIOS) */}
+      {activeRole === 'student_registration' && (
+        <StudentRegistrationView
+          activeAcademy={studentManagementTargetAcademy || activeAcademy}
+          onBack={() => setActiveRole(isSuperAdminOrCEO ? 'ceo' : 'manager')}
+          onStudentSaved={(saved) => {
+            setStudentsList((prev) => {
+              const next = [saved, ...prev];
+              safeLocalStorageSet('bjj_students_roster', next);
+              return next;
+            });
+            triggerPushNotification(
+              '🥋 Aluno Salvo no Banco Nuvem!',
+              `${saved.name} foi cadastrado e sincronizado no Firebase Firestore com sucesso.`
+            );
+          }}
+          students={studentsList}
+          onOpenR2Backup={() => setIsR2BackupModalOpen(true)}
         />
       )}
 
@@ -1544,6 +1648,10 @@ export default function App() {
         onUpdateAcademy={handleUpdateAcademy}
         initialRegistering={studentManagementInitialRegistering}
         onOpenR2Backup={() => setIsR2BackupModalOpen(true)}
+        onOpenFullPageRegistration={() => {
+          setIsStudentManagementOpen(false);
+          setActiveRole('student_registration');
+        }}
       />
 
       {/* ☁️ Cloudflare R2 External Media & Disaster Recovery Backup Modal */}
@@ -1698,6 +1806,27 @@ export default function App() {
         academies={academies}
         onOpenSaaSSimulator={() => setIsSaaSSimulatorOpen(true)}
         onOpenFinancial={() => setIsFinancialOpen(true)}
+        onOpenSuperAdminSaas={() => {
+          setIsCEOProfileOpen(false);
+          setActiveRole('saas_superadmin');
+        }}
+        onOpenCloudStatus={() => {
+          setIsCEOProfileOpen(false);
+          setIsCloudStatusOpen(true);
+        }}
+        onOpenR2Backup={() => {
+          setIsCEOProfileOpen(false);
+          setIsR2BackupModalOpen(true);
+        }}
+        onStartCeoAudit={(targetRole) => {
+          setIsCEOProfileOpen(false);
+          setIsCeoAuditMode(true);
+          setActiveRole(targetRole);
+          triggerPushNotification(
+            '👑 Modo Auditoria CEO Ativado',
+            `Você está auditando a experiência do usuário como: ${targetRole === 'student' ? 'Aluno' : targetRole === 'teacher' ? 'Professor' : 'Responsável (Kids)'}. Toque no botão dourado no topo para retornar ao Painel CEO.`
+          );
+        }}
       />
 
       {/* 🥋 Academy Operating Hours Modal (Opened via Academy Filter Bar) */}

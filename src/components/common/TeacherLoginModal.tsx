@@ -22,50 +22,78 @@ export const TeacherLoginModal: React.FC<TeacherLoginModalProps> = ({
   academy,
   classes = []
 }) => {
-  // Staff instructors list
+  // Staff instructors list (Professores Oficiais Loyalty Jiu-Jitsu)
   const staffList: AcademyStaffUser[] = academy?.staffUsers && academy.staffUsers.length > 0 
     ? academy.staffUsers 
     : [
         {
-          id: 'prof_rodrigo_cavalo',
-          name: 'Mestre Rodrigo "Cavalo"',
-          email: 'rodrigo.cavalo@loyaltyjiujitsu.com.br',
+          id: 'prof_pedro_erick',
+          name: 'Prof. Pedro Erick',
+          email: 'pedro.erick@loyaltyjiujitsu.com.br',
+          role: 'PROFESSOR',
+          belt: 'black',
+          stripes: 2,
+          avatar: '/bjj_media/bjj_professor_mestre.jpg',
+          academyId: academy?.id || 'acad_loyalty_jiujitsu',
+          password: 'Pedro@loyalty1',
+          pinCode: '071600',
+          activeClassId: 'class_loyalty_0700',
+          isClassActive: false
+        },
+        {
+          id: 'prof_anilton',
+          name: 'Prof. Anilton',
+          email: 'anilton@loyaltyjiujitsu.com.br',
+          role: 'PROFESSOR',
+          belt: 'black',
+          stripes: 2,
+          avatar: '/bjj_media/bjj_professor_mestre.jpg',
+          academyId: academy?.id || 'acad_loyalty_jiujitsu',
+          password: 'Anilton@loyalty1',
+          pinCode: '111200',
+          activeClassId: 'class_loyalty_1100',
+          isClassActive: false
+        },
+        {
+          id: 'prof_dudu',
+          name: 'Prof. Dudu',
+          email: 'dudu@loyaltyjiujitsu.com.br',
+          role: 'PROFESSOR',
+          belt: 'black',
+          stripes: 1,
+          avatar: '/bjj_media/bjj_professor_mestre.jpg',
+          academyId: academy?.id || 'acad_loyalty_jiujitsu',
+          password: 'Dudu@loyalty1',
+          pinCode: '150000',
+          activeClassId: 'class_loyalty_1500',
+          isClassActive: false
+        },
+        {
+          id: 'prof_emanuel_badel',
+          name: 'Prof. Emanuel (Badel)',
+          email: 'emanuel.badel@loyaltyjiujitsu.com.br',
+          role: 'PROFESSOR',
+          belt: 'black',
+          stripes: 2,
+          avatar: '/bjj_media/bjj_professor_mestre.jpg',
+          academyId: academy?.id || 'acad_loyalty_jiujitsu',
+          password: 'Badel@loyalty1',
+          pinCode: '190000',
+          activeClassId: 'class_loyalty_1900',
+          isClassActive: false
+        },
+        {
+          id: 'prof_anderson',
+          name: 'Prof. Anderson',
+          email: 'anderson@loyaltyjiujitsu.com.br',
           role: 'PROFESSOR',
           belt: 'black',
           stripes: 3,
           avatar: '/bjj_media/bjj_professor_mestre.jpg',
           academyId: academy?.id || 'acad_loyalty_jiujitsu',
-          password: 'Cavalo@tatame1',
-          pinCode: '333333',
-          activeClassId: 'class_02',
-          isClassActive: false
-        },
-        {
-          id: 'prof_beatriz_lima',
-          name: 'Profª Beatriz Lima',
-          email: 'beatriz.lima@loyaltyjiujitsu.com.br',
-          role: 'PROFESSOR',
-          belt: 'brown',
-          stripes: 1,
-          avatar: '/bjj_media/bjj_student_female.jpg',
-          academyId: academy?.id || 'acad_loyalty_jiujitsu',
-          password: 'Beatriz@kids2',
-          pinCode: '222222',
-          activeClassId: 'class_01',
-          isClassActive: false
-        },
-        {
-          id: 'prof_alexandre_pecanha',
-          name: 'Prof. Alexandre Peçanha',
-          email: 'alexandre.pecanha@loyaltyjiujitsu.com.br',
-          role: 'PROFESSOR',
-          belt: 'black',
-          stripes: 1,
-          avatar: '/bjj_media/bjj_professor_mestre.jpg',
-          academyId: academy?.id || 'acad_loyalty_jiujitsu',
-          password: 'Pecanha@bjj1',
-          pinCode: '111111',
-          activeClassId: 'class_03',
+          password: 'Anderson@loyalty1',
+          pinCode: '200000',
+          activeClassId: 'class_loyalty_2000',
           isClassActive: false
         }
       ];
@@ -207,7 +235,7 @@ export const TeacherLoginModal: React.FC<TeacherLoginModalProps> = ({
               </span>
               <span className="text-[10px] font-mono text-emerald-400">Faixa {activeInstructor.belt}</span>
             </label>
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-52 overflow-y-auto pr-1">
               {staffList.map((prof) => {
                 const isSelected = prof.id === selectedInstructorId;
                 return (
@@ -215,22 +243,28 @@ export const TeacherLoginModal: React.FC<TeacherLoginModalProps> = ({
                     key={prof.id}
                     type="button"
                     onClick={() => handleSelectInstructor(prof.id)}
-                    className={`p-2.5 rounded-xl border text-left transition flex items-center gap-2 ${
+                    className={`p-2.5 rounded-xl border text-left transition flex items-center gap-2.5 ${
                       isSelected 
                         ? 'bg-emerald-950/80 border-emerald-500 text-white shadow-md shadow-emerald-950/50' 
                         : 'bg-slate-950/60 border-slate-800 text-slate-400 hover:border-slate-700'
                     }`}
                   >
-                    <div className="w-7 h-7 rounded-lg bg-slate-800 border border-slate-700 overflow-hidden shrink-0 flex items-center justify-center">
+                    <div className="w-8 h-8 rounded-lg bg-slate-800 border border-slate-700 overflow-hidden shrink-0 flex items-center justify-center">
                       {prof.avatar ? (
                         <img src={prof.avatar} alt={prof.name} className="w-full h-full object-cover" />
                       ) : (
                         <User size={14} className="text-slate-400" />
                       )}
                     </div>
-                    <div className="truncate">
-                      <div className="text-xs font-bold text-white truncate">{prof.name.split(' ')[0]}</div>
-                      <div className="text-[10px] text-slate-400 truncate">{prof.belt}</div>
+                    <div className="min-w-0 flex-1 truncate">
+                      <div className="text-xs font-black text-white truncate">{prof.name}</div>
+                      <div className="text-[10px] text-emerald-400 font-medium truncate">
+                        {prof.id === 'prof_pedro_erick' && '07h No-gi / 16h Luta-Livre'}
+                        {prof.id === 'prof_anilton' && '11h Gi / 12h No-gi'}
+                        {prof.id === 'prof_dudu' && '15h Gi (Seg/Qua/Sex)'}
+                        {prof.id === 'prof_emanuel_badel' && '19h Gi (Adulto/Juv)'}
+                        {prof.id === 'prof_anderson' && '20h Gi (Adulto Avançado)'}
+                      </div>
                     </div>
                   </button>
                 );
@@ -326,7 +360,7 @@ export const TeacherLoginModal: React.FC<TeacherLoginModalProps> = ({
                       required
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
-                      placeholder="Senha do professor (ex: Cavalo@tatame1)"
+                      placeholder="Senha do professor (ex: Pedro@loyalty1)"
                       className="w-full pl-9 pr-9 py-2.5 rounded-xl bg-slate-950 border border-slate-800 text-xs text-white focus:outline-none focus:border-emerald-500"
                     />
                     <button

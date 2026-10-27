@@ -19,6 +19,7 @@ export type UserRole =
   | 'student'               // 🥋 Aluno
   | 'parent'                // 👨‍👧 Portal Responsável Legal (Kids/Menor)
   | 'academy_registration'  // 🏛️ Cadastrar / Gerenciar Rede de Academias
+  | 'student_registration'  // 👤 Cadastro Oficial de Novos Alunos (Página Dedicada 100% Completa)
   | 'expense_management'    // 💸 Gestão de Despesas & Custos Operacionais
   | 'saas_superadmin';      // 🛡️ Painel Super Admin (Gestão de Assinaturas SaaS - Criador/Dono do Software)
 
@@ -1033,6 +1034,7 @@ export interface AcademyStaffUser {
   avatar?: string;
   academyId: string;
   academyName?: string;
+  scheduleNotes?: string; // Horários e dias oficiais de aula do professor
   password?: string; // Para login com e-mail/senha
   pinCode?: string; // PIN de 6 dígitos para acesso rápido no tatame
   activeClassId?: string; // ID da aula atualmente em andamento ministrada por este professor
