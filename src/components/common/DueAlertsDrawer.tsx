@@ -2,10 +2,16 @@ import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { 
   AlertCircle, Clock, X, MessageCircle, DollarSign, Download, 
-  CheckCircle2, ShieldAlert, Sparkles, RefreshCw, Send, Bell, Check
+  CheckCircle2, ShieldAlert, Sparkles, RefreshCw, Send, Bell, Check,
+  Lock, ShieldCheck
 } from 'lucide-react';
 import { Invoice } from '../../types';
-import { sendReminderViaWhatsApp, sendAdvance3DaysReminderViaWhatsApp } from '../../utils/whatsappHelper';
+import { 
+  sendReminderViaWhatsApp, 
+  sendAdvance3DaysReminderViaWhatsApp, 
+  sendPriorityDebtWhatsApp 
+} from '../../utils/whatsappHelper';
+import { analyzeStudentOverdueDebts } from '../../utils/respectfulBilling';
 import { exportFinancialInvoicesCSV } from '../../utils/csvExport';
 import { AsaasSubaccountClient } from '../../services/asaasSubaccountClient';
 import { triggerNativeHaptic } from '../../utils/nativeApp';
@@ -244,29 +250,50 @@ export const DueAlertsDrawer: React.FC<DueAlertsDrawerProps> = ({
               </div>
             ) : (
               displayedList.map((inv) => {
-                const isOverdue = inv.status === 'overdue';
                 const daysUntilDue = getDaysUntilDueDate(inv.dueDate);
+                const isOverdue = inv.status === 'overdue' || daysUntilDue < 0;
                 const isDueIn3Days = daysUntilDue === 3 || (daysUntilDue > 0 && daysUntilDue <= 3);
                 const wasSent = sentRemindersIds.has(inv.id);
+
+                const debtAnalysis = isOverdue
+                  ? analyzeStudentOverdueDebts(inv.studentId || inv.studentName, invoices, currentAcademyName)
+                  : null;
+                const isMultiDebt = debtAnalysis ? debtAnalysis.hasMultipleDebts : false;
+                const isOldestPriority = isMultiDebt && debtAnalysis?.oldestInvoice?.id === inv.id;
+                const isLockedRecentDebt = isMultiDebt && !isOldestPriority;
 
                 return (
                   <div
                     key={inv.id}
                     className={`p-3 rounded-2xl border transition ${
-                      isOverdue
-                        ? 'bg-red-950/20 border-red-900/60 ring-1 ring-red-500/20'
+                      isOldestPriority
+                        ? 'bg-amber-950/30 border-amber-500/50 ring-1 ring-amber-500/30'
+                        : isLockedRecentDebt
+                        ? 'bg-slate-900/60 border-slate-800/80 opacity-80'
                         : isDueIn3Days
-                          ? 'bg-cyan-950/20 border-cyan-800/60 ring-1 ring-cyan-500/30'
-                          : 'bg-slate-900 border-slate-800'
+                        ? 'bg-cyan-950/20 border-cyan-800/60 ring-1 ring-cyan-500/30'
+                        : isOverdue
+                        ? 'bg-red-950/20 border-red-900/60 ring-1 ring-red-500/20'
+                        : 'bg-slate-900 border-slate-800'
                     }`}
                   >
                     <div className="flex items-start justify-between gap-2">
                       <div>
-                        <div className="text-xs font-black text-white flex items-center gap-1.5">
+                        <div className="text-xs font-black text-white flex items-center gap-1.5 flex-wrap">
                           <span>{inv.studentName}</span>
                           {wasSent && (
                             <span className="text-[9px] bg-emerald-950 text-emerald-300 border border-emerald-700 px-1.5 py-0.2 rounded-full flex items-center gap-0.5">
                               <Check size={9} /> D-3 Enviado
+                            </span>
+                          )}
+                          {isOldestPriority && (
+                            <span className="text-[9px] bg-red-950 text-red-300 border border-red-700 px-1.5 py-0.2 rounded-full font-bold flex items-center gap-0.5">
+                              ⭐ Mais Antigo (Prioritário 1/{debtAnalysis?.totalOverdueCount})
+                            </span>
+                          )}
+                          {isLockedRecentDebt && (
+                            <span className="text-[9px] bg-slate-800 text-slate-400 border border-slate-700 px-1.5 py-0.2 rounded-full font-semibold flex items-center gap-0.5">
+                              <Lock size={9} /> Fatura Recente Bloqueada
                             </span>
                           )}
                         </div>
@@ -274,9 +301,9 @@ export const DueAlertsDrawer: React.FC<DueAlertsDrawerProps> = ({
                         <div className="text-[10px] font-mono text-slate-500">Doc: {inv.invoiceNumber}</div>
                       </div>
 
-                      <div className="text-right">
+                      <div className="text-right shrink-0">
                         <span className="text-xs font-black text-white font-mono block">
-                          R$ {inv.amount.toFixed(2).replace('.', ',')}
+                          R$ {(inv.totalUpdatedAmount || inv.amount).toFixed(2).replace('.', ',')}
                         </span>
                         <span
                           className={`text-[10px] font-bold px-1.5 py-0.5 rounded-full inline-block mt-0.5 ${
@@ -302,20 +329,41 @@ export const DueAlertsDrawer: React.FC<DueAlertsDrawerProps> = ({
                         <button
                           type="button"
                           onClick={() => {
-                            sendAdvance3DaysReminderViaWhatsApp(inv, undefined, academyName, pixKey);
+                            sendAdvance3DaysReminderViaWhatsApp(inv, undefined, currentAcademyName, pixKey);
                             setSentRemindersIds(prev => new Set(prev).add(inv.id));
                           }}
-                          className="flex-1 py-1.5 px-2.5 rounded-xl bg-cyan-600 hover:bg-cyan-500 text-white text-[11px] font-bold flex items-center justify-center gap-1.5 transition shadow-sm"
+                          className="flex-1 py-1.5 px-2.5 rounded-xl bg-cyan-600 hover:bg-cyan-500 text-white text-[11px] font-bold flex items-center justify-center gap-1.5 transition shadow-sm cursor-pointer"
                           title="Enviar lembrete amigável de 3 dias no WhatsApp"
                         >
                           <MessageCircle className="w-3.5 h-3.5 text-white" />
                           <span>Lembrete 3 Dias (WhatsApp)</span>
                         </button>
+                      ) : isOldestPriority && debtAnalysis ? (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            sendPriorityDebtWhatsApp({
+                              studentName: inv.studentName,
+                              totalOverdueCount: debtAnalysis.totalOverdueCount,
+                              oldestInvoice: inv
+                            });
+                          }}
+                          className="flex-1 py-1.5 px-2.5 rounded-xl bg-gradient-to-r from-red-600 to-amber-600 hover:from-red-500 hover:to-amber-500 text-white text-[11px] font-black flex items-center justify-center gap-1.5 transition shadow-sm cursor-pointer"
+                          title="Enviar cobrança prioritária com aviso explícito de múltiplos débitos no WhatsApp"
+                        >
+                          <Send className="w-3.5 h-3.5 text-white" />
+                          <span>Cobrar Boleto Mais Antigo (WhatsApp)</span>
+                        </button>
+                      ) : isLockedRecentDebt ? (
+                        <div className="flex-1 py-1.5 px-2.5 rounded-xl bg-slate-800/60 border border-slate-700 text-slate-400 text-[10px] flex items-center justify-center gap-1">
+                          <Lock size={12} className="text-amber-400" />
+                          <span>Trava: Aguarde quitação do boleto anterior</span>
+                        </div>
                       ) : (
                         <button
                           type="button"
-                          onClick={() => sendReminderViaWhatsApp(inv, academyName, pixKey)}
-                          className="flex-1 py-1.5 px-2.5 rounded-xl bg-emerald-600/90 hover:bg-emerald-500 text-white text-[11px] font-bold flex items-center justify-center gap-1.5 transition shadow-sm"
+                          onClick={() => sendReminderViaWhatsApp(inv, currentAcademyName, pixKey)}
+                          className="flex-1 py-1.5 px-2.5 rounded-xl bg-emerald-600/90 hover:bg-emerald-500 text-white text-[11px] font-bold flex items-center justify-center gap-1.5 transition shadow-sm cursor-pointer"
                           title="Enviar lembrete amigável no WhatsApp"
                         >
                           <MessageCircle className="w-3.5 h-3.5 text-white" />
@@ -323,14 +371,14 @@ export const DueAlertsDrawer: React.FC<DueAlertsDrawerProps> = ({
                         </button>
                       )}
 
-                      {onOpenInvoicePix && (
+                      {onOpenInvoicePix && !isLockedRecentDebt && (
                         <button
                           type="button"
                           onClick={() => {
                             onOpenInvoicePix(inv);
                             onClose();
                           }}
-                          className="py-1.5 px-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-[11px] font-semibold flex items-center gap-1 transition border border-slate-700"
+                          className="py-1.5 px-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-[11px] font-semibold flex items-center gap-1 transition border border-slate-700 cursor-pointer"
                         >
                           <DollarSign className="w-3 h-3 text-emerald-400" />
                           <span>PIX</span>

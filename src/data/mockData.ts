@@ -455,6 +455,27 @@ export const mockInvoices: Invoice[] = [
     invoiceNumber: 'LOY-2026-08-0199'
   },
   {
+    id: 'inv_overdue_jardins_02',
+    studentId: 'stu_marcos_01',
+    studentName: 'Marcos Vinicius Ribeiro',
+    studentAvatar: '/bjj_media/bjj_student_male.jpg',
+    title: 'Mensalidade Loyalty Black - Setembro/2026',
+    amount: 290.00,
+    dueDate: '10/09/2026',
+    status: 'overdue',
+    academyId: 'acad_loyalty_jiujitsu',
+    academyName: 'Loyalty Jiu-Jitsu',
+    planName: 'Mensal Loyalty Black',
+    lateFeePercent: 2.0,
+    dailyInterestPercent: 0.0333,
+    daysOverdue: 19,
+    calculatedFine: 5.80,
+    calculatedInterest: 1.83,
+    totalUpdatedAmount: 297.63,
+    pixCode: '00020126580014br.gov.bcb.pix0136loyalty-bjj-pix-marcos-set-2975204000053039865406297.635802BR5918LOYALTY JIU JITSU6009FORTALEZA62070503***6304A812',
+    invoiceNumber: 'LOY-2026-09-0205'
+  },
+  {
     id: 'inv_prev_aug',
     studentId: 'stu_lucas_01',
     studentName: 'Lucas Gracie Mendes',

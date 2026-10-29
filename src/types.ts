@@ -1377,7 +1377,7 @@ export interface SparringPair {
 // 3. Automated Respectful WhatsApp Billing
 // -------------------------------------------------------------
 export interface RespectfulBillingTemplate {
-  type: 'preventive' | 'due_today' | 'polite_late' | 'kiosk_discrete';
+  type: 'preventive' | 'due_today' | 'polite_late' | 'kiosk_discrete' | 'priority_debt';
   title: string;
   body: string;
   pixKeyText: string;

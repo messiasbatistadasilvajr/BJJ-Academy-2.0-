@@ -347,3 +347,64 @@ Qualquer dúvida estamos à disposição na recepção ou por este canal. Bons t
   return { success: true, url };
 }
 
+/**
+ * Dispara mensagem oficial do Assistente Virtual de Atendimento e Cobrança
+ * Notifica explicitamente múltiplos débitos e trava no envio do boleto mais antigo.
+ */
+export function sendPriorityDebtWhatsApp({
+  studentName,
+  totalOverdueCount,
+  oldestInvoice,
+  phone
+}: {
+  studentName: string;
+  totalOverdueCount: number;
+  oldestInvoice: Invoice;
+  phone?: string;
+}) {
+  const updatedAmount = oldestInvoice.totalUpdatedAmount || oldestInvoice.amount;
+  const formattedAmount = updatedAmount.toFixed(2).replace('.', ',');
+  const pixKey = oldestInvoice.pixCode || oldestInvoice.invoiceNumber || 'Chave PIX da Academia';
+  const cleanPhone = (phone || '').replace(/\D/g, '');
+  const phoneParam = cleanPhone.length >= 10 ? `phone=55${cleanPhone}&` : '';
+
+  let message = '';
+  if (totalOverdueCount >= 2) {
+    message = 
+`Olá, ${studentName}!
+
+Identificamos que você possui ${totalOverdueCount} boletos pendentes em seu cadastro. 
+
+Para evitar a incidência de novos juros, bloqueio de serviços ou o pagamento da fatura errada, estamos enviando abaixo os dados para quitação do seu boleto MAIS ANTIGO:
+
+📌 Referência: ${oldestInvoice.title}
+🗓 Vencimento original: ${oldestInvoice.dueDate}
+💰 Valor atualizado: R$ ${formattedAmount}
+
+Código Pix / Linha Digitável para pagamento:
+${pixKey}
+
+⚠️ IMPORTANTE: Por padrão de segurança, a quitação deve seguir a ordem de vencimento. Assim que este pagamento for compensado em nosso sistema, enviaremos os dados para regularização dos demais.`;
+  } else {
+    message =
+`Olá, ${studentName}!
+
+Identificamos 1 boleto pendente em seu cadastro:
+
+📌 Referência: ${oldestInvoice.title}
+🗓 Vencimento original: ${oldestInvoice.dueDate}
+💰 Valor atualizado: R$ ${formattedAmount}
+
+Código Pix / Linha Digitável para pagamento:
+${pixKey}
+
+⚠️ IMPORTANTE: Para evitar juros e suspensão de acesso ao tatame, pedimos a gentileza de realizar a quitação assim que possível. Qualquer dúvida estamos à disposição!`;
+  }
+
+  const url = `https://api.whatsapp.com/send?${phoneParam}text=${encodeURIComponent(message)}`;
+  if (typeof window !== 'undefined') {
+    window.open(url, '_blank');
+  }
+  return { success: true, url };
+}
+
