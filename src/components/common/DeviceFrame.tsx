@@ -10,6 +10,7 @@ import { UserRole, isCeoRole, isSuperAdminOrCeoRole, RegisteredAcademy, canAcces
 import { NativeStatusBar } from './NativeStatusBar';
 import { BJJFixedBackground } from './BJJFixedBackground';
 import { AcademyFilterBar } from './AcademyFilterBar';
+import { safeLocalStorageGet } from '../../utils/safeStorage';
 
 interface DeviceFrameProps {
   children: React.ReactNode;
@@ -137,10 +138,11 @@ export const DeviceFrame: React.FC<DeviceFrameProps> = ({
     { id: 'expense_management', label: 'Gestão de Despesas', icon: TrendingDown, color: 'text-rose-400', badge: 'DESPESAS' },
   ];
 
-  // Regra de Sigilo Estrito: Os donos de academia e alunos NÃO podem sequer saber que a rota Super Admin SaaS existe
+  // O CEO possui permissão total irrestrita a todos os papéis e módulos
+  const isCeoAuthenticated = safeLocalStorageGet<boolean>('bjj_is_ceo_authenticated', true);
   const roles = allRoles.filter(r => {
     if (r.id === 'saas_superadmin') {
-      return canAccessSuperAdmin(activeRole);
+      return isCeoAuthenticated || canAccessSuperAdmin(activeRole);
     }
     return true;
   });
@@ -168,40 +170,43 @@ export const DeviceFrame: React.FC<DeviceFrameProps> = ({
 
         {/* Responsive Mobile Container: 100% width on phone, generously wide on tablet/desktop */}
         <div className="w-full max-w-xl md:max-w-3xl lg:max-w-5xl xl:max-w-6xl h-full flex flex-col relative z-20 overflow-hidden shadow-2xl bg-slate-950/20 backdrop-blur-[0.5px] sm:border-x sm:border-slate-800/80">
-          {/* Enhanced Mobile Top App Bar com Transparência de Vidro (Imagem 100% Visível no Topo) e Fontes Ampliadas */}
-          <header className="h-15 shrink-0 px-3 sm:px-4 bg-slate-950/40 border-b border-white/10 backdrop-blur-md flex items-center justify-between gap-2.5 z-30 shadow-lg">
+          {/* Enhanced Mobile Top App Bar com Transparência de Vidro e Layout Responsivo Anti-Clipping */}
+          <header className="h-14 sm:h-15 shrink-0 px-2 sm:px-4 bg-slate-950/40 border-b border-white/10 backdrop-blur-md flex items-center justify-between gap-1.5 sm:gap-2.5 z-30 shadow-lg">
             {/* Logo + Academy selector pill */}
-            <div className="flex items-center gap-2.5 min-w-0">
-              <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-red-600 to-red-800 p-0.5 shadow-md flex items-center justify-center font-black text-sm text-white shrink-0 ring-1 ring-white/20">
+            <div className="flex items-center gap-1.5 sm:gap-2 min-w-0 shrink">
+              <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-xl bg-gradient-to-br from-red-600 to-red-800 p-0.5 shadow-md flex items-center justify-center font-black text-xs sm:text-sm text-white shrink-0 ring-1 ring-white/20">
                 BJJ
               </div>
               <button
+                type="button"
                 onClick={() => setIsMobileBranchOpen(true)}
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-900/80 hover:bg-slate-800 border border-slate-700/80 text-white text-sm font-extrabold truncate max-w-[130px] sm:max-w-[170px] transition cursor-pointer shadow-sm"
+                className="flex items-center gap-1 px-2 sm:px-3 py-1.5 rounded-xl bg-slate-900/80 hover:bg-slate-800 border border-slate-700/80 text-white text-xs sm:text-sm font-extrabold truncate max-w-[95px] xs:max-w-[125px] sm:max-w-[170px] transition cursor-pointer shadow-sm active:scale-95"
                 title="Alternar academia ou filial"
               >
                 <span className="truncate">{currentAcademy?.shortName || currentAcademy?.name || activeAcademyName || 'BJJ Academy'}</span>
-                <ChevronDown className="w-4 h-4 text-slate-300 shrink-0" />
+                <ChevronDown className="w-3.5 h-3.5 text-slate-300 shrink-0" />
               </button>
             </div>
 
-            {/* Center Role Switcher Pill (Alimentado com Fonte Maior e Mais Nítida) */}
+            {/* Center Role Switcher Pill */}
             <button
+              type="button"
               onClick={() => setIsMobileRolesOpen(true)}
-              className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-slate-900/90 hover:bg-slate-800 border border-slate-600/80 text-sm font-black transition shadow-md truncate max-w-[135px] sm:max-w-[165px] cursor-pointer"
+              className="flex items-center gap-1 sm:gap-1.5 px-2.5 sm:px-3.5 py-1.5 rounded-full bg-slate-900/90 hover:bg-slate-800 border border-slate-600/80 text-xs sm:text-sm font-black transition shadow-md truncate max-w-[100px] xs:max-w-[130px] sm:max-w-[165px] cursor-pointer shrink active:scale-95"
               title="Alternar Perfil de Acesso"
             >
-              <CurrentRoleIcon className={`w-4 h-4 ${currentRoleObj.color} shrink-0`} />
-              <span className="truncate text-white text-sm font-black">{currentRoleObj.label.replace('👑 ', '').replace('🥋 ', '')}</span>
-              <ChevronDown className="w-4 h-4 text-slate-300 shrink-0" />
+              <CurrentRoleIcon className={`w-3.5 h-3.5 sm:w-4 sm:h-4 ${currentRoleObj.color} shrink-0`} />
+              <span className="truncate text-white font-black">{currentRoleObj.label.replace('👑 ', '').replace('🥋 ', '')}</span>
+              <ChevronDown className="w-3.5 h-3.5 text-slate-300 shrink-0" />
             </button>
 
             {/* Right Action Icons: Direct Desktop Switcher, Modules & More Menu */}
-            <div className="flex items-center gap-1.5 shrink-0">
+            <div className="flex items-center gap-1 sm:gap-1.5 shrink-0">
               {/* Instant 1-tap Desktop Toggle */}
               <button
+                type="button"
                 onClick={onToggleDesktopView}
-                className="px-2.5 py-1.5 rounded-xl bg-slate-900/90 hover:bg-slate-800 border border-slate-700 text-cyan-300 hover:text-white text-xs font-black flex items-center gap-1 transition shadow-sm cursor-pointer"
+                className="px-2 sm:px-2.5 py-1.5 rounded-xl bg-slate-900/90 hover:bg-slate-800 border border-slate-700 text-cyan-300 hover:text-white text-xs font-black flex items-center gap-1 transition shadow-sm cursor-pointer active:scale-95"
                 title="Alternar para Painel Desktop (Computador)"
               >
                 <Monitor className="w-3.5 h-3.5 text-cyan-400" />
@@ -211,8 +216,9 @@ export const DeviceFrame: React.FC<DeviceFrameProps> = ({
               {/* Toggle to smartphone shell mockup if on desktop */}
               {!isMobileScreen && (
                 <button
+                  type="button"
                   onClick={() => setMobilePresentation('mockup')}
-                  className="p-2 rounded-xl bg-slate-900/90 hover:bg-slate-800 border border-slate-700 text-slate-200 hover:text-white text-xs transition cursor-pointer"
+                  className="p-1.5 sm:p-2 rounded-xl bg-slate-900/90 hover:bg-slate-800 border border-slate-700 text-slate-200 hover:text-white text-xs transition cursor-pointer active:scale-95"
                   title="Ver com Moldura de Celular (Simulador)"
                 >
                   <Tablet className="w-4 h-4" />
@@ -220,8 +226,9 @@ export const DeviceFrame: React.FC<DeviceFrameProps> = ({
               )}
 
               <button
+                type="button"
                 onClick={() => setIsMobileModulesOpen(true)}
-                className="p-2 rounded-xl bg-gradient-to-r from-red-600/40 to-amber-600/30 hover:bg-red-600/50 border border-red-500/50 text-amber-300 text-xs font-black flex items-center gap-1.5 transition cursor-pointer shadow-sm"
+                className="p-1.5 sm:p-2 rounded-xl bg-gradient-to-r from-red-600/40 to-amber-600/30 hover:bg-red-600/50 border border-red-500/50 text-amber-300 text-xs font-black flex items-center gap-1 transition cursor-pointer shadow-sm active:scale-95"
                 title="Abrir Módulos do Tatame"
               >
                 <Sparkles className="w-4 h-4 text-amber-400" />
@@ -229,8 +236,9 @@ export const DeviceFrame: React.FC<DeviceFrameProps> = ({
               </button>
 
               <button
+                type="button"
                 onClick={() => setIsMobileMenuOpen(true)}
-                className="p-2 rounded-xl bg-slate-900/90 hover:bg-slate-800 border border-slate-700 text-white transition cursor-pointer"
+                className="p-1.5 sm:p-2 rounded-xl bg-slate-900/90 hover:bg-slate-800 border border-slate-700 text-white transition cursor-pointer active:scale-95"
                 title="Menu e ferramentas adicionais"
               >
                 <Menu className="w-4 h-4" />
@@ -481,7 +489,7 @@ export const DeviceFrame: React.FC<DeviceFrameProps> = ({
                   </button>
                 )}
 
-                {canAccessExpenseManagement(activeRole) && (
+                {(isCeoAuthenticated || canAccessExpenseManagement(activeRole)) && (
                   <button
                     onClick={() => {
                       setIsMobileModulesOpen(false);
@@ -496,7 +504,7 @@ export const DeviceFrame: React.FC<DeviceFrameProps> = ({
                   </button>
                 )}
 
-                {canAccessSuperAdmin(activeRole) && (
+                {(isCeoAuthenticated || canAccessSuperAdmin(activeRole)) && (
                   <button
                     onClick={() => {
                       setIsMobileModulesOpen(false);
@@ -983,7 +991,7 @@ export const DeviceFrame: React.FC<DeviceFrameProps> = ({
         </div>
 
         {/* Viewport, OS and Tech Tools */}
-        <div className="flex items-center gap-1.5">
+        <div className="flex flex-wrap items-center gap-1.5">
           {/* CEO Login Quick Button */}
           {onOpenCEOLogin && (
             <button

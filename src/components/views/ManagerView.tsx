@@ -685,151 +685,155 @@ export const ManagerView: React.FC<ManagerViewProps> = ({
             </div>
           </div>
 
-          {/* Quick Actions & Platform Switcher in a smooth horizontal scroll on mobile, flex on desktop */}
-          <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar pb-1 lg:pb-0 w-full lg:w-auto shrink-0">
-            {/* Radar Anti-Evasão Quick Indicator Button */}
-            {onOpenRetentionRadar && (
-              <button
-                onClick={onOpenRetentionRadar}
-                className="px-2.5 py-1.5 rounded-xl border text-[11px] font-bold flex items-center gap-1 transition shadow-sm bg-red-950/60 hover:bg-red-900/80 border-red-500/60 text-red-300 ring-1 ring-red-500/30 shrink-0"
-                title="Radar Anti-Evasão: Alunos com risco de abandono"
-              >
-                <ShieldAlert className="w-3.5 h-3.5 text-red-400 animate-pulse" />
-                <span>Radar Evasão</span>
-                {retentionAlertsCount !== undefined && retentionAlertsCount > 0 && (
-                  <span className="px-1.5 py-0.2 rounded-full text-[9px] bg-red-500 text-white font-black">
-                    {retentionAlertsCount}
-                  </span>
-                )}
-              </button>
-            )}
+          {/* Quick Actions & Platform Switcher - 100% Responsivo sem botões escondidos */}
+          <div className="flex flex-wrap items-center gap-2 w-full lg:w-auto justify-start lg:justify-end pt-1 lg:pt-0">
+            {/* Primary Action Group: + Aluno & + Academia (Sempre Visíveis) */}
+            <div className="flex items-center gap-1.5 shrink-0">
+              <StudentEnrollmentButton
+                academy={activeRegisteredAcademy || { id: activeAcademyId, name: activeAcademyName }}
+                onOpenEnrollment={(acad) => {
+                  if (onOpenStudentEnrollment) {
+                    onOpenStudentEnrollment(acad || activeRegisteredAcademy);
+                  } else if (onOpenStudentManagement) {
+                    onOpenStudentManagement();
+                  }
+                }}
+                variant="header"
+                label="+ Aluno"
+              />
 
-            {/* Aniversariantes do Mês / Hoje Quick Indicator Button */}
-            {onOpenBirthdayAlert && (
               <button
-                onClick={onOpenBirthdayAlert}
-                className="px-2.5 py-1.5 rounded-xl border text-[11px] font-bold flex items-center gap-1 transition shadow-sm bg-amber-950/60 hover:bg-amber-900/80 border-amber-500/60 text-amber-300 ring-1 ring-amber-500/30 shrink-0"
-                title="Aniversariantes: Felicitações com o nome oficial da academia"
+                type="button"
+                onClick={onOpenAcademyRegistration}
+                className="px-2.5 py-1.5 rounded-xl bg-gradient-to-r from-red-600/30 to-amber-600/30 hover:from-red-600/50 hover:to-amber-600/50 border border-amber-500/40 text-amber-300 text-xs font-bold flex items-center gap-1 transition shadow-sm cursor-pointer active:scale-95"
+                title="Cadastrar Nova Academia ou Filial"
               >
-                <Cake className="w-3.5 h-3.5 text-amber-400" />
-                <span>Aniversariantes</span>
-                {todayBirthdaysCount !== undefined && todayBirthdaysCount > 0 && (
-                  <span className="px-1.5 py-0.2 rounded-full text-[9px] bg-amber-500 text-slate-950 font-black">
-                    {todayBirthdaysCount} hoje
-                  </span>
-                )}
+                <Building2 className="w-3.5 h-3.5 text-amber-400" />
+                <span>+ Academia</span>
               </button>
-            )}
+            </div>
 
-            {/* 📦 Separação de Pedidos da Pro-Shop Quick Indicator Button */}
-            <button
-              onClick={onOpenProShopFulfillment || onOpenProShop}
-              className={`px-2.5 py-1.5 rounded-xl border text-[11px] font-bold flex items-center gap-1.5 transition shadow-sm shrink-0 ${
-                pendingProShopCount > 0
-                  ? 'bg-purple-950/70 hover:bg-purple-900/90 border-purple-500/70 text-purple-200 ring-1 ring-purple-500/40'
-                  : 'bg-slate-800 hover:bg-slate-700 border-slate-700 text-slate-300'
-              }`}
-              title="Central de Separação de Pedidos e Estoque Físico da Pro-Shop"
-            >
-              <Package className={`w-3.5 h-3.5 ${pendingProShopCount > 0 ? 'text-purple-400' : 'text-slate-400'}`} />
-              <span>Separação Estoque</span>
-              {pendingProShopCount > 0 && (
-                <span className="px-1.5 py-0.2 rounded-full text-[9px] bg-amber-400 text-slate-950 font-black animate-pulse">
-                  {pendingProShopCount} para separar
-                </span>
+            {/* Status Triggers Group: Faturas D-3, Radar Evasão, Aniversariantes, Separação Estoque */}
+            <div className="flex flex-wrap items-center gap-1.5">
+              {/* Smart Due Alerts Indicator Button */}
+              <button
+                type="button"
+                onClick={() => setIsDueAlertsOpen(true)}
+                className={`px-2.5 py-1.5 rounded-xl border text-xs font-bold flex items-center gap-1.5 transition shadow-sm cursor-pointer active:scale-95 ${
+                  overdueInvoicesCount > 0
+                    ? 'bg-amber-950/60 hover:bg-amber-900/80 border-amber-500/60 text-amber-300 ring-1 ring-amber-500/30'
+                    : 'bg-slate-900 hover:bg-slate-800 border-slate-700/80 text-slate-300'
+                }`}
+                title="Alertas Inteligentes de Vencimento e Lembretes Automáticos WhatsApp D-3"
+              >
+                <AlertCircle className={`w-3.5 h-3.5 ${overdueInvoicesCount > 0 ? 'text-amber-400' : 'text-slate-400'}`} />
+                <span>{overdueInvoicesCount > 0 ? `${overdueInvoicesCount} Vencidos` : 'Faturas D-3'}</span>
+              </button>
+
+              {/* Radar Anti-Evasão Quick Indicator Button */}
+              {onOpenRetentionRadar && (
+                <button
+                  type="button"
+                  onClick={onOpenRetentionRadar}
+                  className="px-2.5 py-1.5 rounded-xl border text-xs font-bold flex items-center gap-1.5 transition shadow-sm bg-red-950/60 hover:bg-red-900/80 border-red-500/60 text-red-300 ring-1 ring-red-500/30 cursor-pointer active:scale-95"
+                  title="Radar Anti-Evasão: Alunos com risco de abandono"
+                >
+                  <ShieldAlert className="w-3.5 h-3.5 text-red-400 animate-pulse" />
+                  <span>Radar</span>
+                  {retentionAlertsCount !== undefined && retentionAlertsCount > 0 && (
+                    <span className="px-1.5 py-0.2 rounded-full text-[10px] bg-red-500 text-white font-black">
+                      {retentionAlertsCount}
+                    </span>
+                  )}
+                </button>
               )}
-            </button>
 
-            {/* Smart Due Alerts Indicator Button */}
-            <button
-              onClick={() => setIsDueAlertsOpen(true)}
-              className={`px-2.5 py-1.5 rounded-xl border text-[11px] font-bold flex items-center gap-1 transition shadow-sm shrink-0 ${
-                overdueInvoicesCount > 0
-                  ? 'bg-amber-950/60 hover:bg-amber-900/80 border-amber-500/60 text-amber-300 ring-1 ring-amber-500/30'
-                  : 'bg-slate-800 hover:bg-slate-700 border-slate-700 text-slate-300'
-              }`}
-              title="Alertas Inteligentes de Vencimento e Lembretes Automáticos WhatsApp D-3"
-            >
-              <AlertCircle className={`w-3.5 h-3.5 ${overdueInvoicesCount > 0 ? 'text-amber-400' : 'text-slate-400'}`} />
-              <span>{overdueInvoicesCount > 0 ? `${overdueInvoicesCount} Vencidos` : 'Faturas • D-3'}</span>
-            </button>
+              {/* Aniversariantes do Mês / Hoje Quick Indicator Button */}
+              {onOpenBirthdayAlert && (
+                <button
+                  type="button"
+                  onClick={onOpenBirthdayAlert}
+                  className="px-2.5 py-1.5 rounded-xl border text-xs font-bold flex items-center gap-1.5 transition shadow-sm bg-amber-950/60 hover:bg-amber-900/80 border-amber-500/60 text-amber-300 ring-1 ring-amber-500/30 cursor-pointer active:scale-95"
+                  title="Aniversariantes: Felicitações com o nome oficial da academia"
+                >
+                  <Cake className="w-3.5 h-3.5 text-amber-400" />
+                  <span>Niver</span>
+                  {todayBirthdaysCount !== undefined && todayBirthdaysCount > 0 && (
+                    <span className="px-1.5 py-0.2 rounded-full text-[10px] bg-amber-500 text-slate-950 font-black">
+                      {todayBirthdaysCount}
+                    </span>
+                  )}
+                </button>
+              )}
 
-            {/* New Academy Quick Button */}
-            <button
-              onClick={onOpenAcademyRegistration}
-              className="px-2.5 py-1.5 rounded-xl bg-gradient-to-r from-red-600/30 to-amber-600/30 hover:from-red-600/50 hover:to-amber-600/50 border border-amber-500/40 text-amber-300 text-[11px] font-bold flex items-center gap-1 transition shadow-sm shrink-0"
-              title="Cadastrar Nova Academia ou Filial"
-            >
-              <Building2 className="w-3.5 h-3.5 text-amber-400" />
-              <span>+ Academia</span>
-            </button>
+              {/* 📦 Separação de Pedidos da Pro-Shop Quick Indicator Button */}
+              <button
+                type="button"
+                onClick={onOpenProShopFulfillment || onOpenProShop}
+                className={`px-2.5 py-1.5 rounded-xl border text-xs font-bold flex items-center gap-1.5 transition shadow-sm cursor-pointer active:scale-95 ${
+                  pendingProShopCount > 0
+                    ? 'bg-purple-950/70 hover:bg-purple-900/90 border-purple-500/70 text-purple-200 ring-1 ring-purple-500/40'
+                    : 'bg-slate-900 hover:bg-slate-800 border-slate-700/80 text-slate-300'
+                }`}
+                title="Central de Separação de Pedidos e Estoque Físico da Pro-Shop"
+              >
+                <Package className={`w-3.5 h-3.5 ${pendingProShopCount > 0 ? 'text-purple-400' : 'text-slate-400'}`} />
+                <span>Estoque</span>
+                {pendingProShopCount > 0 && (
+                  <span className="px-1.5 py-0.2 rounded-full text-[10px] bg-amber-400 text-slate-950 font-black animate-pulse">
+                    {pendingProShopCount}
+                  </span>
+                )}
+              </button>
 
-            {/* Standard Button: Cadastrar Novo Aluno */}
-            <StudentEnrollmentButton
-              academy={activeRegisteredAcademy || { id: activeAcademyId, name: activeAcademyName }}
-              onOpenEnrollment={(acad) => {
-                if (onOpenStudentEnrollment) {
-                  onOpenStudentEnrollment(acad || activeRegisteredAcademy);
-                } else if (onOpenStudentManagement) {
-                  onOpenStudentManagement();
-                }
-              }}
-              variant="header"
-              label="+ Aluno"
-            />
-
-            {/* View Mode Toggle Button */}
-            <button
-              onClick={onToggleDesktopLayout}
-              className={`p-1.5 px-2.5 rounded-xl border text-xs font-bold flex items-center gap-1.5 transition shrink-0 ${
-                isDesktopLayout
-                  ? 'bg-red-600 border-red-500 text-white shadow-md'
-                  : 'bg-slate-800 border-slate-700 text-cyan-300 hover:text-white'
-              }`}
-              title={isDesktopLayout ? 'Alternar para Plataforma Mobile (PWA / Celular)' : 'Alternar para Painel Desktop (PC)'}
-            >
-              {isDesktopLayout ? <Smartphone className="w-3.5 h-3.5" /> : <Monitor className="w-3.5 h-3.5" />}
-              <span className="text-[10px] font-bold">{isDesktopLayout ? '📱 Modo Mobile' : '💻 Modo Desktop'}</span>
-            </button>
-
-            <button
-              onClick={onOpenCapacitorDocs}
-              className="p-1.5 rounded-xl bg-slate-800 border border-slate-700 text-slate-300 hover:text-red-400 transition shrink-0"
-              title="Ver Arquitetura Capacitor & Multiplataforma"
-            >
-              <Layers className="w-3.5 h-3.5" />
-            </button>
+              {/* View Mode Toggle Button */}
+              <button
+                type="button"
+                onClick={onToggleDesktopLayout}
+                className={`px-2.5 py-1.5 rounded-xl border text-xs font-bold flex items-center gap-1.5 transition cursor-pointer active:scale-95 ${
+                  isDesktopLayout
+                    ? 'bg-red-600 border-red-500 text-white shadow-md'
+                    : 'bg-slate-900 border-slate-700/80 text-cyan-300 hover:text-white'
+                }`}
+                title={isDesktopLayout ? 'Alternar para Plataforma Mobile (PWA / Celular)' : 'Alternar para Painel Desktop (PC)'}
+              >
+                {isDesktopLayout ? <Smartphone className="w-3.5 h-3.5" /> : <Monitor className="w-3.5 h-3.5" />}
+                <span>{isDesktopLayout ? 'Mobile' : 'PC'}</span>
+              </button>
+            </div>
           </div>
         </div>
 
-        {/* Quick Tabs com Fontes Maiores e Mais Nítidas */}
-        <div className="flex items-center gap-2 overflow-x-auto no-scrollbar pt-1.5">
-          {[
-            { id: 'dashboard', label: 'Métricas & Tatame', icon: BarChart3 },
-            { id: 'graficos', label: 'Gráficos & DRE', icon: PieChart },
-            { id: 'financeiro', label: 'Receita & Asaas', icon: DollarSign },
-            { id: 'despesas', label: 'Gestão de Despesas', icon: TrendingDown },
-            { id: 'academies', label: `Cadastrar Academia (${academies.length})`, icon: Building2 },
-            { id: 'crm', label: 'Novos Leads (CRM)', icon: UserPlus },
-            { id: 'push', label: 'Push em Massa', icon: Bell },
-          ].map((tab) => {
-            const Icon = tab.icon;
-            const isActive = activeTab === tab.id;
-            return (
-              <button
-                key={tab.id}
-                onClick={() => setActiveTab(tab.id as any)}
-                className={`px-3.5 py-2 rounded-xl text-xs sm:text-sm font-extrabold shrink-0 flex items-center gap-1.5 transition ${
-                  isActive
-                    ? 'bg-amber-500 text-slate-950 shadow-lg font-black ring-1 ring-amber-300'
-                    : 'bg-slate-900/80 text-slate-300 hover:text-white hover:bg-slate-800'
-                }`}
-              >
-                <Icon className="w-4 h-4" />
-                {tab.label}
-              </button>
-            );
-          })}
+        {/* Quick Tabs: Enterprise Tier-1 Segmented Control (Linear / macOS Style) */}
+        <div className="pt-2">
+          <div className="inline-flex p-1 bg-slate-900/90 rounded-2xl border border-slate-800/80 max-w-full overflow-x-auto no-scrollbar gap-1 shadow-inner">
+            {[
+              { id: 'dashboard', label: 'Métricas & Tatame', icon: BarChart3 },
+              { id: 'graficos', label: 'Gráficos & DRE', icon: PieChart },
+              { id: 'financeiro', label: 'Receita & Asaas', icon: DollarSign },
+              { id: 'despesas', label: 'Gestão Despesas', icon: TrendingDown },
+              { id: 'academies', label: `Filiais (${academies.length})`, icon: Building2 },
+              { id: 'crm', label: 'Leads (CRM)', icon: UserPlus },
+              { id: 'push', label: 'Push Broadcast', icon: Bell },
+            ].map((tab) => {
+              const Icon = tab.icon;
+              const isActive = activeTab === tab.id;
+              return (
+                <button
+                  key={tab.id}
+                  onClick={() => setActiveTab(tab.id as any)}
+                  className={`px-3.5 py-1.5 rounded-xl text-xs font-semibold shrink-0 flex items-center gap-1.5 transition-all duration-150 cursor-pointer ${
+                    isActive
+                      ? 'bg-slate-800 text-white shadow-sm border border-slate-700/80 font-black'
+                      : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/50'
+                  }`}
+                >
+                  <Icon className={`w-3.5 h-3.5 ${isActive ? 'text-amber-400' : 'text-slate-400'}`} />
+                  <span>{tab.label}</span>
+                </button>
+              );
+            })}
+          </div>
         </div>
       </div>
 
@@ -838,274 +842,276 @@ export const ManagerView: React.FC<ManagerViewProps> = ({
         {/* 1. DASHBOARD */}
         {activeTab === 'dashboard' && (
           <div className="space-y-4">
-            {/* 📦 Banner Operacional: Pedidos Pro-Shop Aguardando Separação no Estoque */}
-            {pendingProShopCount > 0 && (
-              <div 
-                onClick={onOpenProShopFulfillment || onOpenProShop}
-                className="p-3.5 rounded-2xl bg-gradient-to-r from-purple-950/80 via-slate-900 to-slate-900 border border-purple-500/60 hover:border-purple-400/90 cursor-pointer flex flex-col sm:flex-row sm:items-center justify-between gap-3 transition group shadow-lg"
-              >
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-2xl bg-purple-500/20 text-purple-300 border border-purple-500/40 flex items-center justify-center shrink-0 group-hover:scale-105 transition">
-                    <Package className="w-5 h-5 text-purple-400 animate-bounce" />
-                  </div>
-                  <div>
-                    <div className="flex items-center gap-2">
-                      <span className="text-xs font-black text-white group-hover:text-purple-300 transition">
-                        📦 {pendingProShopCount} Pedido{pendingProShopCount > 1 ? 's' : ''} Pro-Shop para Separar no Estoque!
-                      </span>
-                      <span className="px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-amber-400 text-slate-950">
-                        RECEPÇÃO & TATAME
-                      </span>
-                    </div>
-                    <p className="text-[11px] text-slate-300 leading-tight mt-0.5">
-                      Alunos compraram kimonos/acessórios. Verifique os tamanhos no depósito e deixe os itens separados no balcão.
-                    </p>
-                  </div>
-                </div>
-                <button
-                  type="button"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    if (onOpenProShopFulfillment) onOpenProShopFulfillment();
-                    else if (onOpenProShop) onOpenProShop();
-                  }}
-                  className="px-3.5 py-1.5 rounded-xl bg-purple-600 hover:bg-purple-500 text-white text-xs font-extrabold flex items-center justify-center gap-1 shrink-0 shadow-md transition"
-                >
-                  <span>Separar Agora</span>
-                  <ArrowUpRight className="w-3.5 h-3.5" />
-                </button>
-              </div>
-            )}
-
-            {/* 🚨 Radar Anti-Evasão Warning Banner */}
-            {onOpenRetentionRadar && (
-              <div 
-                onClick={onOpenRetentionRadar}
-                className="p-3.5 rounded-2xl bg-gradient-to-r from-red-950/70 via-slate-900 to-amber-950/50 border border-red-800/50 hover:border-red-500/70 cursor-pointer flex items-center justify-between transition group shadow-md"
-              >
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-2xl bg-red-600/20 text-red-400 border border-red-500/40 flex items-center justify-center group-hover:scale-105 transition">
-                    <ShieldAlert className="w-5 h-5 animate-pulse" />
-                  </div>
-                  <div>
-                    <div className="flex items-center gap-2">
-                      <span className="text-xs font-black text-white group-hover:text-red-300 transition">
-                        🚨 Radar Anti-Evasão Ativo
-                      </span>
-                      <span className="px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-red-500/20 text-red-400 border border-red-500/40">
-                        {retentionAlertsCount ?? 4} Alunos em Risco
-                      </span>
-                    </div>
-                    <p className="text-[11px] text-slate-300 leading-tight mt-0.5">
-                      Alunos com mais de 7 dias sem check-in no tatame. Clique para abrir o Radar e disparar o WhatsApp de acolhimento.
-                    </p>
-                  </div>
-                </div>
-                <button
-                  type="button"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    onOpenRetentionRadar();
-                  }}
-                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-red-600 hover:bg-red-500 active:scale-95 text-white font-bold text-xs shadow-md shadow-red-950 transition shrink-0 cursor-pointer"
-                >
-                  <span className="hidden sm:inline">Resgatar Alunos</span>
-                  <span className="sm:hidden">Resgatar</span>
-                  <ArrowUpRight className="w-4 h-4" />
-                </button>
-              </div>
-            )}
-
-            {/* 🎂 Aniversariantes do Tatame Banner */}
-            {onOpenBirthdayAlert && (
-              <div 
-                onClick={onOpenBirthdayAlert}
-                className="p-3.5 rounded-2xl bg-gradient-to-r from-amber-950/60 via-slate-900 to-yellow-950/40 border border-amber-500/40 hover:border-amber-400 cursor-pointer flex items-center justify-between transition group shadow-md"
-              >
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-2xl bg-amber-500/20 text-amber-400 border border-amber-500/40 flex items-center justify-center group-hover:scale-105 transition shadow-inner">
-                    <Cake className="w-5 h-5 text-amber-400" />
-                  </div>
-                  <div>
-                    <div className="flex items-center gap-2">
-                      <span className="text-xs font-black text-white group-hover:text-amber-300 transition">
-                        🎂 Aniversariantes no Tatame
-                      </span>
-                      {todayBirthdaysCount !== undefined && todayBirthdaysCount > 0 ? (
-                        <span className="px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-amber-500/20 text-amber-300 border border-amber-500/40 animate-pulse">
-                          🎉 {todayBirthdaysCount} Hoje!
-                        </span>
-                      ) : (
-                        <span className="px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-slate-800 text-slate-300 border border-slate-700">
-                          Setembro
-                        </span>
-                      )}
-                    </div>
-                    <p className="text-[11px] text-slate-300 leading-tight mt-0.5">
-                      Felicitações oficiais aos alunos e professores com o nome da <strong className="text-amber-300 font-bold">{activeAcademyName}</strong>.
-                    </p>
-                  </div>
-                </div>
-                <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-black text-xs shadow-md transition shrink-0">
-                  <span className="hidden sm:inline">Parabenizar</span>
-                  <span className="sm:hidden">Ver</span>
-                  <ArrowUpRight className="w-4 h-4" />
-                </div>
-              </div>
-            )}
-
-            {/* Cloud Database Multi-Access Banner */}
-            <div 
-              onClick={onOpenCloudStatus}
-              className="p-3.5 rounded-2xl bg-gradient-to-r from-emerald-950/60 via-slate-900 to-slate-900 border border-emerald-500/30 flex items-center justify-between gap-3 cursor-pointer hover:border-emerald-500/50 transition-colors shadow-lg shadow-emerald-950/20"
-            >
-              <div className="flex items-center gap-3">
-                <div className="p-2.5 rounded-xl bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 shrink-0">
-                  <Database size={20} />
-                </div>
-                <div>
-                  <div className="flex items-center gap-2">
-                    <span className="text-xs font-extrabold text-white">Banco em Nuvem Ativo (Firebase)</span>
-                    <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[9px] font-bold bg-emerald-500/20 text-emerald-400">
-                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
-                      MULTI-ACESSO
-                    </span>
-                  </div>
-                  <p className="text-[11px] text-slate-400 mt-0.5">
-                    Multi-acesso simultâneo com persistência total • {studentsCount ?? 6} alunos em nuvem
-                  </p>
-                </div>
-              </div>
-              <button 
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onOpenStudentManagement && onOpenStudentManagement();
-                }}
-                className="px-3 py-1.5 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-xs font-bold shrink-0 transition-colors flex items-center gap-1 cursor-pointer"
-              >
-                <Users size={13} />
-                <span>Gerenciar</span>
-              </button>
-            </div>
-
-            {/* Cloudflare R2 Mídias Externas & Backup Automático (Disaster Recovery) */}
-            <div 
-              onClick={onOpenR2Backup}
-              className="p-3.5 rounded-2xl bg-gradient-to-r from-amber-950/60 via-slate-900 to-slate-900 border border-amber-500/40 flex items-center justify-between gap-3 cursor-pointer hover:border-amber-400/60 transition-colors shadow-lg shadow-amber-950/20"
-            >
-              <div className="flex items-center gap-3">
-                <div className="p-2.5 rounded-xl bg-amber-500/10 text-amber-400 border border-amber-500/30 shrink-0">
-                  <Cloud size={20} />
-                </div>
-                <div>
-                  <div className="flex items-center gap-2 flex-wrap">
-                    <span className="text-xs font-extrabold text-white">Mídias Fora da Máquina & Backup (Cloudflare R2)</span>
-                    <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[9px] font-bold bg-amber-500/20 text-amber-300 border border-amber-500/40">
-                      <span className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse"></span>
-                      10 GB GRÁTIS • S3
-                    </span>
-                  </div>
-                  <p className="text-[11px] text-slate-300 mt-0.5">
-                    Fotos de alunos e docs no R2 • Backup automático com recuperação rápida (Disaster Recovery) em caso de erro no deploy
-                  </p>
-                </div>
-              </div>
-              <button 
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onOpenR2Backup && onOpenR2Backup();
-                }}
-                className="px-3 py-1.5 bg-gradient-to-r from-amber-600 to-orange-600 hover:from-amber-500 hover:to-orange-500 text-white rounded-xl text-xs font-black shrink-0 transition-colors flex items-center gap-1.5 shadow-md shadow-amber-950/50 cursor-pointer"
-              >
-                <Upload size={13} />
-                <span>R2 & Backup</span>
-              </button>
-            </div>
-
-            {/* Banner Interativo: Gráficos Financeiros & DRE do Tatame */}
-            <div 
-              onClick={() => setActiveTab('graficos')}
-              className="p-4 rounded-2xl bg-gradient-to-r from-amber-500/15 via-slate-900 to-orange-500/15 border border-amber-500/50 flex items-center justify-between gap-3 cursor-pointer hover:border-amber-400 transition-all shadow-lg shadow-amber-950/20 group"
-            >
-              <div className="flex items-center gap-3">
-                <div className="p-2.5 rounded-xl bg-gradient-to-br from-amber-500 to-orange-600 text-slate-950 font-black shadow-md shadow-amber-950/40 shrink-0">
-                  <PieChart size={20} className="stroke-[2.5]" />
-                </div>
-                <div>
-                  <div className="flex items-center gap-2 flex-wrap">
-                    <span className="text-xs font-black text-white group-hover:text-amber-300 transition-colors">
-                      Gráficos Financeiros & DRE do Tatame
-                    </span>
-                    <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[9px] font-black bg-amber-500/20 text-amber-300 border border-amber-500/40">
-                      <Sparkles size={10} /> NOVO PAINEL VISUAL
-                    </span>
-                  </div>
-                  <p className="text-[11px] text-slate-300 mt-0.5">
-                    Acompanhe por gráficos: Mensalidades dos alunos, Vendas da lojinha, Pagamento dos professores e Aluguel.
-                  </p>
-                </div>
-              </div>
-              <button 
-                onClick={(e) => {
-                  e.stopPropagation();
-                  setActiveTab('graficos');
-                }}
-                className="px-3 py-1.5 bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-400 text-slate-950 rounded-xl text-xs font-black shrink-0 transition-colors flex items-center gap-1.5 shadow-md shadow-amber-950/50 cursor-pointer"
-              >
-                <span>Ver Gráficos</span>
-                <ArrowUpRight size={14} />
-              </button>
-            </div>
-
-            {/* KPI Cards Grid */}
-            <div className="grid grid-cols-2 gap-2.5">
+            {/* KPI Cards Grid: Design System Stripe/Linear Architecture (First Viewport Presence) */}
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+              {/* Card 1: Alunos Cadastrados */}
               <div 
                 onClick={onOpenStudentManagement}
-                className="p-3.5 rounded-2xl bg-slate-900 border border-slate-800 space-y-1 cursor-pointer hover:border-blue-500/40 transition-colors"
+                className="group relative p-4 rounded-2xl bg-slate-900/60 backdrop-blur-md border border-slate-800/80 border-t-white/10 hover:border-blue-500/50 transition-all duration-200 cursor-pointer shadow-sm hover:shadow-md hover:bg-slate-900/80"
                 title="Clique para abrir lista e cadastro de alunos na nuvem"
               >
-                <div className="flex items-center justify-between text-[10px] text-slate-400 uppercase font-bold">
-                  <span>Alunos Cadastrados</span>
-                  <Users className="w-3.5 h-3.5 text-blue-400" />
+                <div className="flex items-center justify-between text-xs text-slate-400 uppercase font-semibold tracking-wider">
+                  <span>Alunos Ativos</span>
+                  <div className="w-7 h-7 rounded-lg bg-blue-500/10 border border-blue-500/20 text-blue-400 flex items-center justify-center group-hover:scale-105 transition-transform">
+                    <Users className="w-3.5 h-3.5" />
+                  </div>
                 </div>
-                <div className="text-2xl font-black text-white">{studentsCount || activeStudents}</div>
-                <div className="text-[10px] text-blue-400 font-semibold flex items-center gap-1">
-                  <Cloud className="w-3 h-3 text-emerald-400" /> Nuvem Firestore
+                <div className="mt-2 text-3xl font-black text-white font-mono tracking-tight">
+                  {studentsCount || activeStudents}
                 </div>
-              </div>
-
-              <div className="p-3.5 rounded-2xl bg-slate-900 border border-slate-800 space-y-1">
-                <div className="flex items-center justify-between text-[10px] text-slate-400 uppercase font-bold">
-                  <span>Faturamento Mês</span>
-                  <DollarSign className="w-3.5 h-3.5 text-emerald-400" />
-                </div>
-                <div className="text-2xl font-black text-emerald-400">
-                  R$ {(totalRevenue / 1000).toFixed(1)}k
-                </div>
-                <div className="text-[10px] text-emerald-400 font-semibold flex items-center gap-1">
-                  <TrendingUp className="w-3 h-3" /> 95.8% adimplência
+                <div className="mt-2 pt-2 border-t border-slate-800/60 flex items-center justify-between text-[11px]">
+                  <span className="text-slate-400 font-medium flex items-center gap-1.5">
+                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
+                    Nuvem Firestore
+                  </span>
+                  <span className="text-blue-400 font-semibold group-hover:translate-x-0.5 transition-transform flex items-center gap-0.5">
+                    Gerenciar <ArrowUpRight className="w-3 h-3" />
+                  </span>
                 </div>
               </div>
 
-              <div className="p-3.5 rounded-2xl bg-slate-900 border border-slate-800 space-y-1">
-                <div className="flex items-center justify-between text-[10px] text-slate-400 uppercase font-bold">
+              {/* Card 2: Faturamento Mês */}
+              <div 
+                onClick={onOpenFinancial}
+                className="group relative p-4 rounded-2xl bg-slate-900/60 backdrop-blur-md border border-slate-800/80 border-t-white/10 hover:border-emerald-500/50 transition-all duration-200 cursor-pointer shadow-sm hover:shadow-md hover:bg-slate-900/80"
+                title="Clique para abrir conciliação financeira e cobranças Asaas"
+              >
+                <div className="flex items-center justify-between text-xs text-slate-400 uppercase font-semibold tracking-wider">
+                  <span>Faturamento (MRR)</span>
+                  <div className="w-7 h-7 rounded-lg bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 flex items-center justify-center group-hover:scale-105 transition-transform">
+                    <DollarSign className="w-3.5 h-3.5" />
+                  </div>
+                </div>
+                <div className="mt-2 text-3xl font-black text-emerald-400 font-mono tracking-tight">
+                  {formatPrivacyBRL(totalRevenue)}
+                </div>
+                <div className="mt-2 pt-2 border-t border-slate-800/60 flex items-center justify-between text-[11px]">
+                  <span className="text-emerald-400 font-semibold flex items-center gap-1 font-mono">
+                    <TrendingUp className="w-3 h-3" /> 95.8% adimplência
+                  </span>
+                  <span className="text-slate-400 font-medium">Asaas Pix</span>
+                </div>
+              </div>
+
+              {/* Card 3: Inadimplência & Recuperação */}
+              <div 
+                onClick={() => setIsDueAlertsOpen(true)}
+                className="group relative p-4 rounded-2xl bg-slate-900/60 backdrop-blur-md border border-slate-800/80 border-t-white/10 hover:border-amber-500/50 transition-all duration-200 cursor-pointer shadow-sm hover:shadow-md hover:bg-slate-900/80"
+                title="Clique para abrir régua inteligente de cobrança respeitosa FIFO"
+              >
+                <div className="flex items-center justify-between text-xs text-slate-400 uppercase font-semibold tracking-wider">
                   <span>Inadimplência</span>
-                  <AlertTriangle className="w-3.5 h-3.5 text-amber-400" />
+                  <div className="w-7 h-7 rounded-lg bg-amber-500/10 border border-amber-500/20 text-amber-400 flex items-center justify-center group-hover:scale-105 transition-transform">
+                    <AlertTriangle className="w-3.5 h-3.5" />
+                  </div>
                 </div>
-                <div className="text-2xl font-black text-white">{defaultRate}%</div>
-                <div className="text-[10px] text-amber-400 font-medium">
-                  R$ 2.720 em cobrança
+                <div className="mt-2 text-3xl font-black text-amber-300 font-mono tracking-tight">
+                  {defaultRate}%
+                </div>
+                <div className="mt-2 pt-2 border-t border-slate-800/60 flex items-center justify-between text-[11px]">
+                  <span className="text-amber-300/90 font-medium">
+                    {formatPrivacyBRL(2720)} em cobrança
+                  </span>
+                  <span className="text-amber-400 font-semibold flex items-center gap-0.5 group-hover:translate-x-0.5 transition-transform">
+                    Cobrar <ArrowUpRight className="w-3 h-3" />
+                  </span>
                 </div>
               </div>
 
-              <div className="p-3.5 rounded-2xl bg-slate-900 border border-slate-800 space-y-1">
-                <div className="flex items-center justify-between text-[10px] text-slate-400 uppercase font-bold">
+              {/* Card 4: Presenças e Ocupação no Tatame */}
+              <div className="p-4 rounded-2xl bg-slate-900/60 backdrop-blur-md border border-slate-800/80 border-t-white/10 shadow-sm">
+                <div className="flex items-center justify-between text-xs text-slate-400 uppercase font-semibold tracking-wider">
                   <span>Presenças Hoje</span>
-                  <CheckCircle className="w-3.5 h-3.5 text-red-400" />
+                  <div className="w-7 h-7 rounded-lg bg-red-500/10 border border-red-500/20 text-red-400 flex items-center justify-center">
+                    <CheckCircle className="w-3.5 h-3.5" />
+                  </div>
                 </div>
-                <div className="text-2xl font-black text-white">88</div>
-                <div className="text-[10px] text-slate-400">
-                  Ocupação média: 82%
+                <div className="mt-2 text-3xl font-black text-white font-mono tracking-tight">
+                  88
+                </div>
+                <div className="mt-2 pt-2 border-t border-slate-800/60 flex items-center justify-between text-[11px]">
+                  <span className="text-slate-400 font-medium">
+                    Ocupação média: <strong className="text-slate-200">82%</strong>
+                  </span>
+                  <span className="text-red-400 font-medium">14 faixas pretas</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Central de Ações & Alertas Operacionais (Design System Priority Stream) */}
+            <div className="space-y-2">
+              <div className="flex items-center justify-between px-1">
+                <div className="flex items-center gap-2">
+                  <span className="w-2 h-2 rounded-full bg-amber-400 animate-pulse"></span>
+                  <h3 className="text-xs font-bold uppercase tracking-wider text-slate-300">
+                    Ações Operacionais Prioritárias
+                  </h3>
+                </div>
+                <span className="text-[11px] font-mono text-slate-400">
+                  Tempo Real · {activeAcademyName}
+                </span>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                {/* 📦 Separação de Pedidos Pro-Shop */}
+                {pendingProShopCount > 0 ? (
+                  <div 
+                    onClick={onOpenProShopFulfillment || onOpenProShop}
+                    className="p-3.5 rounded-2xl bg-slate-900/80 border border-purple-500/30 hover:border-purple-400/70 cursor-pointer flex items-center justify-between gap-3 transition-all duration-200 group shadow-sm hover:shadow-purple-950/20"
+                  >
+                    <div className="flex items-center gap-3 min-w-0">
+                      <div className="w-10 h-10 rounded-xl bg-purple-500/10 border border-purple-500/20 text-purple-400 flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform">
+                        <Package className="w-5 h-5 text-purple-400 animate-bounce" />
+                      </div>
+                      <div className="min-w-0">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <span className="text-xs font-bold text-white truncate">
+                            {pendingProShopCount} Pedido{pendingProShopCount > 1 ? 's' : ''} Pro-Shop
+                          </span>
+                          <span className="text-[10px] font-mono font-semibold px-2 py-0.5 rounded-md bg-purple-500/20 text-purple-300 border border-purple-500/30">
+                            Estoque Balcão
+                          </span>
+                        </div>
+                        <p className="text-[11px] text-slate-400 truncate mt-0.5">
+                          Kimonos e itens comprados para separar e entregar no tatame.
+                        </p>
+                      </div>
+                    </div>
+                    <button
+                      type="button"
+                      className="px-3 py-1.5 rounded-xl bg-purple-600 hover:bg-purple-500 text-white text-xs font-bold flex items-center gap-1 shrink-0 transition cursor-pointer"
+                    >
+                      <span>Separar</span>
+                      <ArrowUpRight className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+                ) : (
+                  <div 
+                    onClick={onOpenProShop}
+                    className="p-3.5 rounded-2xl bg-slate-900/50 border border-slate-800/80 hover:border-slate-700 cursor-pointer flex items-center justify-between gap-3 transition group"
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-xl bg-slate-800 text-slate-400 flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform">
+                        <ShoppingBag className="w-5 h-5" />
+                      </div>
+                      <div>
+                        <span className="text-xs font-bold text-white block">Pro-Shop & Estoque</span>
+                        <span className="text-[11px] text-slate-400">Todos os pedidos estão em dia</span>
+                      </div>
+                    </div>
+                    <button
+                      type="button"
+                      className="px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold"
+                    >
+                      Abrir Loja
+                    </button>
+                  </div>
+                )}
+
+                {/* 🚨 Radar Anti-Evasão */}
+                {onOpenRetentionRadar && (
+                  <div 
+                    onClick={onOpenRetentionRadar}
+                    className="p-3.5 rounded-2xl bg-slate-900/80 border border-rose-500/30 hover:border-rose-400/70 cursor-pointer flex items-center justify-between gap-3 transition-all duration-200 group shadow-sm hover:shadow-rose-950/20"
+                  >
+                    <div className="flex items-center gap-3 min-w-0">
+                      <div className="w-10 h-10 rounded-xl bg-rose-500/10 border border-rose-500/20 text-rose-400 flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform">
+                        <ShieldAlert className="w-5 h-5 text-rose-400 animate-pulse" />
+                      </div>
+                      <div className="min-w-0">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <span className="text-xs font-bold text-white truncate">
+                            Radar Anti-Evasão
+                          </span>
+                          <span className="text-[10px] font-mono font-semibold px-2 py-0.5 rounded-md bg-rose-500/20 text-rose-300 border border-rose-500/30">
+                            {retentionAlertsCount ?? 4} em risco
+                          </span>
+                        </div>
+                        <p className="text-[11px] text-slate-400 truncate mt-0.5">
+                          Alunos há &gt; 7 dias sem check-in. Disparar acolhimento.
+                        </p>
+                      </div>
+                    </div>
+                    <button
+                      type="button"
+                      className="px-3 py-1.5 rounded-xl bg-rose-600 hover:bg-rose-500 text-white text-xs font-bold flex items-center gap-1 shrink-0 transition cursor-pointer"
+                    >
+                      <span>Resgatar</span>
+                      <ArrowUpRight className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+                )}
+
+                {/* 🎂 Aniversariantes do Mês / Hoje */}
+                {onOpenBirthdayAlert && (
+                  <div 
+                    onClick={onOpenBirthdayAlert}
+                    className="p-3.5 rounded-2xl bg-slate-900/80 border border-amber-500/30 hover:border-amber-400/70 cursor-pointer flex items-center justify-between gap-3 transition-all duration-200 group shadow-sm"
+                  >
+                    <div className="flex items-center gap-3 min-w-0">
+                      <div className="w-10 h-10 rounded-xl bg-amber-500/10 border border-amber-500/20 text-amber-400 flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform">
+                        <Cake className="w-5 h-5 text-amber-400" />
+                      </div>
+                      <div className="min-w-0">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <span className="text-xs font-bold text-white truncate">
+                            Aniversariantes no Tatame
+                          </span>
+                          {todayBirthdaysCount !== undefined && todayBirthdaysCount > 0 ? (
+                            <span className="text-[10px] font-mono font-semibold px-2 py-0.5 rounded-md bg-amber-500/20 text-amber-300 border border-amber-500/30 animate-pulse">
+                              {todayBirthdaysCount} hoje
+                            </span>
+                          ) : (
+                            <span className="text-[10px] font-mono font-semibold px-2 py-0.5 rounded-md bg-slate-800 text-slate-400">
+                              Mês Atual
+                            </span>
+                          )}
+                        </div>
+                        <p className="text-[11px] text-slate-400 truncate mt-0.5">
+                          Felicitações oficiais via WhatsApp com nome da academia.
+                        </p>
+                      </div>
+                    </div>
+                    <button
+                      type="button"
+                      className="px-3 py-1.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 text-xs font-black flex items-center gap-1 shrink-0 transition cursor-pointer"
+                    >
+                      <span>Parabenizar</span>
+                      <ArrowUpRight className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+                )}
+
+                {/* 📊 Atalho Rápido para Gráficos & DRE */}
+                <div 
+                  onClick={() => setActiveTab('graficos')}
+                  className="p-3.5 rounded-2xl bg-slate-900/80 border border-slate-800 hover:border-slate-700 cursor-pointer flex items-center justify-between gap-3 transition-all duration-200 group shadow-sm"
+                >
+                  <div className="flex items-center gap-3 min-w-0">
+                    <div className="w-10 h-10 rounded-xl bg-slate-800 border border-slate-700 text-amber-400 flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform">
+                      <PieChart className="w-5 h-5 text-amber-400" />
+                    </div>
+                    <div className="min-w-0">
+                      <div className="flex items-center gap-2">
+                        <span className="text-xs font-bold text-white truncate">
+                          Gráficos Financeiros & DRE
+                        </span>
+                        <span className="text-[10px] font-mono text-emerald-400 font-semibold">
+                          Lucro & Custos
+                        </span>
+                      </div>
+                      <p className="text-[11px] text-slate-400 truncate mt-0.5">
+                        Mensalidades, custos com professores, aluguel e lojinha.
+                      </p>
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    className="px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold flex items-center gap-1 shrink-0 transition cursor-pointer border border-slate-700"
+                  >
+                    <span>Ver DRE</span>
+                    <ArrowUpRight className="w-3.5 h-3.5 text-slate-400" />
+                  </button>
                 </div>
               </div>
             </div>
@@ -1521,19 +1527,50 @@ export const ManagerView: React.FC<ManagerViewProps> = ({
               </div>
             </div>
 
-            {/* Architecture Banner */}
-            <div className="p-3.5 rounded-2xl bg-gradient-to-r from-red-950/40 via-slate-900 to-slate-900 border border-red-800/50 flex items-center justify-between">
-              <div>
-                <div className="text-xs font-bold text-white flex items-center gap-1.5">
-                  <ShieldCheck className="w-4 h-4 text-emerald-400" /> BJJ Academy Mobile 2.0 Ativo
-                </div>
-                <div className="text-[10px] text-slate-300 mt-0.5">
-                  Capacitor + PWA + Web integrados no mesmo core.
+            {/* System Infrastructure & Cloud Status (Tier-1 Enterprise Telemetry Strip) */}
+            <div className="p-3.5 rounded-2xl bg-slate-900/60 backdrop-blur-md border border-slate-800/80 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
+              <div className="flex items-center gap-4 flex-wrap">
+                {/* Cloud Firestore Multi-access */}
+                <button
+                  type="button"
+                  onClick={onOpenCloudStatus}
+                  className="flex items-center gap-2 text-slate-300 hover:text-emerald-400 transition cursor-pointer"
+                  title="Status de sincronização Firestore em nuvem"
+                >
+                  <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+                  <span className="font-mono text-[11px] text-slate-400">Cloud Firestore:</span>
+                  <span className="font-semibold text-emerald-400">Ativo ({studentsCount ?? 6} alunos)</span>
+                </button>
+
+                <span className="text-slate-700 hidden sm:inline">|</span>
+
+                {/* Cloudflare R2 Backup */}
+                {onOpenR2Backup && (
+                  <button
+                    type="button"
+                    onClick={onOpenR2Backup}
+                    className="flex items-center gap-2 text-slate-300 hover:text-amber-400 transition cursor-pointer"
+                    title="Disaster Recovery & Backup Cloudflare R2"
+                  >
+                    <Cloud className="w-3.5 h-3.5 text-amber-400" />
+                    <span className="font-mono text-[11px] text-slate-400">Backup R2:</span>
+                    <span className="font-semibold text-amber-300">S3 Sincronizado</span>
+                  </button>
+                )}
+
+                <span className="text-slate-700 hidden sm:inline">|</span>
+
+                {/* Engine */}
+                <div className="flex items-center gap-1.5 text-slate-400">
+                  <ShieldCheck className="w-3.5 h-3.5 text-blue-400" />
+                  <span className="font-mono text-[11px]">BJJ Academy Mobile 2.0 (PWA + Capacitor)</span>
                 </div>
               </div>
+
               <button
+                type="button"
                 onClick={onOpenCapacitorDocs}
-                className="px-3 py-1.5 rounded-xl bg-red-600 hover:bg-red-700 text-white text-[10px] font-bold shrink-0 shadow-md"
+                className="px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white text-[10px] font-bold shrink-0 transition border border-slate-700 cursor-pointer self-start sm:self-auto"
               >
                 Ver Arquitetura
               </button>

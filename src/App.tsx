@@ -56,6 +56,7 @@ import { SparringMatchmakerModal } from './components/common/SparringMatchmakerM
 import { RespectfulBillingModal } from './components/common/RespectfulBillingModal';
 import { KidsBehavioralFeedModal } from './components/common/KidsBehavioralFeedModal';
 import { TatameTVModal } from './components/common/TatameTVModal';
+import { RoleAuthGateModal } from './components/common/RoleAuthGateModal';
 import { academyVoiceEngine } from './utils/voiceNotification';
 import { useOnlineStatus } from './hooks/usePWAInstall';
 import { safeLocalStorageGet, safeLocalStorageSet } from './utils/safeStorage';
@@ -85,25 +86,104 @@ import {
 export default function App() {
   const isOnline = useOnlineStatus();
 
-  // App State
-  const [activeRole, setActiveRole] = useState<UserRole>('student');
+  // App State: Prioridade Master Permanente para o CEO Mestre Messias
+  const [isCeoUser, setIsCeoUser] = useState<boolean>(() => {
+    return safeLocalStorageGet<boolean>('bjj_is_ceo_authenticated', true);
+  });
+  const [activeRole, setActiveRole] = useState<UserRole>(() => {
+    return safeLocalStorageGet<UserRole>('bjj_active_role', 'ceo');
+  });
   const [isDesktopView, setIsDesktopView] = useState<boolean>(false);
   const [os, setOs] = useState<'ios' | 'android'>('ios');
 
   // RBAC Privileges: CEO possui prioridade total e permissões globais irrestritas
-  const isCEO = isCeoRole(activeRole);
-  const isSuperAdminOrCEO = isSuperAdminOrCeoRole(activeRole);
+  const isCEO = isCeoUser || isCeoRole(activeRole);
+  const isSuperAdminOrCEO = isCeoUser || isSuperAdminOrCeoRole(activeRole);
   const [isCeoAuditMode, setIsCeoAuditMode] = useState<boolean>(false);
 
-  const handleSelectRole = (newRole: UserRole) => {
+  // 🔐 Trava de Segurança RBAC: Confirmação Obrigatória de Senha por Perfil
+  const [isRoleAuthGateOpen, setIsRoleAuthGateOpen] = useState<boolean>(false);
+  const [pendingAuthRole, setPendingAuthRole] = useState<UserRole | null>(null);
+  const [roleAuthCustomMessage, setRoleAuthCustomMessage] = useState<string | undefined>(undefined);
+  const [onRoleAuthSuccessCallback, setOnRoleAuthSuccessCallback] = useState<(() => void) | null>(null);
+
+  // Dispara a checagem obrigatória de senha para qualquer perfil solicitado
+  const requestRoleSwitch = (targetRole: UserRole, customMsg?: string, onSuccess?: () => void) => {
+    if (targetRole === activeRole && !customMsg) {
+      return;
+    }
+    setPendingAuthRole(targetRole);
+    setRoleAuthCustomMessage(customMsg);
+    setOnRoleAuthSuccessCallback(onSuccess ? () => onSuccess : null);
+    setIsRoleAuthGateOpen(true);
+  };
+
+  // Aplicação real da troca de perfil após senha validada
+  const applyRoleSwitch = (newRole: UserRole) => {
     setActiveRole(newRole);
+    safeLocalStorageSet('bjj_active_role', newRole);
     if (isCeoRole(newRole)) {
+      setIsCeoUser(true);
+      safeLocalStorageSet('bjj_is_ceo_authenticated', true);
       triggerPushNotification(
         '👑 Olá, Sr. Messias!',
-        'Acesso Master Total Ativado. Seja bem-vindo ao BJJACADEMY.',
+        'Acesso Master Total Ativado com sucesso.',
+        'announcement'
+      );
+    } else if (newRole === 'general_manager' || newRole === 'saas_superadmin') {
+      triggerPushNotification(
+        '🛡️ Super Admin Master Ativado',
+        'Controle executivo multi-unidades liberado.',
+        'announcement'
+      );
+    } else if (newRole === 'manager') {
+      triggerPushNotification(
+        '🏢 Gestor Filial Conectado',
+        `Painel operacional da ${activeAcademy?.shortName || activeAcademy?.name || 'academia'} liberado.`,
+        'announcement'
+      );
+    } else if (newRole === 'teacher') {
+      triggerPushNotification(
+        '🥋 Professor Conectado',
+        'Painel de turmas e chamadas do tatame liberado.',
+        'announcement'
+      );
+    } else if (newRole === 'student') {
+      triggerPushNotification(
+        '🥋 Área do Aluno',
+        'Bem-vindo ao tatame! Check-in e histórico disponíveis.',
+        'announcement'
+      );
+    } else if (newRole === 'parent') {
+      triggerPushNotification(
+        '👨‍👩‍👧‍👦 Portal do Responsável',
+        'Acompanhamento de dependentes liberado.',
         'announcement'
       );
     }
+  };
+
+  const handleRoleAuthConfirmed = (role: UserRole) => {
+    setIsRoleAuthGateOpen(false);
+    setPendingAuthRole(null);
+    setRoleAuthCustomMessage(undefined);
+    if (onRoleAuthSuccessCallback) {
+      onRoleAuthSuccessCallback();
+      setOnRoleAuthSuccessCallback(null);
+    }
+    applyRoleSwitch(role);
+  };
+
+  const handleRoleAuthCancel = () => {
+    setIsRoleAuthGateOpen(false);
+    setPendingAuthRole(null);
+    setRoleAuthCustomMessage(undefined);
+    setOnRoleAuthSuccessCallback(null);
+  };
+
+  // Intercepta qualquer clique de troca de perfil para exigir a confirmação de senha
+  const handleSelectRole = (newRole: UserRole) => {
+    requestRoleSwitch(newRole);
   };
 
   // Domain Data State (Reactive with persistence fallback)
@@ -826,7 +906,7 @@ export default function App() {
       onOpenTournaments={() => setIsTournamentsOpen(true)}
       onOpenVoiceSettings={() => setIsVoiceSettingsOpen(true)}
       onOpenFinancial={() => setIsFinancialOpen(true)}
-      onOpenAcademyRegistration={() => setActiveRole('academy_registration')}
+      onOpenAcademyRegistration={() => requestRoleSwitch('academy_registration')}
       activeAcademyName={activeAcademy.shortName || activeAcademy.name}
       onOpenCloudStatus={() => setIsCloudStatusOpen(true)}
       onOpenStudentManagement={() => setIsStudentManagementOpen(true)}
@@ -850,8 +930,8 @@ export default function App() {
         setIsOperatingHoursOpen(true);
       }}
       onOpenStudentEnrollment={handleOpenStudentEnrollment}
-      onOpenExpenseManagement={() => setActiveRole('expense_management')}
-      onOpenSuperAdminSaas={() => setActiveRole('saas_superadmin')}
+      onOpenExpenseManagement={() => requestRoleSwitch('expense_management')}
+      onOpenSuperAdminSaas={() => requestRoleSwitch('saas_superadmin')}
       onOpenProShopFulfillment={() => setIsProShopFulfillmentOpen(true)}
       onOpenR2Backup={() => setIsR2BackupModalOpen(true)}
     >
@@ -877,7 +957,7 @@ export default function App() {
       />
 
       {/* ⚠️ BLOQUEIO AUTOMÁTICO DE ACESSO POR INADIMPLÊNCIA SAAS (ALUNOS & PROFESSORES) */}
-      {isCurrentAcademyBlocked && (activeRole === 'student' || activeRole === 'parent' || activeRole === 'teacher') ? (
+      {isCurrentAcademyBlocked && !isCeoUser && (activeRole === 'student' || activeRole === 'parent' || activeRole === 'teacher') ? (
         <AcademySuspendedLockoutModal
           lockoutStatus={currentAcademyLockout}
           academies={academies}
@@ -916,9 +996,9 @@ export default function App() {
               <button
                 type="button"
                 onClick={() => {
-                  setIsCeoAuditMode(false);
-                  setActiveRole('ceo');
-                  triggerPushNotification('👑 Painel CEO Restaurado', 'Você retornou ao controle executivo do CEO Messias.');
+                  requestRoleSwitch('ceo', 'Retornar ao CEO Messias (Senha Master)', () => {
+                    setIsCeoAuditMode(false);
+                  });
                 }}
                 className="px-3.5 py-1.5 rounded-xl bg-slate-950 hover:bg-slate-900 active:scale-95 text-amber-300 hover:text-white font-black text-xs flex items-center gap-1.5 border border-amber-400/60 shadow-lg cursor-pointer transition"
               >
@@ -1054,15 +1134,14 @@ export default function App() {
             triggerPushNotification(`🏆 Convocação Torneio: ${reminder.name}`, `Inscrições até ${reminder.registrationDeadline}`);
           }}
           onSwitchToStudentRole={() => {
-            setActiveRole('student');
-            triggerPushNotification('🥋 Modo Aluno Ativado', 'Você alternou para a sua visão pessoal de treinos e graduação.');
+            requestRoleSwitch('student');
           }}
         />
       )}
         </>
       )}
 
-      {(activeRole === 'manager' || isSuperAdminOrCEO) && (
+      {(activeRole === 'manager' || activeRole === 'ceo' || activeRole === 'general_manager' || activeRole === 'SUPER_ADMIN') && (
         <ManagerView
           classes={classes}
           invoices={invoices}
@@ -1092,7 +1171,7 @@ export default function App() {
           academies={academies}
           generalManager={generalManager}
           onUpdateGeneralManager={handleUpdateGeneralManager}
-          onOpenAcademyRegistration={() => setActiveRole('academy_registration')}
+          onOpenAcademyRegistration={() => requestRoleSwitch('academy_registration')}
           isGeneralManager={isSuperAdminOrCEO}
           isCEO={isCEO}
           onOpenStudentManagement={() => setIsStudentManagementOpen(true)}
@@ -1109,21 +1188,18 @@ export default function App() {
           onAddExpense={handleAddExpense}
           onUpdateExpense={handleUpdateExpense}
           onDeleteExpense={handleDeleteExpense}
-          onOpenExpenseManagement={() => setActiveRole('expense_management')}
+          onOpenExpenseManagement={() => requestRoleSwitch('expense_management')}
           onUpdateInvoices={(updated) => {
             setInvoices(updated);
             localStorage.setItem('bjj_invoices', JSON.stringify(updated));
           }}
           onOpenR2Backup={() => setIsR2BackupModalOpen(true)}
           onStartCeoAudit={(targetRole) => {
-            setIsCeoAuditMode(true);
-            setActiveRole(targetRole);
-            triggerPushNotification(
-              '👑 Modo Auditoria CEO Ativado',
-              `Você está auditando a experiência do usuário como: ${targetRole === 'student' ? 'Aluno' : targetRole === 'teacher' ? 'Professor' : 'Responsável (Kids)'}. Toque no botão dourado no topo para retornar ao Painel CEO a qualquer momento.`
-            );
+            requestRoleSwitch(targetRole, `Auditoria do Tatame: Acessar como ${targetRole === 'student' ? 'Aluno' : targetRole === 'teacher' ? 'Professor' : 'Responsável (Kids)'}`, () => {
+              setIsCeoAuditMode(true);
+            });
           }}
-          onOpenSuperAdminSaas={() => setActiveRole('saas_superadmin')}
+          onOpenSuperAdminSaas={() => requestRoleSwitch('saas_superadmin')}
           onOpenDataIntegrity={() => setIsDataIntegrityOpen(true)}
           onOpenSystemDiagnostics={() => setIsSystemDiagnosticsOpen(true)}
         />
@@ -1168,7 +1244,7 @@ export default function App() {
           onOpenVoiceNotice={(title, body) => {
             academyVoiceEngine.announceAcademyMessage(activeAcademy, title, body);
           }}
-          onBackToManager={() => setActiveRole('manager')}
+          onBackToManager={() => setActiveRole(isCeoUser ? 'ceo' : 'manager')}
           onOpenStudentEnrollment={handleOpenStudentEnrollment}
         />
       )}
@@ -1808,7 +1884,7 @@ export default function App() {
         onOpenFinancial={() => setIsFinancialOpen(true)}
         onOpenSuperAdminSaas={() => {
           setIsCEOProfileOpen(false);
-          setActiveRole('saas_superadmin');
+          requestRoleSwitch('saas_superadmin');
         }}
         onOpenCloudStatus={() => {
           setIsCEOProfileOpen(false);
@@ -1820,12 +1896,9 @@ export default function App() {
         }}
         onStartCeoAudit={(targetRole) => {
           setIsCEOProfileOpen(false);
-          setIsCeoAuditMode(true);
-          setActiveRole(targetRole);
-          triggerPushNotification(
-            '👑 Modo Auditoria CEO Ativado',
-            `Você está auditando a experiência do usuário como: ${targetRole === 'student' ? 'Aluno' : targetRole === 'teacher' ? 'Professor' : 'Responsável (Kids)'}. Toque no botão dourado no topo para retornar ao Painel CEO.`
-          );
+          requestRoleSwitch(targetRole, `Auditoria: Acessar como ${targetRole === 'student' ? 'Aluno' : targetRole === 'teacher' ? 'Professor' : 'Responsável (Kids)'}`, () => {
+            setIsCeoAuditMode(true);
+          });
         }}
       />
 
@@ -1837,6 +1910,16 @@ export default function App() {
           academy={academyForHours}
         />
       )}
+
+      {/* 🔐 Gate de Confirmação de Senha Obrigatória por Perfil (CEO Messias, Super Admin, Gestor Filial, Professor, Aluno, Responsável) */}
+      <RoleAuthGateModal
+        isOpen={isRoleAuthGateOpen}
+        targetRole={pendingAuthRole}
+        onConfirm={handleRoleAuthConfirmed}
+        onCancel={handleRoleAuthCancel}
+        academy={activeAcademy}
+        contextMessage={roleAuthCustomMessage}
+      />
     </DeviceFrame>
     </ErrorBoundary>
   );
